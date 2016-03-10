@@ -3,7 +3,7 @@ project(shoot-them)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(IRRLICHT_PATH Dependencies/irrlicht-1.5.2)
+set(IRRLICHT_PATH Dependencies/irrlicht-1.8.3)
 set(IRRKLANG_PATH Dependencies/irrKlang-1.5.0)
 
 find_package(X11)
@@ -20,21 +20,21 @@ else()
     SET(EX_PLATFORM_NAME "x86")
 endif()
 
-if (NOT IRRLICHT_LIBRARY_PATH)
-    if (UNIX)
+if(NOT IRRLICHT_LIBRARY_PATH)
+    if(UNIX)
         set(IRRLICHT_PATH_SUFFIX Linux)
     endif()
 
-    if (APPLE)
+    if(APPLE)
         set(IRRLICHT_PATH_SUFFIX MacOSX)
     endif()
 
-    if (WIN32)
-        if (MSVC)
+    if(WIN32)
+        if(MSVC)
             set(IRRLICHT_PATH_SUFFIX Win32-visualstudio Win64-visualstudio)
         endif()
 
-        if (MINGW)
+        if(MINGW)
             set(IRRLICHT_PATH_SUFFIX Win32-gcc)
         endif()
     endif()
@@ -47,23 +47,23 @@ if (NOT IRRLICHT_LIBRARY_PATH)
     message(STATUS "Found Irrlicht: ${IRRLICHT_LIBRARY_PATH}")
 endif()
 
-if (NOT IRRKLANG_LIBRARY_PATH)
-    if (UNIX)
+if(NOT IRRKLANG_LIBRARY_PATH)
+    if(UNIX)
         set(IRRKLANG_PATH_SUFFIX linux-gcc)
     endif()
 
-    if (APPLE)
+    if(APPLE)
         set(IRRKLANG_PATH_SUFFIX macosx-gcc)
     endif()
 
-    if (WIN32)
-        if (MSVC)
+    if(WIN32)
+        if(MSVC)
             set(IRRKLANG_PATH_SUFFIX winx64 dotnet-4)
         endif()
     endif()
 
-    if (EX_PLATFORM EQUAL 64)
-        if (NOT APPLE)
+    if(EX_PLATFORM EQUAL 64)
+        if(NOT APPLE)
             set(IRRKLANG_PATH_SUFFIX ${IRRKLANG_PATH_SUFFIX}-64)
         endif()
     endif()
@@ -85,7 +85,7 @@ set(LIBRARIES
         ${OPENGL_LIBRARIES}
         ${ZLIB_LIBRARIES})
 
-if (NOT APPLE)
+if(NOT APPLE)
     set(LIBRARIES ${LIBRARIES} ${X11_Xxf86vm_LIB})
 endif()
 
@@ -95,7 +95,7 @@ include_directories(${IRRKLANG_PATH}/include)
 set(SOURCE_FILES Game/Sources/main.cpp)
 set(EXECUTABLE_NAME shoot-them)
 
-if (APPLE)
+if(APPLE)
     find_library(IOKIT NAMES IOKit)
     find_library(OpenGL NAMES OpenGL)
     find_library(COREVIDEO NAMES CoreVideo)
@@ -103,13 +103,15 @@ if (APPLE)
     SET(LIBRARIES ${LIBRARIES} ${IOKIT} ${COREVIDEO} ${COCOA})
 endif()
 
-if (APPLE)
-    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCE_FILES})
+if(APPLE)
+    file(GLOB RESOURCE_FILES Game/Resources)
+    set_source_files_properties(${RESOURCE_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
+
+    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCE_FILES} ${RESOURCE_FILES})
 else()
     add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
+
+    file(COPY Game/Resources DESTINATION ${PROJECT_BINARY_DIR})
 endif()
 
 target_link_libraries(${EXECUTABLE_NAME} ${LIBRARIES})
-
-file(COPY Game/Data DESTINATION ${PROJECT_BINARY_DIR})
-file(COPY Game/Resources DESTINATION ${PROJECT_BINARY_DIR})

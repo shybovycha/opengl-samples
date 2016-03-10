@@ -181,8 +181,10 @@ EventReceiver receiver;
 
 void init()
 {
-    device = createDevice(EDT_OPENGL, dimension2d<s32>(640, 480), 32,
-			false, false, false, 0);
+   //  device = createDevice(EDT_OPENGL, dimension2d<s32>(640, 480), 32,
+			// false, false, false, 0);
+
+    device = createDevice(video::EDT_OPENGL, core::dimension2d<u32>(640, 480), 16, false, false, false);
 
 	device->setWindowCaption(L"ShootThem!");
 
@@ -218,7 +220,7 @@ void init()
 
     smgr->addLightSceneNode(0, vector3df(0, 10, 0), SColorf(0.5f, 0.5f, 0.5f, 0.5f), 1000, 0);
 
-    driver->setFog(SColor(0, 138, 125, 81), true, 250, 1000, 0, true);
+    driver->setFog(SColor(0, 138, 125, 81), EFT_FOG_LINEAR, 250, 1000, 0, true);
 }
 
 void createPlayer()
@@ -490,7 +492,9 @@ void refreshIndicator()
             musicNum = 0;
 	}*/
 
-	if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector, intersection, tri))
+    ISceneNode* node = 0;
+
+	if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector, intersection, tri, node))
         bill->setPosition(intersection);
 }
 
