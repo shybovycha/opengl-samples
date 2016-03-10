@@ -60,7 +60,7 @@ ICameraSceneNode* camera = 0;
 IAnimatedMesh* playermesh = 0;
 IAnimatedMeshSceneNode* player = 0;
 
-ILightSceneNode* light[10] = {0};
+// ILightSceneNode* light[10] = {0};
 
 IBillboardSceneNode* bill = 0;
 ITriangleSelector* selector = 0;
@@ -218,7 +218,7 @@ void init()
 	bill->setMaterialFlag(EMF_ZBUFFER, false);
 	bill->setSize(dimension2d<f32>(20.0f, 20.0f));
 
-    smgr->addLightSceneNode(0, vector3df(0, 10, 0), SColorf(0.5f, 0.5f, 0.5f, 0.5f), 1000, 0);
+    smgr->addLightSceneNode(0, vector3df(0, 20, 0), SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
 
     driver->setFog(SColor(0, 138, 125, 81), EFT_FOG_LINEAR, 250, 1000, 0, true);
 }
