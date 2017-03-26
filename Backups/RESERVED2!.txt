@@ -1,0 +1,355 @@
+#include "irrlicht.h"
+#include "fstream"
+#include "stdlib.h"
+#include "irrKlang.h"
+
+#pragma comment(lib, "irrlicht.lib")
+#pragma comment(lib, "irrKlang.lib")
+
+using namespace irr;
+using namespace core;
+using namespace scene;
+using namespace video;
+using namespace io;
+using namespace gui;
+using namespace std;
+using namespace irrklang;
+
+#define maxAmmo 10
+#define maxTime 6000
+
+int targetCnt = 0, Tm = maxTime, levelNumber = 0;
+int points = 0, targetLeft = 0, ammo = maxAmmo;
+
+bool endLevel = false;
+
+char* maps[10];
+char* targetfiles[10];
+
+vector3df positions[100];
+
+IGUIStaticText* indicator = 0;
+ITimer* timer = 0;
+IGUIWindow* msgbox = 0;
+
+IrrlichtDevice *device = 0;
+IVideoDriver* driver = 0;
+ISceneManager* smgr = 0;
+IGUIEnvironment* guienv = 0;
+IAnimatedMesh* levelmesh = 0;
+IAnimatedMeshSceneNode* level = 0;
+ICameraSceneNode* camera = 0;
+
+IAnimatedMesh* playermesh = 0;
+IAnimatedMeshSceneNode* player = 0;
+
+ISoundEngine* engine = 0;
+
+ISceneNode* target[10] = {0};
+
+void gotoMap(int mapNum);
+
+class EventReceiver : public IEventReceiver
+{
+    public:
+        virtual bool OnEvent(const SEvent& event)
+        {
+            if (event.EventType == EET_GUI_EVENT)
+            {
+                if (event.GUIEvent.EventType == EGET_MESSAGEBOX_OK)
+                {
+                    if (endLevel == true)
+                    {
+                        endLevel = false;
+                        gotoMap(++levelNumber);
+                    }
+                }
+            }
+
+            if (event.EventType == EET_KEY_INPUT_EVENT)
+            {
+                if (event.KeyInput.Key == KEY_ESCAPE)
+                {
+                    device->drop();
+
+                    exit(0);
+                }
+            }
+
+            if (event.EventType == EET_MOUSE_INPUT_EVENT)
+            {
+                if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN)
+                {
+                    ISceneNode* object = 0;
+
+                    object = smgr->getSceneCollisionManager()->getSceneNodeFromCameraBB(camera);
+
+                    if (ammo <= 0)
+                    {
+                        engine->play2D("noammo.wav", false);
+                        return false;
+                    }
+
+                    engine->play2D("shot.wav", false);
+                    ammo--;
+
+                    if (object == level || object == player)
+                        return false;
+
+                    object->setVisible(false);
+
+                    points++;
+                    targetLeft--;
+
+                    return true;
+                }
+
+                if (event.MouseInput.Event == EMIE_RMOUSE_PRESSED_DOWN)
+                {
+                    if (ammo < maxAmmo)
+                    {
+                        ammo = maxAmmo;
+                        engine->play2D("reload.wav", false);
+                    }
+                }
+            }
+
+            return false;
+        }
+};
+
+EventReceiver receiver;
+
+void init()
+{
+    device = createDevice(EDT_OPENGL, dimension2d<s32>(640, 480), 16,
+			false, false, false, 0);
+
+	device->setWindowCaption(L"ShootThem!");
+
+	driver = device->getVideoDriver();
+	smgr = device->getSceneManager();
+	guienv = device->getGUIEnvironment();
+
+	device->setEventReceiver(&receiver);
+
+	engine = createIrrKlangDevice();
+
+	for (int i = 0; i <= 9; i++)
+    {
+        target[i] = smgr->addSphereSceneNode();
+        target[i]->setVisible(false);
+    }
+}
+
+void createPlayer()
+{
+    camera = smgr->addCameraSceneNodeFPS(0, 100, 0, 0);
+    device->getCursorControl()->setVisible(false);
+
+    stringw str = L"Ammo: ";
+    str += ammo;
+    str += "/";
+    str += maxAmmo;
+    str += ";  Points: ";
+    str += points;
+    str += "/";
+    str += targetCnt;
+
+    indicator = guienv->addStaticText(str.c_str(), rect<s32>(10, 10, 260, 22), true);
+    timer = device->getTimer();
+    //timer->setSpeed(1000000);
+    timer->start();
+
+    playermesh = smgr->getMesh("rifle.3ds");
+    player = smgr->addAnimatedMeshSceneNode(playermesh);
+
+    player->setPosition(vector3df(0.5f, -1.0f, 1.0f));
+
+    player->setParent(camera);
+}
+
+void loadConfig(char* filename)
+{
+    ifstream inf(filename);
+
+	char str[255] = "";
+
+    int mapCnt = 0;
+
+	inf>>mapCnt;
+
+    for (int i = 0; i <= mapCnt - 1; i++)
+    {
+        inf.getline(str, '\n');
+		//maps[i] = str;
+		strcat(maps[i], str);
+
+        inf.getline(str, '\n');
+		targetfiles[i] = str;
+		strcat(targetfiles[i], str);
+    }
+
+    inf.close();
+}
+
+void loadCoords(char* filename)
+{
+    ifstream inf(filename);
+
+    int i = 0, oldI = 0, maxI;
+
+    while (!inf.eof())
+    {
+        inf>>maxI;
+
+        for (i = oldI; i <= oldI + maxI; i++)
+            inf>>positions[i].X>>positions[i].Y>>positions[i].Z;
+
+        oldI = i;
+    }
+
+    inf.close();
+}
+
+void createConfig()
+{
+    maps[0] = "room.3ds";
+    targetfiles[0] = "room.dat";
+
+    maps[1] = "room2.3ds";
+    targetfiles[1] = "room2.dat";
+
+    maps[2] = "room.3ds";
+    targetfiles[2] = "room.dat";
+
+    maps[3] = "room.3ds";
+    targetfiles[3] = "room.dat";
+
+    maps[4] = "room.3ds";
+    targetfiles[4] = "room.dat";
+}
+
+void loadMap(char* mapname)
+{
+    levelmesh = smgr->getMesh(mapname);
+    level = smgr->addAnimatedMeshSceneNode(levelmesh);
+
+    smgr->addLightSceneNode(0, vector3df(0, 0, 0), SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
+}
+
+void loadTargets(char* filename)
+{
+    ifstream inf(filename);
+
+    //for (int i = 0; i <= targetCnt - 1; i++)
+        //target[i]->setVisi
+        //target[i] = 0;
+
+    vector3df pos;
+
+    inf>>targetCnt;
+    targetLeft = targetCnt;
+
+    for (int i = 0; i <= targetCnt - 1; i++)
+    {
+        inf>>pos.X>>pos.Y>>pos.Z;
+
+        /*target[i] = smgr->addSphereSceneNode(5.0f, 64, 0, i+1,
+            pos, vector3df(0, 0, 0), vector3df(1, 1, 1));
+
+        target[i]->setName("enemy");*/
+
+        target[i]->setVisible(true);
+        target[i]->setPosition(pos);
+    }
+
+    inf.close();
+}
+
+void gotoMap(int mapNum)
+{
+    if (levelmesh != 0)
+        levelmesh->drop();
+
+    if (level != 0)
+        level->drop();
+
+    loadMap(maps[mapNum]);
+    loadTargets(targetfiles[mapNum]);
+}
+
+void showResult()
+{
+    stringw title = L"Level complete!";
+    stringw msg = L"Your time: ";
+
+    msg += (maxTime - (Tm/100));
+    msg += ";  Accuracy: ";
+    msg += (points / targetCnt * 100);
+
+    guienv->addMessageBox(title.c_str(), msg.c_str(), true, EMBF_OK, 0, 0);
+
+    endLevel = true;
+
+    timer->stop();
+}
+
+void refreshIndicator()
+{
+    stringw str = L"Ammo: ";
+    str += ammo;
+    str += "/";
+    str += maxAmmo;
+    str += ";  Points: ";
+    str += points;
+    str += "/";
+    str += targetCnt;
+    str += ";  Time:";
+    str += (Tm/100);
+
+    if (timer->isStopped() && endLevel == false)
+    {
+        Tm--;
+    }
+
+    if (Tm <= 0 || points == targetCnt)
+        if (endLevel == false)
+        {
+            //engine->play2D("gameover.wav", false);
+            showResult();
+        }
+
+    indicator->setText(str.c_str());
+}
+
+int main()
+{
+    init();
+    createPlayer();
+    //loadConfig("c:/1/game.cfg");
+    createConfig();
+    gotoMap(0);
+
+	while(device->run())
+	{
+		driver->beginScene(true, true, SColor(0,200,200,200));
+
+		smgr->drawAll();
+		guienv->drawAll();
+
+		refreshIndicator();
+
+		//device->sleep(10, true);
+
+		driver->endScene();
+	}
+
+	device->drop();
+	engine->drop();
+
+	timer->stop();
+
+	return 0;
+}
+
