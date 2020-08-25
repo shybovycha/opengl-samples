@@ -1,10 +1,9 @@
-#include "irrlicht.h"
-#include "fstream"
-#include "stdlib.h"
-#include "irrKlang.h"
+#include <fstream>
+#include <iostream>
+#include <string>
 
-// #pragma comment(lib, "irrlicht.lib")
-// #pragma comment(lib, "irrKlang.lib")
+#include "irrlicht.h"
+#include "irrKlang.h"
 
 using namespace irr;
 using namespace core;
@@ -12,7 +11,6 @@ using namespace scene;
 using namespace video;
 using namespace io;
 using namespace gui;
-using namespace std;
 using namespace irrklang;
 
 #define maxAmmo 10
@@ -26,9 +24,6 @@ bool endLevel = false;
 bool hiscoremnu = false;
 
 char *maps[10];
-/*char* musics[1000];
-int musicCnt = -1;
-int musicNum = 0;*/
 vector3df positions[100];
 int targets[100] = {-1}, levelCnt, shoots = 0;
 
@@ -59,8 +54,6 @@ ICameraSceneNode *camera = 0;
 
 IAnimatedMesh *playermesh = 0;
 IAnimatedMeshSceneNode *player = 0;
-
-// ILightSceneNode* light[10] = {0};
 
 IBillboardSceneNode *bill = 0;
 ITriangleSelector *selector = 0;
@@ -181,9 +174,6 @@ EventReceiver receiver;
 
 void init()
 {
-    //  device = createDevice(EDT_OPENGL, dimension2d<s32>(640, 480), 32,
-    // false, false, false, 0);
-
     device = createDevice(video::EDT_OPENGL, core::dimension2d<u32>(640, 480), 16, false, false, false);
 
     device->setWindowCaption(L"ShootThem!");
@@ -204,7 +194,6 @@ void init()
     for (int i = 0; i <= 9; i++)
     {
         target[i] = smgr->addAnimatedMeshSceneNode(mesh);
-        //target[i]->setScale(vector3df(2, 2, 2));
         target[i]->setVisible(false);
 
         target[i]->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
@@ -251,7 +240,7 @@ void createPlayer()
 
 void loadCoords(char *filename)
 {
-    ifstream inf(filename);
+    std::ifstream inf(filename);
 
     int i = 0, oldI = 0;
 
@@ -272,7 +261,7 @@ void loadCoords(char *filename)
 
 void loadHiscores(char *filename)
 {
-    ifstream inf(filename);
+    std::ifstream inf(filename);
 
     inf >> hiscoreCnt;
 
@@ -288,7 +277,7 @@ void loadHiscores(char *filename)
 
 void saveHiscores()
 {
-    ofstream outf("Data/hiscores.dat");
+    std::ofstream outf("Data/hiscores.dat");
 
     outf << ++hiscoreCnt;
 
@@ -305,16 +294,6 @@ void saveHiscores()
 
     outf.close();
 }
-
-/*void loadMusicList(char* filename)
-{
-    ifstream inf(filename);
-
-    while (!inf.eof())
-        inf.getline(musics[++musicCnt], '\n');
-
-    inf.close();
-}*/
 
 void createConfig()
 {
@@ -344,8 +323,6 @@ void pasteTargets(int levelNumber)
         int k = targets[levelNumber - 1];
 
         target[i]->setPosition(positions[k + i]);
-
-        //light[i]->setPosition(vector3df(positions[k+i].X+25, positions[k+i].Y + 25, positions[k+i].Z));
     }
 
     targetLeft = targets[levelNumber];
@@ -439,7 +416,6 @@ void showHiscores()
         driver->endScene();
     }
 
-    //hiscoreTable->drop();
     timer->start();
 }
 
@@ -483,15 +459,6 @@ void refreshIndicator()
     vector3df intersection;
     triangle3df tri;
 
-    /*if (engine)
-	{
-	    if (music->isFinished())
-            music = engine->play2D(musics[++musicNum]);
-
-        if (musicNum >= musicCnt)
-            musicNum = 0;
-	}*/
-
     ISceneNode *node = 0;
 
     if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector, intersection, tri, node))
@@ -502,18 +469,10 @@ int main()
 {
     init();
 
-    /*IParticleSystemSceneNode* ps = 0;
-    ps = smgr->addParticleSystemSceneNode(true, 0, 0, vector3df(0, 5, 5), vector3df(0, 0, 0), vector3df(2, 2, 2));
-    ps->setParticleSize(dimension2d<f32>(20.0f, 20.0f));
-    ps->setMaterialTexture(0, driver->getTexture("fire.bmp"));*/
-
     createPlayer();
     createConfig();
     loadCoords("Data/coords.dat");
     loadHiscores("Data/hiscores.dat");
-    //loadMusicList("music.dat");
-
-    //music = engine->play2D(musics[0]);
 
     gotoMap(0);
 
