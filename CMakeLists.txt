@@ -1,7 +1,6 @@
-cmake_minimum_required(VERSION 3.1)
-project(shoot-them)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+project(shoot-them VERSION 1.0.1 LANGUAGES CXX)
 
 set(IRRLICHT_PATH Dependencies/irrlicht-1.8.3)
 set(IRRKLANG_PATH Dependencies/irrKlang-1.5.0)
@@ -113,5 +112,11 @@ else()
 
     file(COPY Game/Resources DESTINATION ${PROJECT_BINARY_DIR})
 endif()
+
+set_target_properties(${EXECUTABLE_NAME} PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS ON
+)
 
 target_link_libraries(${EXECUTABLE_NAME} ${LIBRARIES})
