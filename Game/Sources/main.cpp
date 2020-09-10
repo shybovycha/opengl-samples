@@ -7,7 +7,6 @@
 
 using namespace irr;
 using namespace scene;
-using namespace gui;
 using namespace irrklang;
 
 #define maxAmmo 10
@@ -36,15 +35,15 @@ struct TRecord
 int hiscoreCnt = -1;
 TRecord hiscores[100];
 
-IGUIStaticText *indicator = 0;
+irr::gui::IGUIStaticText *indicator = 0;
 ITimer *timer = 0;
-IGUIWindow *msgbox = 0;
-IGUIListBox *hiscoreTable = 0;
+irr::gui::IGUIWindow *msgbox = 0;
+irr::gui::IGUIListBox *hiscoreTable = 0;
 
 IrrlichtDevice *device = 0;
 irr::video::IVideoDriver *driver = 0;
 ISceneManager *smgr = 0;
-IGUIEnvironment *guienv = 0;
+irr::gui::IGUIEnvironment *guienv = 0;
 IAnimatedMesh *levelmesh = 0;
 IAnimatedMeshSceneNode *level = 0;
 ICameraSceneNode *camera = 0;
@@ -72,7 +71,7 @@ public:
     {
         if (event.EventType == EET_GUI_EVENT)
         {
-            if (event.GUIEvent.EventType == EGET_MESSAGEBOX_OK)
+            if (event.GUIEvent.EventType == irr::gui::EGET_MESSAGEBOX_OK)
             {
                 if (levelNumber + 1 == levelCnt)
                 {
@@ -355,7 +354,7 @@ void showResult()
     Tms += (maxTime / 100) - abs(Tm / 100);
     Pnts += points;
 
-    guienv->addMessageBox(title.c_str(), msg.c_str(), true, EMBF_OK, 0, 0);
+    guienv->addMessageBox(title.c_str(), msg.c_str(), true, irr::gui::EMBF_OK, 0, 0);
 
     endLevel = true;
 
@@ -365,7 +364,7 @@ void showResult()
     {
         guienv->getSkin()->setFont(guienv->getFont("fontcourier.bmp"));
         guienv->clear();
-        guienv->addMessageBox(L"Congratulations!", L"Game over!", true, EMBF_OK, 0, 0);
+        guienv->addMessageBox(L"Congratulations!", L"Game over!", true, irr::gui::EMBF_OK, 0, 0);
 
         while (device->run())
         {
