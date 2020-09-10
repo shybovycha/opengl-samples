@@ -26,7 +26,11 @@ if(NOT IRRLICHT_LIBRARY_PATH)
 
     if(WIN32)
         if(MSVC)
-            set(IRRLICHT_PATH_SUFFIX Win32-visualstudio Win64-visualstudio)
+            if(EX_PLATFORM EQUAL "32")
+                set(IRRLICHT_PATH_SUFFIX Win32-visualstudio)
+            else()
+                set(IRRLICHT_PATH_SUFFIX Win64-visualStudio)
+            endif()
         endif()
 
         if(MINGW)
@@ -58,8 +62,6 @@ if(NOT IRRKLANG_LIBRARY_PATH)
             set(IRRKLANG_PATH_SUFFIX Winx64-visualStudio dotnet-4)
         endif()
     endif()
-
-    message(STATUS "Looking for IrrKlang in ${IRRKLANG_PATH}/bin with ${IRRKLANG_PATH_SUFFIX}")
 
     find_library(IRRKLANG_LIBRARY_PATH
             irrKlang
