@@ -2,11 +2,10 @@
 #include <iostream>
 #include <string>
 
-#include "irrlicht.h"
-#include "irrKlang.h"
+#include <irrlicht.h>
+#include <irrKlang.h>
 
 using namespace irr;
-using namespace core;
 using namespace scene;
 using namespace video;
 using namespace io;
@@ -24,7 +23,7 @@ bool endLevel = false;
 bool hiscoremnu = false;
 
 char *maps[10];
-vector3df positions[100];
+irr::core::vector3df positions[100];
 int targets[100] = {-1}, levelCnt, shoots = 0;
 
 ISound *music = 0;
@@ -205,9 +204,9 @@ void init()
     bill->setMaterialTexture(0, driver->getTexture("cross.bmp"));
     bill->setMaterialFlag(EMF_LIGHTING, false);
     bill->setMaterialFlag(EMF_ZBUFFER, false);
-    bill->setSize(dimension2d<f32>(20.0f, 20.0f));
+    bill->setSize(irr::core::dimension2d<f32>(20.0f, 20.0f));
 
-    smgr->addLightSceneNode(0, vector3df(0, 20, 0), SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
+    smgr->addLightSceneNode(0, irr::core::vector3df(0, 20, 0), SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
 
     driver->setFog(SColor(0, 138, 125, 81), EFT_FOG_LINEAR, 250, 1000, 0, true);
 }
@@ -217,7 +216,7 @@ void createPlayer()
     camera = smgr->addCameraSceneNodeFPS(0, 100, 0, 0);
     device->getCursorControl()->setVisible(false);
 
-    stringw str = L"Ammo: ";
+    irr::core::stringw str = L"Ammo: ";
     str += ammo;
     str += "/";
     str += maxAmmo;
@@ -226,14 +225,14 @@ void createPlayer()
     str += "/";
     str += targetCnt;
 
-    indicator = guienv->addStaticText(str.c_str(), rect<s32>(10, 10, 260, 22), true, true, 0, 0, true);
+    indicator = guienv->addStaticText(str.c_str(), irr::core::rect<s32>(10, 10, 260, 22), true, true, 0, 0, true);
     timer = device->getTimer();
     timer->start();
 
     playermesh = smgr->getMesh("rifle.3ds");
     player = smgr->addAnimatedMeshSceneNode(playermesh);
 
-    player->setPosition(vector3df(0.5f, -1.0f, 1.0f));
+    player->setPosition(irr::core::vector3df(0.5f, -1.0f, 1.0f));
 
     player->setParent(camera);
 }
@@ -287,9 +286,9 @@ void saveHiscores()
 
     for (int i = 0; i <= hiscoreCnt - 1; i++)
     {
-        outf << hiscores[i].name << endl;
-        outf << hiscores[i].time << endl;
-        outf << hiscores[i].points << endl;
+        outf << hiscores[i].name << std::endl;
+        outf << hiscores[i].time << std::endl;
+        outf << hiscores[i].points << std::endl;
     }
 
     outf.close();
@@ -341,8 +340,8 @@ void gotoMap(int mapNum)
 
 void showResult()
 {
-    stringw title = L"Level complete!";
-    stringw msg = L"Your time: ";
+    irr::core::stringw title = L"Level complete!";
+    irr::core::stringw msg = L"Your time: ";
 
     msg += (maxTime / 100) - abs(Tm / 100);
     msg += "sec;  Shots: ";
@@ -386,11 +385,11 @@ void showHiscores()
 {
     hiscoremnu = true;
 
-    hiscoreTable = guienv->addListBox(rect<s32>(10, 30, 300, 100), 0, 0, true);
+    hiscoreTable = guienv->addListBox(irr::core::rect<s32>(10, 30, 300, 100), 0, 0, true);
 
     for (int i = 0; i <= hiscoreCnt - 1; i++)
     {
-        stringw str = L"";
+        irr::core::stringw str = L"";
 
         str += (i + 1);
         str += " - ";
@@ -421,7 +420,7 @@ void showHiscores()
 
 void refreshIndicator()
 {
-    stringw str = L"Ammo: ";
+    irr::core::stringw str = L"Ammo: ";
     str += ammo;
     str += "/";
     str += maxAmmo;
@@ -449,15 +448,15 @@ void refreshIndicator()
 
     float k = (sin(abs(Tm) / 100) / (10 - levelNumber));
 
-    camera->setRotation(vector3df(camera->getRotation().X + k,
+    camera->setRotation(irr::core::vector3df(camera->getRotation().X + k,
                                   camera->getRotation().Y, camera->getRotation().Z));
 
-    line3d<f32> line;
+    irr::core::line3d<f32> line;
     line.start = camera->getPosition();
     line.end = line.start + (camera->getTarget() - line.start).normalize() * 10000.0f;
 
-    vector3df intersection;
-    triangle3df tri;
+    irr::core::vector3df intersection;
+    irr::core::triangle3df tri;
 
     ISceneNode *node = 0;
 
