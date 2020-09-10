@@ -253,9 +253,13 @@ void loadCoords(char *filename)
     inf.close();
 }
 
-void loadHiscores(char *filename)
+void loadHiscores(char* filename)
 {
-    /*std::ifstream inf(filename);
+    std::ifstream inf(filename);
+
+    if (!inf.is_open()) {
+        return;
+    }
 
     inf >> hiscoreCnt;
 
@@ -266,7 +270,7 @@ void loadHiscores(char *filename)
         inf >> hiscores[i].points;
     }
 
-    inf.close();*/
+    inf.close();
 }
 
 void saveHiscores()
