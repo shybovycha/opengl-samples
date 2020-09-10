@@ -434,7 +434,7 @@ void refreshIndicator()
     str += "/";
     str += levelCnt;
 
-    if (timer->isStopped() && endLevel == false)
+    if (!timer->isStopped() && endLevel == false)
     {
         Tm--;
     }
