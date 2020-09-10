@@ -8,7 +8,6 @@
 using namespace irr;
 using namespace scene;
 using namespace video;
-using namespace io;
 using namespace gui;
 using namespace irrklang;
 
