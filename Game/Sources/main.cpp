@@ -6,7 +6,6 @@
 #include <irrKlang.h>
 
 using namespace irr;
-using namespace scene;
 using namespace irrklang;
 
 #define maxAmmo 10
@@ -42,23 +41,23 @@ irr::gui::IGUIListBox *hiscoreTable = 0;
 
 IrrlichtDevice *device = 0;
 irr::video::IVideoDriver *driver = 0;
-ISceneManager *smgr = 0;
+irr::scene::ISceneManager *smgr = 0;
 irr::gui::IGUIEnvironment *guienv = 0;
-IAnimatedMesh *levelmesh = 0;
-IAnimatedMeshSceneNode *level = 0;
-ICameraSceneNode *camera = 0;
+irr::scene::IAnimatedMesh *levelmesh = 0;
+irr::scene::IAnimatedMeshSceneNode *level = 0;
+irr::scene::ICameraSceneNode *camera = 0;
 
-IAnimatedMesh *playermesh = 0;
-IAnimatedMeshSceneNode *player = 0;
+irr::scene::IAnimatedMesh *playermesh = 0;
+irr::scene::IAnimatedMeshSceneNode *player = 0;
 
-IBillboardSceneNode *bill = 0;
-ITriangleSelector *selector = 0;
+irr::scene::IBillboardSceneNode *bill = 0;
+irr::scene::ITriangleSelector *selector = 0;
 
 ISoundEngine *engine = 0;
 
-ISceneNode *target[10] = {0};
+irr::scene::ISceneNode *target[10] = {0};
 
-ITriangleSelector *trisel = 0;
+irr::scene::ITriangleSelector *trisel = 0;
 
 void gotoMap(int mapNum);
 void showHiscores();
@@ -117,7 +116,7 @@ public:
 
         if (event.EventType == EET_MOUSE_INPUT_EVENT)
         {
-            ISceneNode *object = 0;
+            irr::scene::ISceneNode *object = 0;
 
             if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN)
             {
@@ -184,7 +183,7 @@ void init()
 
     device->getFileSystem()->addZipFileArchive("Resources/Packs/data.pk3");
 
-    IAnimatedMesh *mesh = 0;
+    irr::scene::IAnimatedMesh *mesh = 0;
     mesh = smgr->getMesh("chicken.3ds");
 
     for (int i = 0; i <= 9; i++)
@@ -455,7 +454,7 @@ void refreshIndicator()
     irr::core::vector3df intersection;
     irr::core::triangle3df tri;
 
-    ISceneNode *node = 0;
+    irr::scene::ISceneNode *node = 0;
 
     if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector, intersection, tri, node))
         bill->setPosition(intersection);
