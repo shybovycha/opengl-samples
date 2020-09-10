@@ -1,22 +1,18 @@
-cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 project(shoot-them VERSION 1.0.1 LANGUAGES CXX)
 
-set(IRRLICHT_PATH Dependencies/irrlicht-1.8.3)
-set(IRRKLANG_PATH Dependencies/irrKlang-1.5.0)
-
-find_package(X11)
-find_package(OpenGL)
-find_package(ZLIB)
+set(IRRLICHT_PATH ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.3)
+set(IRRKLANG_PATH ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrKlang-1.5.0)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     message("64 bit platform detected")
-    SET(EX_PLATFORM 64)
-    SET(EX_PLATFORM_NAME "x64")
+    set(EX_PLATFORM 64)
+    set(EX_PLATFORM_NAME "x64")
 else()
     message("32 bit platform detected")
-    SET(EX_PLATFORM 32)
-    SET(EX_PLATFORM_NAME "x86")
+    set(EX_PLATFORM 32)
+    set(EX_PLATFORM_NAME "x86")
 endif()
 
 if(NOT IRRLICHT_LIBRARY_PATH)
@@ -39,11 +35,13 @@ if(NOT IRRLICHT_LIBRARY_PATH)
     endif()
 
     find_library(IRRLICHT_LIBRARY_PATH
-            NAMES Irrlicht
+            Irrlicht
             PATHS ${IRRLICHT_PATH}/lib/
             PATH_SUFFIXES ${IRRLICHT_PATH_SUFFIX})
 
-    message(STATUS "Found Irrlicht: ${IRRLICHT_LIBRARY_PATH}")
+    set(IRRLICHT_PATH_SUFFIX ${CMAKE_CURRENT_LIST_DIR}/${IRRLICHT_PATH_SUFFIX})
+
+    message("Found Irrlicht: ${IRRLICHT_LIBRARY_PATH}")
 endif()
 
 if(NOT IRRKLANG_LIBRARY_PATH)
@@ -57,66 +55,20 @@ if(NOT IRRKLANG_LIBRARY_PATH)
 
     if(WIN32)
         if(MSVC)
-            set(IRRKLANG_PATH_SUFFIX winx64 dotnet-4)
-        endif()
-    endif()
-
-    if(EX_PLATFORM EQUAL 64)
-        if(NOT APPLE)
-            set(IRRKLANG_PATH_SUFFIX ${IRRKLANG_PATH_SUFFIX}-64)
+            set(IRRKLANG_PATH_SUFFIX Winx64-visualStudio dotnet-4)
         endif()
     endif()
 
     message(STATUS "Looking for IrrKlang in ${IRRKLANG_PATH}/bin with ${IRRKLANG_PATH_SUFFIX}")
 
     find_library(IRRKLANG_LIBRARY_PATH
-            NAMES irrklang
-            PATHS ${IRRKLANG_PATH}/bin/
+            irrKlang
+            PATHS ${IRRKLANG_PATH}/lib/
             PATH_SUFFIXES ${IRRKLANG_PATH_SUFFIX})
 
-    message(STATUS "Found IrrKlang: ${IRRKLANG_LIBRARY_PATH}")
+    set(IRRKLANG_PATH ${CMAKE_CURRENT_LIST_DIR}/${IRRKLANG_LIBRARY_PATH})
+
+    message("Found IrrKlang: ${IRRKLANG_LIBRARY_PATH}")
 endif()
 
-set(LIBRARIES
-        ${IRRLICHT_LIBRARY_PATH}
-        ${IRRKLANG_LIBRARY_PATH}
-        ${X11_LIBRARIES}
-        ${OPENGL_LIBRARIES}
-        ${ZLIB_LIBRARIES})
-
-if(NOT APPLE)
-    set(LIBRARIES ${LIBRARIES} ${X11_Xxf86vm_LIB})
-endif()
-
-include_directories(${IRRLICHT_PATH}/include)
-include_directories(${IRRKLANG_PATH}/include)
-
-set(SOURCE_FILES Game/Sources/main.cpp)
-set(EXECUTABLE_NAME shoot-them)
-
-if(APPLE)
-    find_library(IOKIT NAMES IOKit)
-    find_library(OpenGL NAMES OpenGL)
-    find_library(COREVIDEO NAMES CoreVideo)
-    find_library(COCOA NAMES Cocoa)
-    SET(LIBRARIES ${LIBRARIES} ${IOKIT} ${COREVIDEO} ${COCOA})
-endif()
-
-if(APPLE)
-    file(GLOB RESOURCE_FILES Game/Resources)
-    set_source_files_properties(${RESOURCE_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
-
-    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCE_FILES} ${RESOURCE_FILES})
-else()
-    add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
-
-    file(COPY Game/Resources DESTINATION ${PROJECT_BINARY_DIR})
-endif()
-
-set_target_properties(${EXECUTABLE_NAME} PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS ON
-)
-
-target_link_libraries(${EXECUTABLE_NAME} ${LIBRARIES})
+add_subdirectory(Game)
