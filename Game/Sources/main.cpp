@@ -7,7 +7,6 @@
 
 using namespace irr;
 using namespace scene;
-using namespace video;
 using namespace gui;
 using namespace irrklang;
 
@@ -43,7 +42,7 @@ IGUIWindow *msgbox = 0;
 IGUIListBox *hiscoreTable = 0;
 
 IrrlichtDevice *device = 0;
-IVideoDriver *driver = 0;
+irr::video::IVideoDriver *driver = 0;
 ISceneManager *smgr = 0;
 IGUIEnvironment *guienv = 0;
 IAnimatedMesh *levelmesh = 0;
@@ -195,19 +194,19 @@ void init()
         target[i]->setVisible(false);
 
         target[i]->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
-        target[i]->setMaterialFlag(EMF_ANISOTROPIC_FILTER, true);
+        target[i]->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
     }
 
     bill = smgr->addBillboardSceneNode();
-    bill->setMaterialType(EMT_TRANSPARENT_ADD_COLOR);
+    bill->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
     bill->setMaterialTexture(0, driver->getTexture("cross.bmp"));
-    bill->setMaterialFlag(EMF_LIGHTING, false);
-    bill->setMaterialFlag(EMF_ZBUFFER, false);
+    bill->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+    bill->setMaterialFlag(irr::video::EMF_ZBUFFER, false);
     bill->setSize(irr::core::dimension2d<f32>(20.0f, 20.0f));
 
-    smgr->addLightSceneNode(0, irr::core::vector3df(0, 20, 0), SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
+    smgr->addLightSceneNode(0, irr::core::vector3df(0, 20, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
 
-    driver->setFog(SColor(0, 138, 125, 81), EFT_FOG_LINEAR, 250, 1000, 0, true);
+    driver->setFog(irr::video::SColor(0, 138, 125, 81), irr::video::EFT_FOG_LINEAR, 250, 1000, 0, true);
 }
 
 void createPlayer()
@@ -370,7 +369,7 @@ void showResult()
 
         while (device->run())
         {
-            driver->beginScene(true, true, SColor(0, 200, 200, 200));
+            driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
 
             smgr->drawAll();
             guienv->drawAll();
@@ -406,7 +405,7 @@ void showHiscores()
 
     while (hiscoremnu == true && device->run())
     {
-        driver->beginScene(true, true, SColor(0, 200, 200, 200));
+        driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
 
         smgr->drawAll();
         guienv->drawAll();
@@ -476,7 +475,7 @@ int main()
 
     while (device->run())
     {
-        driver->beginScene(true, true, SColor(0, 200, 200, 200));
+        driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
 
         smgr->drawAll();
         guienv->drawAll();
