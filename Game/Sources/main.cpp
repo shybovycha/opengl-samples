@@ -5,8 +5,6 @@
 #include <irrlicht.h>
 #include <irrKlang.h>
 
-using namespace irrklang;
-
 #define maxAmmo 10
 #define maxTime 6000
 
@@ -21,7 +19,7 @@ char *maps[10];
 irr::core::vector3df positions[100];
 int targets[100] = {-1}, levelCnt, shoots = 0;
 
-ISound *music = 0;
+irrklang::ISound *music = 0;
 
 struct TRecord
 {
@@ -52,7 +50,7 @@ irr::scene::IAnimatedMeshSceneNode *player = 0;
 irr::scene::IBillboardSceneNode *bill = 0;
 irr::scene::ITriangleSelector *selector = 0;
 
-ISoundEngine *engine = 0;
+irrklang::ISoundEngine *engine = 0;
 
 irr::scene::ISceneNode *target[10] = {0};
 
@@ -178,7 +176,7 @@ void init()
 
     device->setEventReceiver(&receiver);
 
-    engine = createIrrKlangDevice();
+    engine = irrklang::createIrrKlangDevice();
 
     device->getFileSystem()->addZipFileArchive("Resources/Packs/data.pk3");
 
