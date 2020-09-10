@@ -40,7 +40,8 @@ if(APPLE)
 else()
     add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
 
-    file(COPY Resources DESTINATION ${PROJECT_BINARY_DIR})
+    file(COPY Resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    file(COPY Data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 set_target_properties(${EXECUTABLE_NAME} PROPERTIES
@@ -51,6 +52,7 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
 
 message("Found Irrlicht at: ${IRRLICHT_LIBRARY_PATH}")
 message("Found IrrKlang at: ${IRRKLANG_LIBRARY_PATH}")
+message("Linking libraries: ${LIBRARIES}")
 
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRLICHT_PATH}/include)
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRKLANG_PATH}/include)
