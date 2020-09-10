@@ -1,5 +1,7 @@
 #include <fstream>
 #include <iostream>
+#include <vector>
+#include <memory>
 #include <string>
 
 #include <irrlicht.h>
@@ -7,11 +9,211 @@
 
 #pragma comment(lib, "Irrlicht.lib")
 
-#define maxAmmo 10
-#define maxTime 6000
+/*
+    --------------------------------------------
 
-int targetCnt = 0, Tm = maxTime, levelNumber = 0;
-int points = 0, targetLeft = 0, ammo = maxAmmo;
+    This part of code is modern, written with few best practices in mind.
+    It also introduces some significant changes to the game architecture (like game state, 
+    loading levels from files, bringing some sane format for game resources files, etc.).
+    This is essentially a new version of the game, taking into consideration all the knowledge
+    acquired in last 13 years.
+    Feel free to blame the author for beating Web for past decade and the global crisis(-es)
+    going on in the world outside if you find this code shit.
+
+    (c) Artem Shubovych, 10 September 2020.
+
+    --------------------------------------------
+*/
+
+class Level {
+public:
+    Level(const std::string filename) : filename(filename) {}
+
+    void load() {
+        // TODO
+    }
+
+private:
+    std::string filename;
+
+    std::vector<irr::core::vector3df> targetPositions;
+
+    std::shared_ptr<irr::scene::ISceneNode> model;
+};
+
+class Score {
+public:
+    Score() : targetsEliminated(0), currentTime(0) {}
+
+    void targetEliminated() {
+        targetsEliminated++;
+    }
+
+    void timeUsed(unsigned long time) {
+        currentTime += time;
+    }
+
+    const unsigned int getTargetsEliminated() const {
+        return targetsEliminated;
+    }
+
+    const unsigned long getCurrentTime() const {
+        return targetsEliminated;
+    }
+
+private:
+    unsigned int targetsEliminated;
+    unsigned long currentTime;
+};
+
+class PlayerState {
+public:
+    PlayerState() : currentAmmo(0), maxAmmo(0) {}
+
+    void setMaxAmmo(unsigned int _maxAmmo) {
+        maxAmmo = _maxAmmo;
+    }
+
+    void reload() {
+        if (currentAmmo < maxAmmo) {
+            currentAmmo = maxAmmo;
+        }
+    }
+
+    void shoot() {
+        if (currentAmmo > 0) {
+            currentAmmo--;
+        }
+    }
+
+    const unsigned int getCurrentAmmo() const {
+        return currentAmmo;
+    }
+
+    const unsigned int getMaxAmmo() const {
+        return maxAmmo;
+    }
+
+private:
+    unsigned int currentAmmo;
+    unsigned int maxAmmo;
+};
+
+enum class E_GAME_STATE {
+    MAIN_MENU,
+    PLAYING,
+    END_LEVEL,
+    END_GAME
+};
+
+class GameState {
+public:
+    GameState() : currentState(E_GAME_STATE::MAIN_MENU), currentScore(std::make_unique<Score>()), playerState(std::make_unique<PlayerState>()) {}
+
+    void loadLevels(const std::string filename) {
+        // TODO
+    }
+
+    void nextLevel() {
+        // TODO
+    }
+
+    void targetEliminated() {
+        currentScore->targetEliminated();
+    }
+
+    void timeElapsed(unsigned long time) {
+        currentScore->timeUsed(time);
+    }
+
+    const std::unique_ptr<Score>& getCurrentScore() const {
+        return std::move(currentScore);
+    }
+
+    const E_GAME_STATE getCurrentState() const {
+        return currentState;
+    }
+
+    const std::shared_ptr<Level> getCurrentLevel() const {
+        if (currentLevel < 0 || currentLevel >= levels.size()) {
+            throw "Invalid current level index";
+        }
+
+        return std::move(levels.at(currentLevel));
+    }
+
+    const std::unique_ptr<PlayerState>& getPlayerState() const {
+        return std::move(playerState);
+    }
+
+private:
+    E_GAME_STATE currentState;
+
+    std::unique_ptr<Score> currentScore;
+    std::unique_ptr<PlayerState> playerState;
+
+    std::vector<std::shared_ptr<Level>> levels;
+    size_t currentLevel;
+};
+
+class ModernEventReceiver : public irr::IEventReceiver {
+public:
+    ModernEventReceiver(std::unique_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
+
+    virtual bool OnEvent(const irr::SEvent& event) {
+        if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
+            if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
+                handleMouseClickLeft();
+            }
+            else if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
+                handleMouseClickRight();
+            }
+        }
+    }
+
+protected:
+    void handleMouseClickLeft() {
+        // TODO
+    }
+
+    void handleMouseClickRight() {
+        // TODO
+    }
+
+    void handleShoot() {
+        // TODO
+    }
+
+    void handleReload() {
+        // TODO
+    }
+
+    void handleNoAmmo() {
+        // TODO
+    }
+
+private:
+    std::unique_ptr<GameState> gameState;
+};
+
+/*
+    --------------------------------------------
+
+    HERE BE DRAGONS!
+
+    The code below was written in 2007 (approx.), with very few modifications made
+    so it compiles and runs.
+
+    Be patient until the whole thing is reworked.
+
+    --------------------------------------------
+*/
+
+#define MAX_AMMO 10
+#define MAX_TIME 6000
+
+int targetCnt = 0, Tm = MAX_TIME, levelNumber = 0;
+int points = 0, targetLeft = 0, ammo = MAX_AMMO;
 int Tms = 0, Pnts = 0;
 
 bool endLevel = false;
@@ -86,7 +288,7 @@ public:
 
                     endLevel = false;
                     gotoMap(++levelNumber);
-                    Tm = maxTime;
+                    Tm = MAX_TIME;
 
                     return true;
                 }
@@ -150,9 +352,9 @@ public:
 
             if (event.MouseInput.Event == irr::EMIE_RMOUSE_PRESSED_DOWN)
             {
-                if (ammo < maxAmmo)
+                if (ammo < MAX_AMMO)
                 {
-                    ammo = maxAmmo;
+                    ammo = MAX_AMMO;
                     engine->play2D("Resources/Sounds/reload.wav", false);
 
                     return true;
@@ -214,7 +416,7 @@ void createPlayer()
     irr::core::stringw str = L"Ammo: ";
     str += ammo;
     str += "/";
-    str += maxAmmo;
+    str += MAX_AMMO;
     str += ";  Points: ";
     str += points;
     str += "/";
@@ -342,7 +544,7 @@ void showResult()
     irr::core::stringw title = L"Level complete!";
     irr::core::stringw msg = L"Your time: ";
 
-    msg += (maxTime / 100) - abs(Tm / 100);
+    msg += (MAX_TIME/ 100) - abs(Tm / 100);
     msg += "sec;  Shots: ";
     msg += shoots;
     msg += "/";
@@ -353,7 +555,7 @@ void showResult()
     msg += "/";
     msg += targets[levelNumber];
 
-    Tms += (maxTime / 100) - abs(Tm / 100);
+    Tms += (MAX_TIME / 100) - abs(Tm / 100);
     Pnts += points;
 
     guienv->addMessageBox(title.c_str(), msg.c_str(), true, irr::gui::EMBF_OK, 0, 0);
@@ -422,7 +624,7 @@ void refreshIndicator()
     irr::core::stringw str = L"Ammo: ";
     str += ammo;
     str += "/";
-    str += maxAmmo;
+    str += MAX_AMMO;
     str += ";  Points: ";
     str += points;
     str += "/";
