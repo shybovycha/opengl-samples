@@ -17,11 +17,11 @@ int Tms = 0, Pnts = 0;
 bool endLevel = false;
 bool hiscoremnu = false;
 
-char *maps[10];
+char* maps[10];
 irr::core::vector3df positions[100];
-int targets[100] = {-1}, levelCnt, shoots = 0;
+int targets[100] = { -1 }, levelCnt, shoots = 0;
 
-irrklang::ISound *music = 0;
+irrklang::ISound* music = 0;
 
 struct TRecord
 {
@@ -33,30 +33,30 @@ struct TRecord
 int hiscoreCnt = -1;
 TRecord hiscores[100];
 
-irr::gui::IGUIStaticText *indicator = 0;
-irr::ITimer *timer = 0;
-irr::gui::IGUIWindow *msgbox = 0;
-irr::gui::IGUIListBox *hiscoreTable = 0;
+irr::gui::IGUIStaticText* indicator = 0;
+irr::ITimer* timer = 0;
+irr::gui::IGUIWindow* msgbox = 0;
+irr::gui::IGUIListBox* hiscoreTable = 0;
 
-irr::IrrlichtDevice *device = 0;
-irr::video::IVideoDriver *driver = 0;
-irr::scene::ISceneManager *smgr = 0;
-irr::gui::IGUIEnvironment *guienv = 0;
-irr::scene::IAnimatedMesh *levelmesh = 0;
-irr::scene::IAnimatedMeshSceneNode *level = 0;
-irr::scene::ICameraSceneNode *camera = 0;
+irr::IrrlichtDevice* device = 0;
+irr::video::IVideoDriver* driver = 0;
+irr::scene::ISceneManager* smgr = 0;
+irr::gui::IGUIEnvironment* guienv = 0;
+irr::scene::IAnimatedMesh* levelmesh = 0;
+irr::scene::IAnimatedMeshSceneNode* level = 0;
+irr::scene::ICameraSceneNode* camera = 0;
 
-irr::scene::IAnimatedMesh *playermesh = 0;
-irr::scene::IAnimatedMeshSceneNode *player = 0;
+irr::scene::IAnimatedMesh* playermesh = 0;
+irr::scene::IAnimatedMeshSceneNode* player = 0;
 
-irr::scene::IBillboardSceneNode *bill = 0;
-irr::scene::ITriangleSelector *selector = 0;
+irr::scene::IBillboardSceneNode* bill = 0;
+irr::scene::ITriangleSelector* selector = 0;
 
-irrklang::ISoundEngine *engine = 0;
+irrklang::ISoundEngine* engine = 0;
 
-irr::scene::ISceneNode *target[10] = {0};
+irr::scene::ISceneNode* target[10] = { 0 };
 
-irr::scene::ITriangleSelector *trisel = 0;
+irr::scene::ITriangleSelector* trisel = 0;
 
 void gotoMap(int mapNum);
 void showHiscores();
@@ -65,7 +65,7 @@ void saveHiscores();
 class EventReceiver : public irr::IEventReceiver
 {
 public:
-    virtual bool OnEvent(const irr::SEvent &event)
+    virtual bool OnEvent(const irr::SEvent& event)
     {
         if (event.EventType == irr::EET_GUI_EVENT)
         {
@@ -115,7 +115,7 @@ public:
 
         if (event.EventType == irr::EET_MOUSE_INPUT_EVENT)
         {
-            irr::scene::ISceneNode *object = 0;
+            irr::scene::ISceneNode* object = 0;
 
             if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN)
             {
@@ -182,7 +182,7 @@ void init()
 
     device->getFileSystem()->addZipFileArchive("Resources/Packs/data.pk3");
 
-    irr::scene::IAnimatedMesh *mesh = 0;
+    irr::scene::IAnimatedMesh* mesh = 0;
     mesh = smgr->getMesh("chicken.3ds");
 
     for (int i = 0; i <= 9; i++)
@@ -232,7 +232,7 @@ void createPlayer()
     player->setParent(camera);
 }
 
-void loadCoords(char *filename)
+void loadCoords(char* filename)
 {
     std::ifstream inf(filename);
 
@@ -301,7 +301,7 @@ void createConfig()
     maps[3] = "square1.x";
 }
 
-void loadMap(char *mapname)
+void loadMap(char* mapname)
 {
     if (level)
         level->setVisible(false);
@@ -448,7 +448,7 @@ void refreshIndicator()
     float k = (sin(abs(Tm) / 100) / (10 - levelNumber));
 
     camera->setRotation(irr::core::vector3df(camera->getRotation().X + k,
-                                  camera->getRotation().Y, camera->getRotation().Z));
+        camera->getRotation().Y, camera->getRotation().Z));
 
     irr::core::line3d<irr::f32> line;
     line.start = camera->getPosition();
@@ -457,7 +457,7 @@ void refreshIndicator()
     irr::core::vector3df intersection;
     irr::core::triangle3df tri;
 
-    irr::scene::ISceneNode *node = 0;
+    irr::scene::ISceneNode* node = 0;
 
     if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector, intersection, tri, node))
         bill->setPosition(intersection);
