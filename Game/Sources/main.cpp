@@ -5,7 +5,6 @@
 #include <irrlicht.h>
 #include <irrKlang.h>
 
-using namespace irr;
 using namespace irrklang;
 
 #define maxAmmo 10
@@ -35,11 +34,11 @@ int hiscoreCnt = -1;
 TRecord hiscores[100];
 
 irr::gui::IGUIStaticText *indicator = 0;
-ITimer *timer = 0;
+irr::ITimer *timer = 0;
 irr::gui::IGUIWindow *msgbox = 0;
 irr::gui::IGUIListBox *hiscoreTable = 0;
 
-IrrlichtDevice *device = 0;
+irr::IrrlichtDevice *device = 0;
 irr::video::IVideoDriver *driver = 0;
 irr::scene::ISceneManager *smgr = 0;
 irr::gui::IGUIEnvironment *guienv = 0;
@@ -63,12 +62,12 @@ void gotoMap(int mapNum);
 void showHiscores();
 void saveHiscores();
 
-class EventReceiver : public IEventReceiver
+class EventReceiver : public irr::IEventReceiver
 {
 public:
-    virtual bool OnEvent(const SEvent &event)
+    virtual bool OnEvent(const irr::SEvent &event)
     {
-        if (event.EventType == EET_GUI_EVENT)
+        if (event.EventType == irr::EET_GUI_EVENT)
         {
             if (event.GUIEvent.EventType == irr::gui::EGET_MESSAGEBOX_OK)
             {
@@ -94,9 +93,9 @@ public:
             }
         }
 
-        if (event.EventType == EET_KEY_INPUT_EVENT)
+        if (event.EventType == irr::EET_KEY_INPUT_EVENT)
         {
-            if (event.KeyInput.Key == KEY_ESCAPE)
+            if (event.KeyInput.Key == irr::KEY_ESCAPE)
             {
                 saveHiscores();
                 device->drop();
@@ -105,7 +104,7 @@ public:
                 exit(0);
             }
 
-            if (event.KeyInput.Key == KEY_RETURN)
+            if (event.KeyInput.Key == irr::KEY_RETURN)
             {
                 if (hiscoremnu == true)
                 {
@@ -114,11 +113,11 @@ public:
             }
         }
 
-        if (event.EventType == EET_MOUSE_INPUT_EVENT)
+        if (event.EventType == irr::EET_MOUSE_INPUT_EVENT)
         {
             irr::scene::ISceneNode *object = 0;
 
-            if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN)
+            if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN)
             {
                 object = smgr->getSceneCollisionManager()->getSceneNodeFromCameraBB(camera);
 
@@ -149,7 +148,7 @@ public:
                     }
             }
 
-            if (event.MouseInput.Event == EMIE_RMOUSE_PRESSED_DOWN)
+            if (event.MouseInput.Event == irr::EMIE_RMOUSE_PRESSED_DOWN)
             {
                 if (ammo < maxAmmo)
                 {
@@ -169,7 +168,7 @@ EventReceiver receiver;
 
 void init()
 {
-    device = createDevice(video::EDT_OPENGL, core::dimension2d<u32>(640, 480), 16, false, false, false);
+    device = irr::createDevice(irr::video::EDT_OPENGL, irr::core::dimension2d<irr::u32>(640, 480), 16, false, false, false);
 
     device->setWindowCaption(L"ShootThem!");
 
@@ -200,7 +199,7 @@ void init()
     bill->setMaterialTexture(0, driver->getTexture("cross.bmp"));
     bill->setMaterialFlag(irr::video::EMF_LIGHTING, false);
     bill->setMaterialFlag(irr::video::EMF_ZBUFFER, false);
-    bill->setSize(irr::core::dimension2d<f32>(20.0f, 20.0f));
+    bill->setSize(irr::core::dimension2d<irr::f32>(20.0f, 20.0f));
 
     smgr->addLightSceneNode(0, irr::core::vector3df(0, 20, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
 
@@ -221,7 +220,7 @@ void createPlayer()
     str += "/";
     str += targetCnt;
 
-    indicator = guienv->addStaticText(str.c_str(), irr::core::rect<s32>(10, 10, 260, 22), true, true, 0, 0, true);
+    indicator = guienv->addStaticText(str.c_str(), irr::core::rect<irr::s32>(10, 10, 260, 22), true, true, 0, 0, true);
     timer = device->getTimer();
     timer->start();
 
@@ -381,7 +380,7 @@ void showHiscores()
 {
     hiscoremnu = true;
 
-    hiscoreTable = guienv->addListBox(irr::core::rect<s32>(10, 30, 300, 100), 0, 0, true);
+    hiscoreTable = guienv->addListBox(irr::core::rect<irr::s32>(10, 30, 300, 100), 0, 0, true);
 
     for (int i = 0; i <= hiscoreCnt - 1; i++)
     {
@@ -447,7 +446,7 @@ void refreshIndicator()
     camera->setRotation(irr::core::vector3df(camera->getRotation().X + k,
                                   camera->getRotation().Y, camera->getRotation().Z));
 
-    irr::core::line3d<f32> line;
+    irr::core::line3d<irr::f32> line;
     line.start = camera->getPosition();
     line.end = line.start + (camera->getTarget() - line.start).normalize() * 10000.0f;
 
