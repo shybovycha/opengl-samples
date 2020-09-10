@@ -5,6 +5,8 @@
 #include <irrlicht.h>
 #include <irrKlang.h>
 
+#pragma comment(lib, "Irrlicht.lib")
+
 #define maxAmmo 10
 #define maxTime 6000
 
@@ -253,7 +255,7 @@ void loadCoords(char *filename)
 
 void loadHiscores(char *filename)
 {
-    std::ifstream inf(filename);
+    /*std::ifstream inf(filename);
 
     inf >> hiscoreCnt;
 
@@ -264,7 +266,7 @@ void loadHiscores(char *filename)
         inf >> hiscores[i].points;
     }
 
-    inf.close();
+    inf.close();*/
 }
 
 void saveHiscores()
