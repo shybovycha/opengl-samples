@@ -30,7 +30,7 @@ public:
     Level(const std::string filename) : filename(filename) {}
 
     void load() {
-        // TODO
+        // TODO: implement
     }
 
 private:
@@ -156,9 +156,25 @@ private:
     size_t currentLevel;
 };
 
+class InputHandler {
+public:
+    InputHandler(std::unique_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
+
+    void shootAction() {
+        // TODO: implement
+    }
+
+    void reloadAction() {
+        // TODO: implement
+    }
+
+private:
+    std::unique_ptr<GameState> gameState;
+};
+
 class ModernEventReceiver : public irr::IEventReceiver {
 public:
-    ModernEventReceiver(std::unique_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
+    ModernEventReceiver(std::unique_ptr<InputHandler> _inputHandler) : inputHandler(std::move(_inputHandler)) {}
 
     virtual bool OnEvent(const irr::SEvent& event) {
         if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
@@ -173,27 +189,72 @@ public:
 
 protected:
     void handleMouseClickLeft() {
-        // TODO
+        // TODO: implement
     }
 
     void handleMouseClickRight() {
-        // TODO
+        // TODO: implement
     }
 
-    void handleShoot() {
-        // TODO
+private:
+    std::unique_ptr<InputHandler> inputHandler;
+};
+
+class Renderer {
+public:
+    Renderer(std::unique_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
+
+    virtual void init() = 0;
+
+    virtual void render() = 0;
+
+    virtual void shutdown() = 0;
+
+    virtual bool isRunning() = 0;
+
+private:
+    std::unique_ptr<GameState> gameState;
+};
+
+class IrrlichtRenderer : public Renderer {
+public:
+    IrrlichtRenderer(std::unique_ptr<GameState> _gameState) : Renderer(std::move(_gameState)) {}
+
+    virtual void init() {
+        // TODO: implement
     }
 
-    void handleReload() {
-        // TODO
+    virtual void render() {
+        // TODO: implement
     }
 
-    void handleNoAmmo() {
-        // TODO
+    virtual void shutdown() {
+        // TODO: implement
+    }
+
+    virtual bool isRunning() {
+        // TODO: implement
+        return true;
+    }
+};
+
+class Application {
+public:
+    Application() {}
+
+    void run() {
+        renderer->init();
+
+        while (renderer->isRunning()) {
+            renderer->render();
+        }
+
+        renderer->shutdown();
     }
 
 private:
     std::unique_ptr<GameState> gameState;
+    std::unique_ptr<Renderer> renderer;
 };
 
 /*
