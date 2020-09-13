@@ -4,8 +4,10 @@
 *.user
 !Dependencies/irrKlang-*.zip
 !Dependencies/irrlicht-*.zip
+!Dependencies/tinyxml2-*.zip
 Dependencies/irrKlang-*/
 Dependencies/irrlicht-*/
+Dependencies/tinyxml2*/
 *~
 build
 .DS_Store

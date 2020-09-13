@@ -50,6 +50,8 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
     CXX_EXTENSIONS ON
 )
 
+set(LIBRARIES ${LIBRARIES} tinyxml2)
+
 message("Found Irrlicht headers at: ${IRRLICHT_PATH}/include")
 message("Found IrrKlang headers at: ${IRRKLANG_PATH}/include")
 message("Linking libraries: ${LIBRARIES}")

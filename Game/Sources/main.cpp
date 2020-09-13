@@ -7,6 +7,8 @@
 
 #include <irrlicht.h>
 #include <irrKlang.h>
+// #include <irrXML.h>
+#include <tinyxml2.h>
 
 #pragma comment(lib, "Irrlicht.lib")
 
@@ -418,8 +420,54 @@ public:
 
 EventReceiver receiver;
 
+struct Settings {
+    std::string driverName;
+    int resolutionWidth;
+    int resolutionHeight;
+    int colorDepth;
+    bool fullScreen;
+    bool vsync;
+    bool stencil;
+};
+
+Settings loadSettings() {
+    std::shared_ptr<tinyxml2::XMLDocument> xml = std::make_shared<tinyxml2::XMLDocument>();
+
+    tinyxml2::XMLError xmlError = xml->LoadFile("Data/settings.xml");
+
+    if (xmlError != tinyxml2::XML_SUCCESS) {
+        std::cerr << "Can not load settings.xml file" << std::endl;
+        throw "Can not load settings";
+    }
+
+    auto settingsNode = xml->FirstChildElement("settings");
+    auto graphicsSettingsNode = settingsNode->FirstChildElement("graphics");
+
+    std::string driverName = graphicsSettingsNode->FirstChildElement("driver")->GetText();
+
+    int resolutionWidth = graphicsSettingsNode->FirstChildElement("resolution")->IntAttribute("width", 640);
+    int resolutionHeight = graphicsSettingsNode->FirstChildElement("resolution")->IntAttribute("height", 480);
+    int colorDepth = graphicsSettingsNode->FirstChildElement("colorDepth")->IntText(16);
+
+    bool fullScreen = graphicsSettingsNode->FirstChildElement("fullScreen")->BoolText(false);
+    bool vsync = graphicsSettingsNode->FirstChildElement("vsync")->BoolText(false);
+    bool stencil = graphicsSettingsNode->FirstChildElement("stencilBuffer")->BoolText(false);
+
+    return Settings { driverName, resolutionWidth, resolutionHeight, colorDepth, fullScreen, vsync, stencil };
+}
+
 void init() {
-    device = irr::createDevice(irr::video::EDT_OPENGL, irr::core::dimension2d<irr::u32>(640, 480), 16, false, false, false);
+    Settings settings = loadSettings();
+
+    irr::video::E_DRIVER_TYPE driverType = irr::video::EDT_OPENGL;
+
+    if (settings.driverName == "DirectX") {
+        driverType = irr::video::EDT_DIRECT3D9;
+    }
+
+    irr::core::dimension2d<irr::u32> resolution = irr::core::dimension2d<irr::u32>(settings.resolutionWidth, settings.resolutionHeight);
+
+    device = irr::createDevice(driverType, resolution, settings.colorDepth, settings.fullScreen, settings.stencil, settings.vsync);
 
     device->setWindowCaption(L"ShootThem!");
 
@@ -577,7 +625,7 @@ void showResult() {
     Tms += (MAX_TIME / 100) - abs(Tm / 100);
     Pnts += points;
 
-    guienv->addMessageBox(title.c_str(), msg.str().(), true, irr::gui::EMBF_OK, 0, 0);
+    guienv->addMessageBox(title.c_str(), msg.str().c_str(), true, irr::gui::EMBF_OK, 0, 0);
 
     endLevel = true;
 

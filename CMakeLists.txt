@@ -69,4 +69,5 @@ if(NOT IRRKLANG_LIBRARY_PATH)
     message("Found IrrKlang: ${IRRKLANG_LIBRARY_PATH}")
 endif()
 
+add_subdirectory(Dependencies/tinyxml2)
 add_subdirectory(Game)
