@@ -2,12 +2,12 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <queue>
 #include <memory>
 #include <string>
 
 #include <irrlicht.h>
 #include <irrKlang.h>
-// #include <irrXML.h>
 #include <tinyxml2.h>
 
 #pragma comment(lib, "Irrlicht.lib")
@@ -28,15 +28,25 @@
     --------------------------------------------
 */
 
+struct Settings {
+    std::string driverName;
+    int resolutionWidth;
+    int resolutionHeight;
+    int colorDepth;
+    bool fullScreen;
+    bool vsync;
+    bool stencil;
+};
+
 class Level {
 public:
     Level(const std::string filename) : meshFilename(filename) {}
 
-    void loadMesh() {
-        // TODO: implement
+    const std::string getModelFilename() const {
+        return meshFilename;
     }
 
-    void addTarget(irr::core::vector3df position) {
+    void addTargetPosition(irr::core::vector3df position) {
         targetPositions.push_back(position);
     }
 
@@ -45,13 +55,27 @@ public:
     }
 
     void setModel(std::shared_ptr<irr::scene::ISceneNode> mesh) {
-        model = std::move(mesh);
+        model = mesh;
+    }
+
+    const std::shared_ptr<irr::scene::ISceneNode> getModel() const {
+        return model;
+    }
+
+    const std::vector<std::shared_ptr<irr::scene::ISceneNode>> getTargets() const {
+        return targets;
+    }
+
+    void setTargets(std::vector<std::shared_ptr<irr::scene::ISceneNode>> _targets) {
+        targets = _targets;
     }
 
 private:
     std::string meshFilename;
 
     std::vector<irr::core::vector3df> targetPositions;
+    std::vector<std::shared_ptr<irr::scene::ISceneNode>> targets;
+
     irr::core::vector3df playerPosition;
 
     std::shared_ptr<irr::scene::ISceneNode> model;
@@ -65,8 +89,16 @@ public:
         targetsEliminated++;
     }
 
+    void resetTargetEliminated() {
+        targetsEliminated = 0;
+    }
+
     void timeUsed(unsigned long time) {
         currentTime += time;
+    }
+
+    void resetTimeUsed() {
+        currentTime = 0;
     }
 
     const unsigned int getTargetsEliminated() const {
@@ -84,7 +116,7 @@ private:
 
 class PlayerState {
 public:
-    PlayerState() : currentAmmo(0), maxAmmo(0) {}
+    PlayerState() : currentAmmo(10), maxAmmo(10) {}
 
     void setMaxAmmo(unsigned int _maxAmmo) {
         maxAmmo = _maxAmmo;
@@ -122,28 +154,98 @@ enum class E_GAME_STATE {
     END_GAME
 };
 
+/*
+* Polymorphic method won't work:
+*
+* virtual void act(std::shared_ptr<Renderer> renderer) = 0
+* 
+* You are fine with only Renderer's public or friend API.
+* But if you want to use anything outside of Renderer otherwise available inside Renderer itself (like for loading resources) - you won't be able to.
+* Also, I want to keep all the engine-specific logic in one place.
+*/
+enum class QueueActionType {
+    PLAY_SOUND,
+    LOAD_FIRST_LEVEL,
+    LOAD_NEXT_LEVEL,
+    TARGET_ELIMINATED,
+};
+
+class QueueAction {
+protected:
+    QueueAction(const QueueActionType _type) : type(_type) {}
+
+public:
+    const QueueActionType getType() const {
+        return type;
+    }
+
+private:
+    QueueActionType type;
+};
+
+class PlaySoundAction : public QueueAction {
+public:
+    PlaySoundAction(std::string _soundFile) : QueueAction(QueueActionType::PLAY_SOUND), soundFile(_soundFile) {}
+
+    const std::string getSoundFile() const {
+        return soundFile;
+    }
+
+private:
+    std::string soundFile;
+};
+
+class LoadNextLevelAction : public QueueAction {
+public:
+    LoadNextLevelAction(std::shared_ptr<Level> _previousLevel, std::shared_ptr<Level> _nextLevel) : QueueAction(QueueActionType::LOAD_NEXT_LEVEL), previousLevel(_previousLevel), nextLevel(_nextLevel) {}
+
+    const std::shared_ptr<Level> getPreviousLevel() const { 
+        return previousLevel; 
+    }
+
+    const std::shared_ptr<Level> getNextLevel() const {
+        return nextLevel;
+    }
+
+private:
+    std::shared_ptr<Level> previousLevel;
+    std::shared_ptr<Level> nextLevel;
+};
+
+class LoadFirstLevelAction : public QueueAction {
+public:
+    LoadFirstLevelAction(std::shared_ptr<Level> _level) : QueueAction(QueueActionType::LOAD_FIRST_LEVEL), level(_level) {}
+
+    const std::shared_ptr<Level> getLevel() const {
+        return level;
+    }
+
+private:
+    std::shared_ptr<Level> level;
+};
+
+class TargetEliminatedAction : public QueueAction {
+public:
+    TargetEliminatedAction(std::shared_ptr<irr::scene::ISceneNode> _target) : QueueAction(QueueActionType::TARGET_ELIMINATED), target(_target) {}
+
+    const std::shared_ptr<irr::scene::ISceneNode> getTarget() const {
+        return target;
+    }
+
+private:
+    std::shared_ptr<irr::scene::ISceneNode> target;
+};
+
 class GameState {
 public:
-    GameState() : currentState(E_GAME_STATE::MAIN_MENU), currentScore(std::make_unique<Score>()), playerState(std::make_unique<PlayerState>()) {}
-
-    void loadLevels(const std::string filename) {
-        // TODO
-    }
-
-    void nextLevel() {
-        // TODO
-    }
-
-    void targetEliminated() {
-        currentScore->targetEliminated();
-    }
+    GameState() : currentState(E_GAME_STATE::MAIN_MENU), currentScore(std::make_shared<Score>()), playerState(std::make_shared<PlayerState>()), currentLevel(0) {}
 
     void timeElapsed(unsigned long time) {
         currentScore->timeUsed(time);
     }
 
-    const std::unique_ptr<Score>& getCurrentScore() const {
-        return std::move(currentScore);
+    const std::shared_ptr<Score> getCurrentScore() const {
+        return currentScore;
     }
 
     const E_GAME_STATE getCurrentState() const {
@@ -151,22 +253,66 @@ public:
     }
 
     const std::shared_ptr<Level> getCurrentLevel() const {
-        if (currentLevel < 0 || currentLevel >= levels.size()) {
+        if (levels.empty() || currentLevel < 0 || currentLevel >= levels.size()) {
             throw "Invalid current level index";
+            return nullptr;
         }
 
-        return std::move(levels.at(currentLevel));
+        return levels.at(currentLevel);
     }
 
-    const std::unique_ptr<PlayerState>& getPlayerState() const {
-        return std::move(playerState);
+    const std::shared_ptr<PlayerState> getPlayerState() const {
+        return playerState;
     }
+
+    const int getCurrentLevelIndex() const {
+        return currentLevel;
+    }
+
+    const int getLevelsCnt() const {
+        return levels.size();
+    }
+
+    void nextLevelLoaded() {
+        ++currentLevel;
+    }
+
+    void enqueue(QueueAction* action) {
+        actionQueue.push(action);
+    }
+
+    const bool hasActions() const {
+        return actionQueue.size() > 0;
+    }
+
+    QueueAction* nextAction() {
+        auto action = actionQueue.front();
+        actionQueue.pop();
+        return action;
+    }
+
+    void setLevels(std::vector<std::shared_ptr<Level>> _levels) {
+        levels = _levels;
+    }
+
+
+    const std::shared_ptr<Level> getNextLevel() const
+    {
+        if (currentLevel + 1 >= levels.size()) {
+            return nullptr;
+        }
+
+        return levels.at(currentLevel + 1);
+    }
+
 
 private:
     E_GAME_STATE currentState;
 
-    std::unique_ptr<Score> currentScore;
-    std::unique_ptr<PlayerState> playerState;
+    std::shared_ptr<Score> currentScore;
+    std::shared_ptr<PlayerState> playerState;
+
+    std::queue<QueueAction*> actionQueue;
 
     std::vector<std::shared_ptr<Level>> levels;
     size_t currentLevel;
@@ -174,181 +320,74 @@ private:
 
 class InputHandler {
 public:
-    InputHandler(std::unique_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
+    InputHandler(std::shared_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
 
-    void shootAction() {
-        // TODO: implement
+    void shootAction(irr::scene::ISceneNode* objectAtCursor) {
+        if (gameState->getPlayerState()->getCurrentAmmo() <= 0) {
+            gameState->enqueue(new PlaySoundAction("Resources/Sounds/noammo.wav"));
+            return;
+        }
+
+        gameState->enqueue(new PlaySoundAction("Resources/Sounds/shot.wav"));
+        
+        gameState->getPlayerState()->shoot();
+
+        if (objectAtCursor == gameState->getCurrentLevel()->getModel().get()) {
+            return;
+        }
+
+        for (auto target: gameState->getCurrentLevel()->getTargets()) {
+            if (target.get() != objectAtCursor) {
+                continue;
+            }
+
+            gameState->enqueue(new TargetEliminatedAction(std::move(target)));
+            gameState->enqueue(new PlaySoundAction("Resources/Sounds/bell.wav"));
+
+            break;
+        }
     }
 
     void reloadAction() {
-        // TODO: implement
+        gameState->getPlayerState()->reload();
+        gameState->enqueue(new PlaySoundAction("Resources/Sounds/reload.wav"));
+    }
+
+    void mainMenuAction() {
+        // TODO: implement properly
+        exit(0);
     }
 
 private:
-    std::unique_ptr<GameState> gameState;
+    std::shared_ptr<GameState> gameState;
 };
 
-class ModernEventReceiver : public irr::IEventReceiver {
+class IrrlichtEventReceiver : public irr::IEventReceiver {
 public:
-    ModernEventReceiver(std::unique_ptr<InputHandler> _inputHandler) : inputHandler(std::move(_inputHandler)) {}
+    IrrlichtEventReceiver(std::shared_ptr<InputHandler> _inputHandler, std::shared_ptr<irr::scene::ISceneManager> _sceneManager, std::shared_ptr<irr::scene::ICameraSceneNode> _camera) :
+        inputHandler(std::move(_inputHandler)),
+        sceneManager(std::move(_sceneManager)),
+        camera(std::move(_camera))
+    {}
 
     virtual bool OnEvent(const irr::SEvent& event) {
         if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
             if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
-                handleMouseClickLeft();
+                irr::scene::ISceneNode* objectAtCursor = sceneManager->getSceneCollisionManager()->getSceneNodeFromCameraBB(camera.get());
+
+                inputHandler->shootAction(objectAtCursor);
             }
-            else if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
-                handleMouseClickRight();
+            else if (event.MouseInput.Event == irr::EMIE_RMOUSE_PRESSED_DOWN) {
+                inputHandler->reloadAction();
             }
         }
-    }
-
-protected:
-    void handleMouseClickLeft() {
-        // TODO: implement
-    }
-
-    void handleMouseClickRight() {
-        // TODO: implement
-    }
-
-private:
-    std::unique_ptr<InputHandler> inputHandler;
-};
-
-class Renderer {
-public:
-    Renderer(std::unique_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
-
-    virtual void init() = 0;
-
-    virtual void render() = 0;
-
-    virtual void shutdown() = 0;
-
-    virtual bool isRunning() = 0;
-
-private:
-    std::unique_ptr<GameState> gameState;
-};
-
-class IrrlichtRenderer : public Renderer {
-public:
-    IrrlichtRenderer(std::unique_ptr<GameState> _gameState) : Renderer(std::move(_gameState)) {}
-
-    virtual void init() {
-        // TODO: implement
-    }
-
-    virtual void render() {
-        // TODO: implement
-    }
-
-    virtual void shutdown() {
-        // TODO: implement
-    }
-
-    virtual bool isRunning() {
-        // TODO: implement
-        return true;
-    }
-};
-
-class Application {
-public:
-    Application() {}
-
-    void run() {
-        renderer->init();
-
-        while (renderer->isRunning()) {
-            renderer->render();
+        else if (event.EventType == irr::EET_KEY_INPUT_EVENT) {
+            if (event.KeyInput.Key == irr::KEY_ESCAPE) {
+                inputHandler->mainMenuAction();
+            }
         }
 
-        renderer->shutdown();
-    }
-
-private:
-    std::unique_ptr<GameState> gameState;
-    std::unique_ptr<Renderer> renderer;
-};
-
-/*
-    --------------------------------------------
-
-    HERE BE DRAGONS!
-
-    The code below was written in 2007 (approx.), with very few modifications made
-    so it compiles and runs.
-
-    Be patient until the whole thing is reworked.
-
-    --------------------------------------------
-*/
-
-#define MAX_AMMO 10
-#define MAX_TIME 6000
-
-int targetCnt = 0, Tm = MAX_TIME, levelNumber = 0;
-int points = 0, targetLeft = 0, ammo = MAX_AMMO;
-int Tms = 0, Pnts = 0;
-
-bool endLevel = false;
-bool hiscoremnu = false;
-
-std::vector<std::shared_ptr<Level>> levels;
-
-std::vector<std::string> levelMeshNames;
-std::vector<irr::core::vector3df> positions;
-std::vector<int> targets;
-int levelCnt, shoots = 0;
-
-irrklang::ISound* music = 0;
-
-struct TRecord
-{
-    char name[128];
-    int time;
-    int points;
-};
-
-int hiscoreCnt = -1;
-TRecord hiscores[100];
-
-irr::gui::IGUIStaticText* indicator = 0;
-irr::ITimer* timer = 0;
-irr::gui::IGUIWindow* msgbox = 0;
-irr::gui::IGUIListBox* hiscoreTable = 0;
-
-irr::IrrlichtDevice* device = 0;
-irr::video::IVideoDriver* driver = 0;
-irr::scene::ISceneManager* smgr = 0;
-irr::gui::IGUIEnvironment* guienv = 0;
-irr::scene::IAnimatedMesh* levelmesh = 0;
-irr::scene::IAnimatedMeshSceneNode* level = 0;
-irr::scene::ICameraSceneNode* camera = 0;
-
-irr::scene::IAnimatedMesh* playermesh = 0;
-irr::scene::IAnimatedMeshSceneNode* player = 0;
-
-irr::scene::IBillboardSceneNode* bill = 0;
-irr::scene::ITriangleSelector* selector = 0;
-
-irrklang::ISoundEngine* engine = 0;
-
-irr::scene::ISceneNode* target[10] = { 0 };
-
-irr::scene::ITriangleSelector* trisel = 0;
-
-void gotoMap(int mapNum);
-void showHiscores();
-void saveHiscores();
-
-class EventReceiver : public irr::IEventReceiver
-{
-public:
-    virtual bool OnEvent(const irr::SEvent& event) {
-        if (event.EventType == irr::EET_GUI_EVENT) {
+        /*if (event.EventType == irr::EET_GUI_EVENT) {
             if (event.GUIEvent.EventType == irr::gui::EGET_MESSAGEBOX_OK) {
                 if (levelNumber + 1 == levelCnt) {
                     saveHiscores();
@@ -384,402 +423,455 @@ public:
                     hiscoremnu = false;
                 }
             }
-        }
-
-        if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
-            irr::scene::ISceneNode* object = 0;
-
-            if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
-                object = smgr->getSceneCollisionManager()->getSceneNodeFromCameraBB(camera);
-
-                if (ammo <= 0) {
-                    engine->play2D("Resources/Sounds/noammo.wav", false);
-                    return false;
-                }
-
-                engine->play2D("Resources/Sounds/shot.wav", false);
-                ammo--;
-                shoots++;
-
-                if (object == level || object == player)
-                    return false;
-
-                for (int i = 0; i <= 9; i++) {
-                    if (target[i] != object) {
-                        continue;
-                    }
-
-                    object->setVisible(false);
-
-                    points++;
-                    targetLeft--;
-
-                    engine->play2D("Resources/Sounds/bell.wav", false);
-
-                    return true;
-                }
-            }
-
-            if (event.MouseInput.Event == irr::EMIE_RMOUSE_PRESSED_DOWN) {
-                if (ammo < MAX_AMMO) {
-                    ammo = MAX_AMMO;
-                    engine->play2D("Resources/Sounds/reload.wav", false);
-
-                    return true;
-                }
-            }
-        }
+        }*/
 
         return false;
     }
+
+private:
+    std::shared_ptr<InputHandler> inputHandler;
+    std::shared_ptr<irr::scene::ISceneManager> sceneManager;
+    std::shared_ptr<irr::scene::ICameraSceneNode> camera;
 };
 
-EventReceiver receiver;
+class Renderer {
+public:
+    Renderer(std::shared_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
 
-struct Settings {
-    std::string driverName;
-    int resolutionWidth;
-    int resolutionHeight;
-    int colorDepth;
-    bool fullScreen;
-    bool vsync;
-    bool stencil;
+    virtual void init(Settings settings) = 0;
+
+    virtual void processActionQueue() = 0;
+
+    virtual void render() = 0;
+
+    virtual void shutdown() = 0;
+
+    virtual bool isRunning() = 0;
+
+protected:
+    std::shared_ptr<GameState> gameState;
 };
 
-Settings loadSettings() {
-    std::shared_ptr<tinyxml2::XMLDocument> xml = std::make_shared<tinyxml2::XMLDocument>();
+class ResourceManager {
+public:
+    ResourceManager() {}
 
-    tinyxml2::XMLError xmlError = xml->LoadFile("Data/settings.xml");
+    virtual Settings loadSettings() = 0;
 
-    if (xmlError != tinyxml2::XML_SUCCESS) {
-        std::cerr << "Can not load settings.xml file" << std::endl;
-        throw "Can not load settings";
-    }
+    virtual std::vector<std::shared_ptr<Level>> loadLevels() = 0;
+};
 
-    auto settingsNode = xml->FirstChildElement("settings");
-    auto graphicsSettingsNode = settingsNode->FirstChildElement("graphics");
+class ModernResourceManager : public ResourceManager {
+public:
+    ModernResourceManager() : ResourceManager() {}
 
-    std::string driverName = graphicsSettingsNode->FirstChildElement("driver")->GetText();
+    virtual Settings loadSettings() {
+        std::shared_ptr<tinyxml2::XMLDocument> xml = std::make_shared<tinyxml2::XMLDocument>();
 
-    int resolutionWidth = graphicsSettingsNode->FirstChildElement("resolution")->IntAttribute("width", 640);
-    int resolutionHeight = graphicsSettingsNode->FirstChildElement("resolution")->IntAttribute("height", 480);
-    int colorDepth = graphicsSettingsNode->FirstChildElement("colorDepth")->IntText(16);
+        tinyxml2::XMLError xmlError = xml->LoadFile("Data/settings.xml");
 
-    bool fullScreen = graphicsSettingsNode->FirstChildElement("fullScreen")->BoolText(false);
-    bool vsync = graphicsSettingsNode->FirstChildElement("vsync")->BoolText(false);
-    bool stencil = graphicsSettingsNode->FirstChildElement("stencilBuffer")->BoolText(false);
-
-    return Settings { driverName, resolutionWidth, resolutionHeight, colorDepth, fullScreen, vsync, stencil };
-}
-
-void init() {
-    Settings settings = loadSettings();
-
-    irr::video::E_DRIVER_TYPE driverType = irr::video::EDT_OPENGL;
-
-    if (settings.driverName == "DirectX") {
-        driverType = irr::video::EDT_DIRECT3D9;
-    }
-
-    irr::core::dimension2d<irr::u32> resolution = irr::core::dimension2d<irr::u32>(settings.resolutionWidth, settings.resolutionHeight);
-
-    device = irr::createDevice(driverType, resolution, settings.colorDepth, settings.fullScreen, settings.stencil, settings.vsync);
-
-    device->setWindowCaption(L"ShootThem!");
-
-    driver = device->getVideoDriver();
-    smgr = device->getSceneManager();
-    guienv = device->getGUIEnvironment();
-
-    device->setEventReceiver(&receiver);
-
-    engine = irrklang::createIrrKlangDevice();
-
-    device->getFileSystem()->addZipFileArchive("Resources/Packs/data.pk3");
-
-    irr::scene::IAnimatedMesh* mesh = 0;
-    mesh = smgr->getMesh("chicken.3ds");
-
-    for (int i = 0; i <= 9; i++) {
-        target[i] = smgr->addAnimatedMeshSceneNode(mesh);
-        target[i]->setVisible(false);
-
-        target[i]->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
-        target[i]->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
-    }
-
-    bill = smgr->addBillboardSceneNode();
-    bill->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
-    bill->setMaterialTexture(0, driver->getTexture("cross.bmp"));
-    bill->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-    bill->setMaterialFlag(irr::video::EMF_ZBUFFER, false);
-    bill->setSize(irr::core::dimension2d<irr::f32>(20.0f, 20.0f));
-
-    smgr->addLightSceneNode(0, irr::core::vector3df(0, 20, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
-
-    driver->setFog(irr::video::SColor(0, 138, 125, 81), irr::video::EFT_FOG_LINEAR, 250, 1000, 0, true);
-}
-
-void createPlayer() {
-    camera = smgr->addCameraSceneNodeFPS(0, 100, 0, 0);
-    device->getCursorControl()->setVisible(false);
-
-    indicator = guienv->addStaticText(L"New game", irr::core::rect<irr::s32>(10, 10, 260, 22), true, true, 0, 0, true);
-    timer = device->getTimer();
-    timer->start();
-
-    playermesh = smgr->getMesh("rifle.3ds");
-    player = smgr->addAnimatedMeshSceneNode(playermesh);
-
-    player->setPosition(irr::core::vector3df(0.5f, -1.0f, 1.0f));
-
-    player->setParent(camera);
-}
-
-void loadLevels() {
-    std::shared_ptr<tinyxml2::XMLDocument> xml = std::make_shared<tinyxml2::XMLDocument>();
-
-    tinyxml2::XMLError xmlError = xml->LoadFile("Data/levels.xml");
-
-    if (xmlError != tinyxml2::XML_SUCCESS) {
-        std::cerr << "Can not load levels.xml file" << std::endl;
-        throw "Can not load levels";
-    }
-
-    auto levelsNode = xml->FirstChildElement("levels");
-
-    auto levelNode = levelsNode->FirstChildElement("level");
-    auto lastLevelNode = levelsNode->LastChildElement("level");
-
-    while (levelNode != nullptr) {
-        std::string meshName = levelNode->FirstChildElement("model")->GetText();
-
-        // auto levelDescriptor = std::make_shared<Level>(meshName);
-
-        auto targetsNode = levelNode->FirstChildElement("targets");
-
-        auto targetNode = targetsNode->FirstChildElement("target");
-        auto lastTargetNode = targetsNode->LastChildElement("target");
-
-        int levelTargetCount = 0;
-
-        while (targetNode != nullptr) {
-            auto positionNode = targetNode->FirstChildElement("position");
-
-            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
-
-            // levelDescriptor->addTarget(position);
-
-            // TODO: remove
-            positions.push_back(position);
-            ++levelTargetCount;
-
-            targetNode = targetNode->NextSiblingElement("target");
+        if (xmlError != tinyxml2::XML_SUCCESS) {
+            std::cerr << "Can not load settings.xml file" << std::endl;
+            throw "Can not load settings";
         }
 
-        targets.push_back(levelTargetCount);
-        levelMeshNames.push_back(meshName);
+        auto settingsNode = xml->FirstChildElement("settings");
+        auto graphicsSettingsNode = settingsNode->FirstChildElement("graphics");
 
-        levelNode = levelNode->NextSiblingElement("level");
+        std::string driverName = graphicsSettingsNode->FirstChildElement("driver")->GetText();
+
+        int resolutionWidth = graphicsSettingsNode->FirstChildElement("resolution")->IntAttribute("width", 640);
+        int resolutionHeight = graphicsSettingsNode->FirstChildElement("resolution")->IntAttribute("height", 480);
+        int colorDepth = graphicsSettingsNode->FirstChildElement("colorDepth")->IntText(16);
+
+        bool fullScreen = graphicsSettingsNode->FirstChildElement("fullScreen")->BoolText(false);
+        bool vsync = graphicsSettingsNode->FirstChildElement("vsync")->BoolText(false);
+        bool stencil = graphicsSettingsNode->FirstChildElement("stencilBuffer")->BoolText(false);
+
+        return Settings{ driverName, resolutionWidth, resolutionHeight, colorDepth, fullScreen, vsync, stencil };
     }
 
-    levelCnt = levelMeshNames.size();
-}
+    virtual std::vector<std::shared_ptr<Level>> loadLevels() {
+        std::shared_ptr<tinyxml2::XMLDocument> xml = std::make_shared<tinyxml2::XMLDocument>();
 
-void loadHiscores(const char* filename) {
-    std::ifstream inf(filename);
+        tinyxml2::XMLError xmlError = xml->LoadFile("Data/levels.xml");
 
-    if (!inf.is_open()) {
-        return;
+        if (xmlError != tinyxml2::XML_SUCCESS) {
+            std::cerr << "Can not load levels.xml file" << std::endl;
+            throw "Can not load levels";
+        }
+
+        auto levelsNode = xml->FirstChildElement("levels");
+
+        auto levelNode = levelsNode->FirstChildElement("level");
+        auto lastLevelNode = levelsNode->LastChildElement("level");
+
+        std::vector<std::shared_ptr<Level>> levels;
+
+        while (levelNode != nullptr) {
+            std::string meshName = levelNode->FirstChildElement("model")->GetText();
+
+            auto levelDescriptor = std::make_shared<Level>(meshName);
+
+            auto targetsNode = levelNode->FirstChildElement("targets");
+
+            auto targetNode = targetsNode->FirstChildElement("target");
+            auto lastTargetNode = targetsNode->LastChildElement("target");
+
+            while (targetNode != nullptr) {
+                auto positionNode = targetNode->FirstChildElement("position");
+
+                irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+
+                levelDescriptor->addTargetPosition(position);
+
+                targetNode = targetNode->NextSiblingElement("target");
+            }
+
+            levels.push_back(levelDescriptor);
+
+            levelNode = levelNode->NextSiblingElement("level");
+        }
+
+        return levels;
+    }
+};
+
+#define MAX_TIME 6000
+
+class IrrlichtRenderer : public Renderer {
+public:
+    IrrlichtRenderer(std::shared_ptr<GameState> _gameState) : Renderer(std::move(_gameState)) {}
+
+    virtual void init(Settings settings) {
+        irr::video::E_DRIVER_TYPE driverType = irr::video::EDT_OPENGL;
+
+        if (settings.driverName == "DirectX") {
+            driverType = irr::video::EDT_DIRECT3D9;
+        }
+
+        irr::core::dimension2d<irr::u32> resolution = irr::core::dimension2d<irr::u32>(settings.resolutionWidth, settings.resolutionHeight);
+
+        device = std::shared_ptr<irr::IrrlichtDevice>(irr::createDevice(driverType, resolution, settings.colorDepth, settings.fullScreen, settings.stencil, settings.vsync));
+
+        device->setWindowCaption(L"ShootThem!");
+
+        driver = std::shared_ptr<irr::video::IVideoDriver>(device->getVideoDriver());
+        smgr = std::shared_ptr<irr::scene::ISceneManager>(device->getSceneManager());
+        guienv = std::shared_ptr<irr::gui::IGUIEnvironment>(device->getGUIEnvironment());
+
+        soundEngine = std::shared_ptr<irrklang::ISoundEngine>(irrklang::createIrrKlangDevice());
+
+        device->getFileSystem()->addZipFileArchive("Resources/Packs/data.pk3");
+
+        bill = smgr->addBillboardSceneNode();
+        bill->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
+        bill->setMaterialTexture(0, driver->getTexture("cross.bmp"));
+        bill->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+        bill->setMaterialFlag(irr::video::EMF_ZBUFFER, false);
+        bill->setSize(irr::core::dimension2d<irr::f32>(20.0f, 20.0f));
+
+        // TODO: move this to scene config too
+        smgr->addLightSceneNode(0, irr::core::vector3df(0, 20, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
+
+        // driver->setFog(irr::video::SColor(0, 138, 125, 81), irr::video::EFT_FOG_LINEAR, 250, 1000, 0, true);
+
+        // TODO: move this to scene config too as a player initial position
+        camera = std::shared_ptr<irr::scene::ICameraSceneNode>(smgr->addCameraSceneNodeFPS(0, 100, 0, 0));
+        device->getCursorControl()->setVisible(false);
+
+        statusBar = guienv->addStaticText(L"New game", irr::core::rect<irr::s32>(10, 10, 260, 22), true, true, 0, 0, true);
+        timer = device->getTimer();
+        timer->start();
+
+        playermesh = smgr->getMesh("rifle.3ds");
+        player = smgr->addAnimatedMeshSceneNode(playermesh);
+
+        // TODO: player model offset relative to camera position
+        player->setPosition(irr::core::vector3df(0.5f, -1.0f, 1.0f));
+
+        player->setParent(camera.get());
+
+        // TODO: should these be initialized here???
+        inputHandler = std::make_shared<InputHandler>(gameState);
+        eventReceiver = std::make_shared<IrrlichtEventReceiver>(inputHandler, smgr, camera);
+
+        device->setEventReceiver(eventReceiver.get());
+
+        // TODO: maybe have some style?
+        gameState->enqueue(new LoadFirstLevelAction(gameState->getCurrentLevel()));
     }
 
-    inf >> hiscoreCnt;
+    virtual void processActionQueue() {
+        while (gameState->hasActions()) {
+            auto action = gameState->nextAction();
 
-    for (int i = 0; i <= hiscoreCnt - 1; i++) {
-        inf >> hiscores[i].name;
-        inf >> hiscores[i].time;
-        inf >> hiscores[i].points;
+            switch (action->getType()) {
+            case QueueActionType::LOAD_FIRST_LEVEL:
+                processAction(reinterpret_cast<LoadFirstLevelAction*>(action));
+                break;
+            case QueueActionType::LOAD_NEXT_LEVEL:
+                processAction(reinterpret_cast<LoadNextLevelAction*>(action));
+                break;
+            case QueueActionType::PLAY_SOUND:
+                processAction(reinterpret_cast<PlaySoundAction*>(action));
+                break;
+            case QueueActionType::TARGET_ELIMINATED:
+                processAction(reinterpret_cast<TargetEliminatedAction*>(action));
+                break;
+            }
+        }
     }
 
-    inf.close();
-}
-
-void saveHiscores() {
-    std::ofstream outf("Data/hiscores.dat");
-
-    outf << ++hiscoreCnt;
-
-    //hiscores[hiscoreCnt].name = "Player";
-    hiscores[hiscoreCnt].time = Tms;
-    hiscores[hiscoreCnt].points = Pnts;
-
-    for (int i = 0; i <= hiscoreCnt - 1; i++) {
-        outf << hiscores[i].name << std::endl;
-        outf << hiscores[i].time << std::endl;
-        outf << hiscores[i].points << std::endl;
+    void processAction(PlaySoundAction* action) {
+        soundEngine->play2D(action->getSoundFile().c_str(), false);
     }
 
-    outf.close();
-}
+    void processAction(LoadFirstLevelAction* action) {
+        irr::scene::IAnimatedMesh* levelMesh = smgr->getMesh(action->getLevel()->getModelFilename().c_str());
 
-void loadMap(const std::string& mapMeshName) {
-    if (level) {
-        level->setVisible(false);
+        std::shared_ptr<irr::scene::IAnimatedMeshSceneNode> level(smgr->addAnimatedMeshSceneNode(levelMesh));
+
+        action->getLevel()->setModel(level);
+
+        selector = std::shared_ptr<irr::scene::ITriangleSelector>(smgr->createOctTreeTriangleSelector(levelMesh->getMesh(0), level.get(), 128));
+
+        irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
+        std::vector<std::shared_ptr<irr::scene::ISceneNode>> targets;
+
+        for (auto position : action->getLevel()->getTargetPositions()) {
+            std::shared_ptr<irr::scene::ISceneNode> target(smgr->addAnimatedMeshSceneNode(targetMesh));
+
+            target->setVisible(true);
+
+            target->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
+            target->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
+            target->setPosition(position);
+
+            targets.push_back(std::move(target));
+        }
+
+        action->getLevel()->setTargets(targets);
     }
 
-    levelmesh = smgr->getMesh(mapMeshName.c_str());
-    level = smgr->addAnimatedMeshSceneNode(levelmesh);
+    void processAction(LoadNextLevelAction* action) {
+        // unload existing level data
+        // TODO: ISceneNode::drop() does not work here for some reason. Neither ISceneNode::remove() does
+        action->getPreviousLevel()->getModel()->setVisible(false);
 
-    selector = smgr->createOctTreeTriangleSelector(levelmesh->getMesh(0), level, 128);
-}
+        for (auto target : action->getPreviousLevel()->getTargets()) {
+            target->setVisible(false);
+        }
 
-void placeTargets(int levelNumber) {
-    for (int i = 0; i <= targets.at(levelNumber) - 1; i++) {
-        target[i]->setVisible(true);
+        // load next level
+        irr::scene::IAnimatedMesh* levelMesh = smgr->getMesh(action->getNextLevel()->getModelFilename().c_str());
 
-        int k = levelNumber > 0 ? targets.at(levelNumber - 1) : 0;
+        std::shared_ptr<irr::scene::IAnimatedMeshSceneNode> level(smgr->addAnimatedMeshSceneNode(levelMesh));
 
-        target[i]->setPosition(positions.at(k + i));
+        action->getNextLevel()->setModel(level);
+
+        selector = std::shared_ptr<irr::scene::ITriangleSelector>(smgr->createOctTreeTriangleSelector(levelMesh->getMesh(0), level.get(), 128));
+
+        irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
+
+        std::vector<std::shared_ptr<irr::scene::ISceneNode>> targets;
+
+        for (auto position : action->getNextLevel()->getTargetPositions()) {
+            std::shared_ptr<irr::scene::ISceneNode> target(smgr->addAnimatedMeshSceneNode(targetMesh));
+
+            target->setVisible(true);
+
+            target->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
+            target->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
+            target->setPosition(position);
+
+            targets.push_back(std::move(target));
+        }
+
+        action->getNextLevel()->setTargets(targets);
+        gameState->nextLevelLoaded();
+        gameState->getCurrentScore()->resetTargetEliminated();
     }
 
-    targetLeft = targets[levelNumber];
-    targetCnt = targetLeft;
-    points = 0;
-    shoots = 0;
-}
-
-void gotoMap(int mapNum) {
-    loadMap(levelMeshNames.at(levelNumber));
-    placeTargets(mapNum);
-
-    timer->start();
-}
-
-void showResult() {
-    irr::core::stringw title = L"Level complete!";
-    
-    std::wostringstream msg;
-    msg << "Your time: " << (MAX_TIME/ 100) - abs(Tm / 100) << "sec;  Shots: " << shoots << "/" << targets[levelNumber] << " min" << ";  Target hit: " << points << "/" << targets[levelNumber];
-
-    Tms += (MAX_TIME / 100) - abs(Tm / 100);
-    Pnts += points;
-
-    guienv->addMessageBox(title.c_str(), msg.str().c_str(), true, irr::gui::EMBF_OK, 0, 0);
-
-    endLevel = true;
-
-    timer->stop();
-
-    if (levelNumber + 1 < levelCnt) {
-        return;
+    void processAction(TargetEliminatedAction* action) {
+        action->getTarget()->setVisible(false);
+        gameState->getCurrentScore()->targetEliminated();
+        
+        if (gameState->getCurrentScore()->getTargetsEliminated() >= gameState->getCurrentLevel()->getTargets().size()) {
+            // TODO: show next level menu
+            gameState->enqueue(new LoadNextLevelAction(gameState->getCurrentLevel(), gameState->getNextLevel()));
+        }
     }
 
-    guienv->getSkin()->setFont(guienv->getFont("fontcourier.bmp"));
-    guienv->clear();
-    guienv->addMessageBox(L"Congratulations!", L"Game over!", true, irr::gui::EMBF_OK, 0, 0);
-
-    while (device->run()) {
+    virtual void render() {
+        // TODO: here should the menu logic be
         driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
 
         smgr->drawAll();
         guienv->drawAll();
 
-        driver->endScene();
-    }
-}
-
-void showHiscores() {
-    hiscoremnu = true;
-
-    hiscoreTable = guienv->addListBox(irr::core::rect<irr::s32>(10, 30, 300, 100), 0, 0, true);
-
-    for (int i = 0; i <= hiscoreCnt - 1; i++) {
-        std::wostringstream str;
-
-        str << (i + 1) << " - " << hiscores[i].name << " - " << hiscores[i].time << " sec. - " << hiscores[i].points << " pts.";
-
-        hiscoreTable->addItem(str.str().c_str());
-    }
-
-    timer->stop();
-
-    while (hiscoremnu == true && device->run()) {
-        driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
-
-        smgr->drawAll();
-        guienv->drawAll();
+        updateStatusBar();
 
         driver->endScene();
     }
 
-    timer->start();
-}
+    virtual void shutdown() {
+        device->drop();
+        soundEngine->drop();
 
-void refreshIndicator() {
-    std::wostringstream statusString;
-
-    statusString << "Ammo: " << ammo << "/" << MAX_AMMO << "; Points: " << points << "/" << targetCnt << "; Time:" << Tm / 100 << "; Level:" << levelNumber + 1 << "/" << levelCnt;
-
-    if (!timer->isStopped() && endLevel == false) {
-        Tm--;
+        timer->stop();
     }
 
-    if ((Tm <= 0 || points == targetCnt) && (endLevel == false)) {
-        showResult();
+    virtual bool isRunning() {
+        // TODO: add (main menu) state checks
+        return device->run();
     }
 
-    indicator->setText(statusString.str().c_str());
+protected:
+    // TODO: this is the endgame screen
+    void showResult() {
+        irr::core::stringw title = L"Level complete!";
 
-    float k = (sin(abs(Tm) / 100) / (10 - levelNumber));
+        int points = gameState->getCurrentScore()->getTargetsEliminated();
+        int targetCnt = gameState->getCurrentLevel()->getTargets().size();
 
-    camera->setRotation(
-        irr::core::vector3df(
-            camera->getRotation().X + k,
-            camera->getRotation().Y,
-            camera->getRotation().Z
-        )
-    );
+        // int shots = gameState->getCurrentScore()->getShots();
+        int shots = 0;
 
-    irr::core::line3d<irr::f32> line;
-    line.start = camera->getPosition();
-    line.end = line.start + (camera->getTarget() - line.start).normalize() * 10000.0f;
+        std::wostringstream msg;
+        msg << "Your time: " << (MAX_TIME / 100) - abs(Tm / 100) << "sec;  Shots: " << shots << "/" << targetCnt << " min" << ";  Target hit: " << points << "/" << targetCnt;
 
-    irr::core::vector3df intersection;
-    irr::core::triangle3df tri;
+        /*Tms += (MAX_TIME / 100) - abs(Tm / 100);
+        Pnts += points;*/
 
-    irr::scene::ISceneNode* node = 0;
+        /*guienv->addMessageBox(title.c_str(), msg.str().c_str(), true, irr::gui::EMBF_OK, 0, 0);
 
-    if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector, intersection, tri, node)) {
-        bill->setPosition(intersection);
+        endLevel = true;
+
+        timer->stop();
+
+        if (levelNumber + 1 < levelCnt) {
+            return;
+        }
+
+        guienv->getSkin()->setFont(guienv->getFont("fontcourier.bmp"));
+        guienv->clear();
+        guienv->addMessageBox(L"Congratulations!", L"Game over!", true, irr::gui::EMBF_OK, 0, 0);*/
     }
-}
+
+    void updateStatusBar() {
+        int points = gameState->getCurrentScore()->getTargetsEliminated();
+        int targetCnt = gameState->getCurrentLevel()->getTargets().size();
+
+        int ammo = gameState->getPlayerState()->getCurrentAmmo();
+        int maxAmmo = gameState->getPlayerState()->getMaxAmmo();
+
+        int levelIdx = gameState->getCurrentLevelIndex();
+        int levelsCnt = gameState->getLevelsCnt();
+
+        std::wostringstream statusString;
+
+        statusString << "Ammo: " << ammo << "/" << maxAmmo << "; Points: " << points << "/" << targetCnt << "; Time:" << Tm / 100 << "; Level:" << levelIdx + 1 << "/" << levelsCnt;
+
+        if (!timer->isStopped() && levelIdx + 1 < levelsCnt) {
+            Tm--;
+        }
+
+        /*if ((Tm <= 0 || points == targetCnt) && (endLevel == false)) {
+            showResult();
+        }*/
+
+        statusBar->setText(statusString.str().c_str());
+
+        float k = (sin(abs(Tm) / 100) / (10 - gameState->getCurrentLevelIndex()));
+
+        camera->setRotation(
+            irr::core::vector3df(
+                camera->getRotation().X + k,
+                camera->getRotation().Y,
+                camera->getRotation().Z
+            )
+        );
+
+        irr::core::line3d<irr::f32> line;
+        line.start = camera->getPosition();
+        line.end = line.start + (camera->getTarget() - line.start).normalize() * 10000.0f;
+
+        irr::core::vector3df intersection;
+        irr::core::triangle3df tri;
+
+        irr::scene::ISceneNode* node = 0;
+
+        if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector.get(), intersection, tri, node)) {
+            bill->setPosition(intersection);
+        }
+    }
+
+private:
+    std::shared_ptr<irr::IEventReceiver> eventReceiver;
+    std::shared_ptr<InputHandler> inputHandler;
+
+    // TODO: load from level?
+    int Tm = MAX_TIME;
+
+    irr::gui::IGUIStaticText* statusBar = 0;
+    irr::ITimer* timer = 0;
+    irr::gui::IGUIWindow* msgbox = 0;
+    irr::gui::IGUIListBox* hiscoreTable = 0;
+
+    std::shared_ptr<irr::IrrlichtDevice> device;
+    std::shared_ptr<irr::video::IVideoDriver> driver;
+    std::shared_ptr<irr::scene::ISceneManager> smgr;
+    std::shared_ptr<irr::gui::IGUIEnvironment> guienv;
+
+    std::shared_ptr<irr::scene::ICameraSceneNode> camera;
+
+    irr::scene::IAnimatedMesh* playermesh = 0;
+    irr::scene::IAnimatedMeshSceneNode* player = 0;
+
+    irr::scene::IBillboardSceneNode* bill = 0;
+    std::shared_ptr<irr::scene::ITriangleSelector> selector;
+
+    std::shared_ptr<irrklang::ISoundEngine> soundEngine;
+};
+
+class Application {
+public:
+    Application(std::shared_ptr<Renderer> _renderer, std::shared_ptr<GameState> _gameState, std::shared_ptr<ResourceManager> _resourceManager) :
+        renderer(std::move(_renderer)),
+        gameState(std::move(_gameState)),
+        inputHandler(std::make_shared<InputHandler>(gameState)),
+        resourceManager(std::move(_resourceManager))
+    {}
+
+    void run() {
+        gameState->setLevels(resourceManager->loadLevels());
+
+        renderer->init(resourceManager->loadSettings());
+
+        while (renderer->isRunning()) {
+            renderer->processActionQueue();
+            renderer->render();
+        }
+
+        renderer->shutdown();
+    }
+
+private:
+    std::shared_ptr<GameState> gameState;
+    std::shared_ptr<Renderer> renderer;
+    std::shared_ptr<InputHandler> inputHandler;
+    std::shared_ptr<ResourceManager> resourceManager;
+};
 
 int main() {
-    init();
+    std::shared_ptr<ResourceManager> resourceManager = std::make_shared<ModernResourceManager>();
+    std::shared_ptr<GameState> gameState = std::make_shared<GameState>();
+    std::shared_ptr<Renderer> renderer = std::make_shared<IrrlichtRenderer>(gameState);
 
-    createPlayer();
-    loadLevels();
-    loadHiscores("Data/hiscores.dat");
+    std::shared_ptr<Application> application = std::make_shared<Application>(renderer, gameState, resourceManager);
 
-    gotoMap(0);
-
-    while (device->run()) {
-        driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
-
-        smgr->drawAll();
-        guienv->drawAll();
-
-        refreshIndicator();
-
-        driver->endScene();
-    }
-
-    saveHiscores();
-
-    device->drop();
-    engine->drop();
-
-    timer->stop();
+    application->run();
 
     return 0;
 }

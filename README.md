@@ -16,9 +16,13 @@ This is a very simple shooting game I made many years ago. It is written in C++ 
 [] replace raw pointers with smart pointers
 [x] fix wobbling effect
 [x] record a video (https://youtu.be/m65z9kvWdYA)
-[] fix timer speed
+[x] fix timer speed
 [] display endgame screen with high scores ¯\_(ツ)_/¯
-[] import each scene from a scene file rather than DAT files with questionable undocumented format
-[] load game settings from a separate file rather than being hard-coded vector population code O_o
+[x] import each scene from a scene file rather than DAT files with questionable undocumented format
+[x] load game settings from a separate file rather than being hard-coded vector population code O_o
 [] add splash screen
-[] encapsulate logic in classes
+[x] encapsulate logic in classes
+[] `ResourceManager` is redundant
+[] clean up the design - `InputHandler` (aka dispatcher) is probably redundant, `GameState` (aka state) should be read-only, maybe extract event / action queue to a separate class
+[] rework the abuse of `std::shared_ptr`
+[] two targets on 3rd level are indestructable
