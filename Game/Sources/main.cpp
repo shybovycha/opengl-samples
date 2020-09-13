@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <memory>
 #include <string>
@@ -474,16 +475,7 @@ void createPlayer()
     camera = smgr->addCameraSceneNodeFPS(0, 100, 0, 0);
     device->getCursorControl()->setVisible(false);
 
-    irr::core::stringw str = L"Ammo: ";
-    str += ammo;
-    str += "/";
-    str += MAX_AMMO;
-    str += ";  Points: ";
-    str += points;
-    str += "/";
-    str += targetCnt;
-
-    indicator = guienv->addStaticText(str.c_str(), irr::core::rect<irr::s32>(10, 10, 260, 22), true, true, 0, 0, true);
+    indicator = guienv->addStaticText(L"New game", irr::core::rect<irr::s32>(10, 10, 260, 22), true, true, 0, 0, true);
     timer = device->getTimer();
     timer->start();
 
@@ -603,23 +595,14 @@ void gotoMap(int mapNum)
 void showResult()
 {
     irr::core::stringw title = L"Level complete!";
-    irr::core::stringw msg = L"Your time: ";
-
-    msg += (MAX_TIME/ 100) - abs(Tm / 100);
-    msg += "sec;  Shots: ";
-    msg += shoots;
-    msg += "/";
-    msg += targets[levelNumber];
-    msg += " min";
-    msg += ";  Target hit: ";
-    msg += points;
-    msg += "/";
-    msg += targets[levelNumber];
+    
+    std::wostringstream msg;
+    msg << "Your time: " << (MAX_TIME/ 100) - abs(Tm / 100) << "sec;  Shots: " << shoots << "/" << targets[levelNumber] << " min" << ";  Target hit: " << points << "/" << targets[levelNumber];
 
     Tms += (MAX_TIME / 100) - abs(Tm / 100);
     Pnts += points;
 
-    guienv->addMessageBox(title.c_str(), msg.c_str(), true, irr::gui::EMBF_OK, 0, 0);
+    guienv->addMessageBox(title.c_str(), msg.str().(), true, irr::gui::EMBF_OK, 0, 0);
 
     endLevel = true;
 
@@ -651,18 +634,11 @@ void showHiscores()
 
     for (int i = 0; i <= hiscoreCnt - 1; i++)
     {
-        irr::core::stringw str = L"";
+        std::wostringstream str;
 
-        str += (i + 1);
-        str += " - ";
-        str += hiscores[i].name;
-        str += " - ";
-        str += hiscores[i].time;
-        str += " sec. - ";
-        str += hiscores[i].points;
-        str += " pts.";
+        str << (i + 1) << " - " << hiscores[i].name << " - " << hiscores[i].time << " sec. - " << hiscores[i].points << " pts.";
 
-        hiscoreTable->addItem(str.c_str());
+        hiscoreTable->addItem(str.str().c_str());
     }
 
     timer->stop();
@@ -682,20 +658,8 @@ void showHiscores()
 
 void refreshIndicator()
 {
-    irr::core::stringw str = L"Ammo: ";
-    str += ammo;
-    str += "/";
-    str += MAX_AMMO;
-    str += ";  Points: ";
-    str += points;
-    str += "/";
-    str += targetCnt;
-    str += ";  Time:";
-    str += (Tm / 100);
-    str += ";  Level:";
-    str += levelNumber + 1;
-    str += "/";
-    str += levelCnt;
+    std::wostringstream statusString;
+    statusString << "Ammo: " << ammo << "/" << MAX_AMMO << "; Points: " << points << "/" << targetCnt << "; Time:" << Tm / 100 << "; Level:" << levelNumber + 1 << "/" << levelCnt;
 
     if (!timer->isStopped() && endLevel == false)
     {
@@ -706,7 +670,7 @@ void refreshIndicator()
         if (endLevel == false)
             showResult();
 
-    indicator->setText(str.c_str());
+    indicator->setText(statusString.str().c_str());
 
     float k = (sin(abs(Tm) / 100) / (10 - levelNumber));
 
