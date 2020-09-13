@@ -2,7 +2,29 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 project(Game VERSION 1.0.1 LANGUAGES CXX)
 
-set(SOURCE_FILES Sources/main.cpp)
+set(SOURCE_FILES 
+    "Sources/main.cpp" 
+    "Sources/Settings.h" 
+    "Sources/Level.h"
+    "Sources/Score.h"
+    "Sources/PlayerState.h"
+    "Sources/GameState.h"
+    "Sources/InputHandler.h"
+    "Sources/IrrlichtEventReceiver.h"
+    "Sources/Renderer.h"
+    "Sources/ResourceManager.h"
+    "Sources/ModernResourceManager.h"
+    "Sources/IrrlichtRenderer.h"
+    "Sources/Application.h"
+    "Sources/Application.cpp"
+    "Sources/GameState.cpp"
+    "Sources/InputHandler.cpp"
+    "Sources/IrrlichtEventReceiver.cpp"
+    "Sources/IrrlichtRenderer.cpp"
+    "Sources/Level.cpp"
+    "Sources/ModernResourceManager.cpp"
+    "Sources/PlayerState.cpp"
+    "Sources/Score.cpp")
 set(EXECUTABLE_NAME Game)
 
 if(NOT IRRLICHT_LIBRARY_PATH)
