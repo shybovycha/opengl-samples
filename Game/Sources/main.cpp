@@ -30,16 +30,29 @@
 
 class Level {
 public:
-    Level(const std::string filename) : filename(filename) {}
+    Level(const std::string filename) : meshFilename(filename) {}
 
-    void load() {
+    void loadMesh() {
         // TODO: implement
     }
 
+    void addTarget(irr::core::vector3df position) {
+        targetPositions.push_back(position);
+    }
+
+    const std::vector<irr::core::vector3df> getTargetPositions() const {
+        return targetPositions;
+    }
+
+    void setModel(std::shared_ptr<irr::scene::ISceneNode> mesh) {
+        model = std::move(mesh);
+    }
+
 private:
-    std::string filename;
+    std::string meshFilename;
 
     std::vector<irr::core::vector3df> targetPositions;
+    irr::core::vector3df playerPosition;
 
     std::shared_ptr<irr::scene::ISceneNode> model;
 };
@@ -283,9 +296,12 @@ int Tms = 0, Pnts = 0;
 bool endLevel = false;
 bool hiscoremnu = false;
 
-char* maps[10];
-irr::core::vector3df positions[100];
-int targets[100] = { -1 }, levelCnt, shoots = 0;
+std::vector<std::shared_ptr<Level>> levels;
+
+std::vector<std::string> levelMeshNames;
+std::vector<irr::core::vector3df> positions;
+std::vector<int> targets;
+int levelCnt, shoots = 0;
 
 irrklang::ISound* music = 0;
 
@@ -520,24 +536,54 @@ void createPlayer() {
     player->setParent(camera);
 }
 
-void loadCoords(char* filename) {
-    std::ifstream inf(filename);
+void loadLevels() {
+    std::shared_ptr<tinyxml2::XMLDocument> xml = std::make_shared<tinyxml2::XMLDocument>();
 
-    int i = 0, oldI = 0;
+    tinyxml2::XMLError xmlError = xml->LoadFile("Data/levels.xml");
 
-    inf >> levelCnt;
-
-    for (int t = 0; t <= levelCnt - 1; t++) {
-        inf >> targets[t];
-
-        for (i = oldI; i <= oldI + targets[t] - 1; i++) {
-            inf >> positions[i].X >> positions[i].Y >> positions[i].Z;
-        }
-
-        oldI = i;
+    if (xmlError != tinyxml2::XML_SUCCESS) {
+        std::cerr << "Can not load levels.xml file" << std::endl;
+        throw "Can not load levels";
     }
 
-    inf.close();
+    auto levelsNode = xml->FirstChildElement("levels");
+
+    auto levelNode = levelsNode->FirstChildElement("level");
+    auto lastLevelNode = levelsNode->LastChildElement("level");
+
+    while (levelNode != nullptr) {
+        std::string meshName = levelNode->FirstChildElement("model")->GetText();
+
+        // auto levelDescriptor = std::make_shared<Level>(meshName);
+
+        auto targetsNode = levelNode->FirstChildElement("targets");
+
+        auto targetNode = targetsNode->FirstChildElement("target");
+        auto lastTargetNode = targetsNode->LastChildElement("target");
+
+        int levelTargetCount = 0;
+
+        while (targetNode != nullptr) {
+            auto positionNode = targetNode->FirstChildElement("position");
+
+            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+
+            // levelDescriptor->addTarget(position);
+
+            // TODO: remove
+            positions.push_back(position);
+            ++levelTargetCount;
+
+            targetNode = targetNode->NextSiblingElement("target");
+        }
+
+        targets.push_back(levelTargetCount);
+        levelMeshNames.push_back(meshName);
+
+        levelNode = levelNode->NextSiblingElement("level");
+    }
+
+    levelCnt = levelMeshNames.size();
 }
 
 void loadHiscores(const char* filename) {
@@ -576,31 +622,24 @@ void saveHiscores() {
     outf.close();
 }
 
-void createConfig() {
-    maps[0] = "room1.x";
-    maps[1] = "egypt1.x";
-    maps[2] = "forest1.x";
-    maps[3] = "square1.x";
-}
-
-void loadMap(char* mapname) {
+void loadMap(const std::string& mapMeshName) {
     if (level) {
         level->setVisible(false);
     }
 
-    levelmesh = smgr->getMesh(mapname);
+    levelmesh = smgr->getMesh(mapMeshName.c_str());
     level = smgr->addAnimatedMeshSceneNode(levelmesh);
 
     selector = smgr->createOctTreeTriangleSelector(levelmesh->getMesh(0), level, 128);
 }
 
-void pasteTargets(int levelNumber) {
-    for (int i = 0; i <= targets[levelNumber] - 1; i++) {
+void placeTargets(int levelNumber) {
+    for (int i = 0; i <= targets.at(levelNumber) - 1; i++) {
         target[i]->setVisible(true);
 
-        int k = targets[levelNumber - 1];
+        int k = levelNumber > 0 ? targets.at(levelNumber - 1) : 0;
 
-        target[i]->setPosition(positions[k + i]);
+        target[i]->setPosition(positions.at(k + i));
     }
 
     targetLeft = targets[levelNumber];
@@ -610,8 +649,8 @@ void pasteTargets(int levelNumber) {
 }
 
 void gotoMap(int mapNum) {
-    loadMap(maps[levelNumber]);
-    pasteTargets(mapNum);
+    loadMap(levelMeshNames.at(levelNumber));
+    placeTargets(mapNum);
 
     timer->start();
 }
@@ -719,8 +758,7 @@ int main() {
     init();
 
     createPlayer();
-    createConfig();
-    loadCoords("Data/coords.dat");
+    loadLevels();
     loadHiscores("Data/hiscores.dat");
 
     gotoMap(0);

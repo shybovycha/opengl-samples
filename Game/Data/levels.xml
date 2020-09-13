@@ -1,0 +1,91 @@
+<levels>
+    <level>
+        <model>room1.x</model>
+        <targets>
+            <target>
+                <position x="-16.346" y="393.417" z="962.377" />
+            </target>
+            <target>
+                <position x="1115.76" y="500.108" z="1152.03" />
+            </target>
+            <target>
+                <position x="-1134.53" y="554.864" z="1204.55" />
+            </target>
+        </targets>
+    </level>
+
+    <level>
+        <model>egypt1.x</model>
+        <targets>
+            <target>
+                <position x="-3.06793" y="86.2608" z="881.03" />
+            </target>
+            <target>
+                <position x="199.761" y="103.207" z="769.16" />
+            </target>
+            <target>
+                <position x="-208.559" y="131.062" z="765.664" />
+            </target>
+            <target>
+                <position x="314.941" y="115.743" z="966.811" />
+            </target>
+            <target>
+                <position x="114.041" y="97.4164" z="808.461" />
+            </target>
+            <target>
+                <position x="114.041" y="97.4164" z="808.461" />
+            </target>
+            <target>
+                <position x="-310.709" y="115.919" z="778.174" />
+            </target>
+        </targets>
+    </level>
+
+    <level>
+        <model>forest1.x</model>
+        <targets>
+            <target>
+                <position x="-760.75" y="333.496" z="472.156" />
+            </target>
+            <target>
+                <position x="-260.847" y="355.284" z="350.735" />
+            </target>
+            <target>
+                <position x="-28.7607" y="351.943" z="-781.464" />
+            </target>
+            <target>
+                <position x="-1137.92" y="363.536" z="-466.256" />
+            </target>
+            <target>
+                <position x="769.411" y="350.184" z="-349.763" />
+            </target>
+        </targets>
+    </level>
+
+    <level>
+        <model>square1.x</model>
+        <targets>
+            <target>
+                <position x="-0.693868" y="53.0339" z="446.627" />
+            </target>
+            <target>
+                <position x="-422.85" y="125.92" z="770.958" />
+            </target>
+            <target>
+                <position x="-223.517" y="158.726" z="1002.82" />
+            </target>
+            <target>
+                <position x="218.64" y="158.078" z="996.064" />
+            </target>
+            <target>
+                <position x="363.062" y="132.967" z="733.018" />
+            </target>
+            <target>
+                <position x="-147.383" y="-24.5689" z="939.939" />
+            </target>
+            <target>
+                <position x="111.36" y="-1.56759" z="943.659" />
+            </target>
+        </targets>
+    </level>
+</levels>
