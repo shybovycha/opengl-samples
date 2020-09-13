@@ -50,8 +50,8 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
     CXX_EXTENSIONS ON
 )
 
-message("Found Irrlicht at: ${IRRLICHT_LIBRARY_PATH}")
-message("Found IrrKlang at: ${IRRKLANG_LIBRARY_PATH}")
+message("Found Irrlicht headers at: ${IRRLICHT_PATH}/include")
+message("Found IrrKlang headers at: ${IRRKLANG_PATH}/include")
 message("Linking libraries: ${LIBRARIES}")
 
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRLICHT_PATH}/include)

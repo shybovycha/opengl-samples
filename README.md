@@ -16,6 +16,7 @@ This is a very simple shooting game I made many years ago. It is written in C++ 
 [] replace raw pointers with smart pointers
 [x] fix wobbling effect
 [x] record a video (https://youtu.be/m65z9kvWdYA)
+[] fix timer speed
 [] display endgame screen with high scores ¯\_(ツ)_/¯
 [] import each scene from a scene file rather than DAT files with questionable undocumented format
 [] load game settings from a separate file rather than being hard-coded vector population code O_o
