@@ -1,11 +1,11 @@
 #pragma once
 
-#include "GameState.h"
-#include "InputHandler.h"
-
 #include <memory>
 
 #include <irrlicht.h>
+
+#include "GameState.h"
+#include "InputHandler.h"
 
 class IrrlichtEventReceiver : public irr::IEventReceiver {
 public:

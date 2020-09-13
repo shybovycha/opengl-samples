@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GameState.h"
-
 #include <memory>
+
+#include "GameState.h"
 
 class InputHandler {
 public:

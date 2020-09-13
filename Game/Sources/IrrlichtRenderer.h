@@ -1,17 +1,17 @@
 #pragma once
 
+#include <memory>
+#include <sstream>
+#include <vector>
+
+#include <irrlicht.h>
+#include <irrKlang.h>
+
 #include "GameState.h"
 #include "InputHandler.h"
 #include "IrrlichtEventReceiver.h"
 #include "Renderer.h"
 #include "Settings.h"
-
-#include <irrlicht.h>
-#include <irrKlang.h>
-
-#include <memory>
-#include <sstream>
-#include <vector>
 
 #define MAX_TIME 6000
 

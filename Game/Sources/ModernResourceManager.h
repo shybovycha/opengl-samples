@@ -1,16 +1,16 @@
 #pragma once
 
-#include "Level.h"
-#include "ResourceManager.h"
-#include "Settings.h"
-
-#include <irrlicht.h>
-#include <tinyxml2.h>
-
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <irrlicht.h>
+#include <tinyxml2.h>
+
+#include "Level.h"
+#include "ResourceManager.h"
+#include "Settings.h"
 
 class ModernResourceManager : public ResourceManager {
 public:

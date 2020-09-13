@@ -1,11 +1,11 @@
 #pragma once
 
+#include <memory>
+
 #include "GameState.h"
 #include "InputHandler.h"
 #include "ResourceManager.h"
 #include "Renderer.h"
-
-#include <memory>
 
 class Application {
 public:

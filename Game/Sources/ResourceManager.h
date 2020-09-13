@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Settings.h"
-
 #include <memory>
 #include <vector>
+
+#include "Settings.h"
 
 class ResourceManager {
 public:

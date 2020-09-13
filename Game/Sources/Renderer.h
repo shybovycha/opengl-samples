@@ -1,9 +1,9 @@
 #pragma once
 
+#include <memory>
+
 #include "GameState.h"
 #include "Settings.h"
-
-#include <memory>
 
 class Renderer {
 public:

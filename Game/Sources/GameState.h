@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Level.h"
-#include "PlayerState.h"
-#include "Score.h"
-
 #include <string>
 #include <memory>
 #include <vector>
 #include <queue>
+
+#include "Level.h"
+#include "PlayerState.h"
+#include "Score.h"
 
 enum class E_GAME_STATE {
     MAIN_MENU,
