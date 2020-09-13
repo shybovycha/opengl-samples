@@ -329,14 +329,10 @@ void saveHiscores();
 class EventReceiver : public irr::IEventReceiver
 {
 public:
-    virtual bool OnEvent(const irr::SEvent& event)
-    {
-        if (event.EventType == irr::EET_GUI_EVENT)
-        {
-            if (event.GUIEvent.EventType == irr::gui::EGET_MESSAGEBOX_OK)
-            {
-                if (levelNumber + 1 == levelCnt)
-                {
+    virtual bool OnEvent(const irr::SEvent& event) {
+        if (event.EventType == irr::EET_GUI_EVENT) {
+            if (event.GUIEvent.EventType == irr::gui::EGET_MESSAGEBOX_OK) {
+                if (levelNumber + 1 == levelCnt) {
                     saveHiscores();
                     device->drop();
                     engine->drop();
@@ -344,8 +340,7 @@ public:
                     exit(0);
                 }
 
-                if (endLevel == true)
-                {
+                if (endLevel == true) {
                     //showHiscores();
 
                     endLevel = false;
@@ -357,10 +352,8 @@ public:
             }
         }
 
-        if (event.EventType == irr::EET_KEY_INPUT_EVENT)
-        {
-            if (event.KeyInput.Key == irr::KEY_ESCAPE)
-            {
+        if (event.EventType == irr::EET_KEY_INPUT_EVENT) {
+            if (event.KeyInput.Key == irr::KEY_ESCAPE) {
                 saveHiscores();
                 device->drop();
                 engine->drop();
@@ -368,25 +361,20 @@ public:
                 exit(0);
             }
 
-            if (event.KeyInput.Key == irr::KEY_RETURN)
-            {
-                if (hiscoremnu == true)
-                {
+            if (event.KeyInput.Key == irr::KEY_RETURN) {
+                if (hiscoremnu == true) {
                     hiscoremnu = false;
                 }
             }
         }
 
-        if (event.EventType == irr::EET_MOUSE_INPUT_EVENT)
-        {
+        if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
             irr::scene::ISceneNode* object = 0;
 
-            if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN)
-            {
+            if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
                 object = smgr->getSceneCollisionManager()->getSceneNodeFromCameraBB(camera);
 
-                if (ammo <= 0)
-                {
+                if (ammo <= 0) {
                     engine->play2D("Resources/Sounds/noammo.wav", false);
                     return false;
                 }
@@ -398,24 +386,24 @@ public:
                 if (object == level || object == player)
                     return false;
 
-                for (int i = 0; i <= 9; i++)
-                    if (target[i] == object)
-                    {
-                        object->setVisible(false);
-
-                        points++;
-                        targetLeft--;
-
-                        engine->play2D("Resources/Sounds/bell.wav", false);
-
-                        return true;
+                for (int i = 0; i <= 9; i++) {
+                    if (target[i] != object) {
+                        continue;
                     }
+
+                    object->setVisible(false);
+
+                    points++;
+                    targetLeft--;
+
+                    engine->play2D("Resources/Sounds/bell.wav", false);
+
+                    return true;
+                }
             }
 
-            if (event.MouseInput.Event == irr::EMIE_RMOUSE_PRESSED_DOWN)
-            {
-                if (ammo < MAX_AMMO)
-                {
+            if (event.MouseInput.Event == irr::EMIE_RMOUSE_PRESSED_DOWN) {
+                if (ammo < MAX_AMMO) {
                     ammo = MAX_AMMO;
                     engine->play2D("Resources/Sounds/reload.wav", false);
 
@@ -430,8 +418,7 @@ public:
 
 EventReceiver receiver;
 
-void init()
-{
+void init() {
     device = irr::createDevice(irr::video::EDT_OPENGL, irr::core::dimension2d<irr::u32>(640, 480), 16, false, false, false);
 
     device->setWindowCaption(L"ShootThem!");
@@ -449,8 +436,7 @@ void init()
     irr::scene::IAnimatedMesh* mesh = 0;
     mesh = smgr->getMesh("chicken.3ds");
 
-    for (int i = 0; i <= 9; i++)
-    {
+    for (int i = 0; i <= 9; i++) {
         target[i] = smgr->addAnimatedMeshSceneNode(mesh);
         target[i]->setVisible(false);
 
@@ -470,8 +456,7 @@ void init()
     driver->setFog(irr::video::SColor(0, 138, 125, 81), irr::video::EFT_FOG_LINEAR, 250, 1000, 0, true);
 }
 
-void createPlayer()
-{
+void createPlayer() {
     camera = smgr->addCameraSceneNodeFPS(0, 100, 0, 0);
     device->getCursorControl()->setVisible(false);
 
@@ -487,20 +472,19 @@ void createPlayer()
     player->setParent(camera);
 }
 
-void loadCoords(char* filename)
-{
+void loadCoords(char* filename) {
     std::ifstream inf(filename);
 
     int i = 0, oldI = 0;
 
     inf >> levelCnt;
 
-    for (int t = 0; t <= levelCnt - 1; t++)
-    {
+    for (int t = 0; t <= levelCnt - 1; t++) {
         inf >> targets[t];
 
-        for (i = oldI; i <= oldI + targets[t] - 1; i++)
+        for (i = oldI; i <= oldI + targets[t] - 1; i++) {
             inf >> positions[i].X >> positions[i].Y >> positions[i].Z;
+        }
 
         oldI = i;
     }
@@ -508,8 +492,7 @@ void loadCoords(char* filename)
     inf.close();
 }
 
-void loadHiscores(char* filename)
-{
+void loadHiscores(const char* filename) {
     std::ifstream inf(filename);
 
     if (!inf.is_open()) {
@@ -518,8 +501,7 @@ void loadHiscores(char* filename)
 
     inf >> hiscoreCnt;
 
-    for (int i = 0; i <= hiscoreCnt - 1; i++)
-    {
+    for (int i = 0; i <= hiscoreCnt - 1; i++) {
         inf >> hiscores[i].name;
         inf >> hiscores[i].time;
         inf >> hiscores[i].points;
@@ -528,8 +510,7 @@ void loadHiscores(char* filename)
     inf.close();
 }
 
-void saveHiscores()
-{
+void saveHiscores() {
     std::ofstream outf("Data/hiscores.dat");
 
     outf << ++hiscoreCnt;
@@ -538,8 +519,7 @@ void saveHiscores()
     hiscores[hiscoreCnt].time = Tms;
     hiscores[hiscoreCnt].points = Pnts;
 
-    for (int i = 0; i <= hiscoreCnt - 1; i++)
-    {
+    for (int i = 0; i <= hiscoreCnt - 1; i++) {
         outf << hiscores[i].name << std::endl;
         outf << hiscores[i].time << std::endl;
         outf << hiscores[i].points << std::endl;
@@ -548,18 +528,17 @@ void saveHiscores()
     outf.close();
 }
 
-void createConfig()
-{
+void createConfig() {
     maps[0] = "room1.x";
     maps[1] = "egypt1.x";
     maps[2] = "forest1.x";
     maps[3] = "square1.x";
 }
 
-void loadMap(char* mapname)
-{
-    if (level)
+void loadMap(char* mapname) {
+    if (level) {
         level->setVisible(false);
+    }
 
     levelmesh = smgr->getMesh(mapname);
     level = smgr->addAnimatedMeshSceneNode(levelmesh);
@@ -567,10 +546,8 @@ void loadMap(char* mapname)
     selector = smgr->createOctTreeTriangleSelector(levelmesh->getMesh(0), level, 128);
 }
 
-void pasteTargets(int levelNumber)
-{
-    for (int i = 0; i <= targets[levelNumber] - 1; i++)
-    {
+void pasteTargets(int levelNumber) {
+    for (int i = 0; i <= targets[levelNumber] - 1; i++) {
         target[i]->setVisible(true);
 
         int k = targets[levelNumber - 1];
@@ -584,16 +561,14 @@ void pasteTargets(int levelNumber)
     shoots = 0;
 }
 
-void gotoMap(int mapNum)
-{
+void gotoMap(int mapNum) {
     loadMap(maps[levelNumber]);
     pasteTargets(mapNum);
 
     timer->start();
 }
 
-void showResult()
-{
+void showResult() {
     irr::core::stringw title = L"Level complete!";
     
     std::wostringstream msg;
@@ -608,32 +583,30 @@ void showResult()
 
     timer->stop();
 
-    if (levelNumber + 1 == levelCnt)
-    {
-        guienv->getSkin()->setFont(guienv->getFont("fontcourier.bmp"));
-        guienv->clear();
-        guienv->addMessageBox(L"Congratulations!", L"Game over!", true, irr::gui::EMBF_OK, 0, 0);
+    if (levelNumber + 1 < levelCnt) {
+        return;
+    }
 
-        while (device->run())
-        {
-            driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
+    guienv->getSkin()->setFont(guienv->getFont("fontcourier.bmp"));
+    guienv->clear();
+    guienv->addMessageBox(L"Congratulations!", L"Game over!", true, irr::gui::EMBF_OK, 0, 0);
 
-            smgr->drawAll();
-            guienv->drawAll();
+    while (device->run()) {
+        driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
 
-            driver->endScene();
-        }
+        smgr->drawAll();
+        guienv->drawAll();
+
+        driver->endScene();
     }
 }
 
-void showHiscores()
-{
+void showHiscores() {
     hiscoremnu = true;
 
     hiscoreTable = guienv->addListBox(irr::core::rect<irr::s32>(10, 30, 300, 100), 0, 0, true);
 
-    for (int i = 0; i <= hiscoreCnt - 1; i++)
-    {
+    for (int i = 0; i <= hiscoreCnt - 1; i++) {
         std::wostringstream str;
 
         str << (i + 1) << " - " << hiscores[i].name << " - " << hiscores[i].time << " sec. - " << hiscores[i].points << " pts.";
@@ -643,8 +616,7 @@ void showHiscores()
 
     timer->stop();
 
-    while (hiscoremnu == true && device->run())
-    {
+    while (hiscoremnu == true && device->run()) {
         driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
 
         smgr->drawAll();
@@ -656,26 +628,30 @@ void showHiscores()
     timer->start();
 }
 
-void refreshIndicator()
-{
+void refreshIndicator() {
     std::wostringstream statusString;
+
     statusString << "Ammo: " << ammo << "/" << MAX_AMMO << "; Points: " << points << "/" << targetCnt << "; Time:" << Tm / 100 << "; Level:" << levelNumber + 1 << "/" << levelCnt;
 
-    if (!timer->isStopped() && endLevel == false)
-    {
+    if (!timer->isStopped() && endLevel == false) {
         Tm--;
     }
 
-    if (Tm <= 0 || points == targetCnt)
-        if (endLevel == false)
-            showResult();
+    if ((Tm <= 0 || points == targetCnt) && (endLevel == false)) {
+        showResult();
+    }
 
     indicator->setText(statusString.str().c_str());
 
     float k = (sin(abs(Tm) / 100) / (10 - levelNumber));
 
-    camera->setRotation(irr::core::vector3df(camera->getRotation().X + k,
-        camera->getRotation().Y, camera->getRotation().Z));
+    camera->setRotation(
+        irr::core::vector3df(
+            camera->getRotation().X + k,
+            camera->getRotation().Y,
+            camera->getRotation().Z
+        )
+    );
 
     irr::core::line3d<irr::f32> line;
     line.start = camera->getPosition();
@@ -686,12 +662,12 @@ void refreshIndicator()
 
     irr::scene::ISceneNode* node = 0;
 
-    if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector, intersection, tri, node))
+    if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector, intersection, tri, node)) {
         bill->setPosition(intersection);
+    }
 }
 
-int main()
-{
+int main() {
     init();
 
     createPlayer();
@@ -701,8 +677,7 @@ int main()
 
     gotoMap(0);
 
-    while (device->run())
-    {
+    while (device->run()) {
         driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
 
         smgr->drawAll();
