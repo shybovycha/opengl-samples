@@ -17,16 +17,17 @@ This is a very simple shooting game I made many years ago. It is written in C++ 
 - [x] fix wobbling effect
 - [x] record a video (https://youtu.be/m65z9kvWdYA)
 - [x] fix timer speed
-- [ ] display endgame screen with high scores ¯\_(ツ)_/¯
+- [ ] display endgame screen with high scores ¯\\_(ツ)_/¯
 - [x] import each scene from a scene file rather than DAT files with questionable undocumented format
 - [x] load game settings from a separate file rather than being hard-coded vector population code O_o
 - [ ] add splash screen
 - [x] encapsulate logic in classes
-- [ ] `ResourceManager` is redundant
+- [x] ~~`ResourceManager` is redundant~~
 - [x] clean up the design - `InputHandler` (aka dispatcher) is probably redundant, `GameState` (aka state) should be read-only, maybe extract event / action queue to a separate class
-- [ ] rework the abuse of `std::shared_ptr` and raw pointers (according to https://www.internalpointers.com/post/move-smart-pointers-and-out-functions-modern-c and https://www.modernescpp.com/index.php/c-core-guidelines-passing-smart-pointer )
+- [ ] rework the abuse of `std::shared_ptr` and raw pointers (according to https://www.internalpointers.com/post/move-smart-pointers-and-out-functions-modern-c and https://www.modernescpp.com/index.php/c-core-guidelines-passing-smart-pointer)
 - [ ] two targets on 3rd level are indestructable
 - [x] when the time runs out the next level is not loaded
 - [ ] add end level menu
 - [ ] change 3D models to the artwork
 - [ ] change the default GUI theme
+- [ ] do not use exceptions (https://google.github.io/styleguide/cppguide.html#Exceptions)
