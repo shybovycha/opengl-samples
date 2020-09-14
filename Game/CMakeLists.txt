@@ -16,6 +16,7 @@ set(SOURCE_FILES
     "Sources/ModernResourceManager.h"
     "Sources/IrrlichtRenderer.h"
     "Sources/Application.h"
+    "Sources/QueueAction.h"
     "Sources/Application.cpp"
     "Sources/GameState.cpp"
     "Sources/ActionDispatcher.cpp"
@@ -24,7 +25,8 @@ set(SOURCE_FILES
     "Sources/Level.cpp"
     "Sources/ModernResourceManager.cpp"
     "Sources/PlayerState.cpp"
-    "Sources/Score.cpp")
+    "Sources/Score.cpp"
+    "Sources/QueueAction.cpp")
 set(EXECUTABLE_NAME Game)
 
 if(NOT IRRLICHT_LIBRARY_PATH)

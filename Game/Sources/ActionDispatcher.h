@@ -5,6 +5,7 @@
 
 #include "GameState.h"
 #include "Level.h"
+#include "QueueAction.h"
 
 class ActionDispatcher {
 public:
