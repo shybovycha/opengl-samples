@@ -6,9 +6,9 @@
 #include "GameState.h"
 #include "Level.h"
 
-class InputHandler {
+class ActionDispatcher {
 public:
-    InputHandler(std::shared_ptr<GameState> _gameState);
+    ActionDispatcher(std::shared_ptr<GameState> _gameState);
 
     void shoot(irr::scene::ISceneNode* objectAtCursor);
 

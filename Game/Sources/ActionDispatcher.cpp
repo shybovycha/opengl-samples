@@ -1,8 +1,8 @@
-#include "InputHandler.h"
+#include "ActionDispatcher.h"
 
-InputHandler::InputHandler(std::shared_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
+ActionDispatcher::ActionDispatcher(std::shared_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
 
-void InputHandler::shoot(irr::scene::ISceneNode* objectAtCursor) {
+void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor) {
     if (gameState->getPlayerState()->getCurrentAmmo() <= 0) {
         gameState->enqueue(new PlaySoundAction("Resources/Sounds/noammo.wav"));
         return;
@@ -28,33 +28,33 @@ void InputHandler::shoot(irr::scene::ISceneNode* objectAtCursor) {
     }
 }
 
-void InputHandler::reload() {
+void ActionDispatcher::reload() {
     gameState->getPlayerState()->reload();
     gameState->enqueue(new PlaySoundAction("Resources/Sounds/reload.wav"));
 }
 
-void InputHandler::mainMenu() {
+void ActionDispatcher::mainMenu() {
     // TODO: implement properly
     exit(0);
 }
 
-void InputHandler::targetEliminated() {
+void ActionDispatcher::targetEliminated() {
     gameState->getCurrentScore()->targetEliminated();
 }
 
-void InputHandler::loadNextLevel() {
+void ActionDispatcher::loadNextLevel() {
     gameState->enqueue(new LoadNextLevelAction(gameState->getCurrentLevel(), gameState->getNextLevel()));
 }
 
-void InputHandler::loadFirstLevel() {
+void ActionDispatcher::loadFirstLevel() {
     gameState->enqueue(new LoadFirstLevelAction(gameState->getCurrentLevel()));
 }
 
-void InputHandler::nextLevelLoaded() {
+void ActionDispatcher::nextLevelLoaded() {
     gameState->nextLevelLoaded();
     gameState->getCurrentScore()->resetTargetEliminated();
 }
 
-void InputHandler::levelsLoaded(std::vector<std::shared_ptr<Level>> levels) {
+void ActionDispatcher::levelsLoaded(std::vector<std::shared_ptr<Level>> levels) {
     gameState->setLevels(levels);
 }

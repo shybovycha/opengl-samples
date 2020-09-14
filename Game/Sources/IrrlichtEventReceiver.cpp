@@ -1,6 +1,6 @@
 #include "IrrlichtEventReceiver.h"
 
-IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<InputHandler> _inputHandler, std::shared_ptr<irr::scene::ISceneManager> _sceneManager, std::shared_ptr<irr::scene::ICameraSceneNode> _camera) :
+IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<ActionDispatcher> _inputHandler, std::shared_ptr<irr::scene::ISceneManager> _sceneManager, std::shared_ptr<irr::scene::ICameraSceneNode> _camera) :
     inputHandler(std::move(_inputHandler)),
     sceneManager(std::move(_sceneManager)),
     camera(std::move(_camera))

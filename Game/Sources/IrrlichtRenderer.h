@@ -8,7 +8,7 @@
 #include <irrKlang.h>
 
 #include "GameState.h"
-#include "InputHandler.h"
+#include "ActionDispatcher.h"
 #include "IrrlichtEventReceiver.h"
 #include "Renderer.h"
 #include "Settings.h"
@@ -45,7 +45,7 @@ protected:
 
 private:
     std::shared_ptr<irr::IEventReceiver> eventReceiver;
-    std::shared_ptr<InputHandler> inputHandler;
+    std::shared_ptr<ActionDispatcher> inputHandler;
 
     // TODO: load from level?
     int Tm = MAX_TIME;

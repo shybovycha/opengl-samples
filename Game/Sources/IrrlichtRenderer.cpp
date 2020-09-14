@@ -52,7 +52,7 @@ void IrrlichtRenderer::init(Settings settings) {
     player->setParent(camera.get());
 
     // TODO: should these be initialized here???
-    inputHandler = std::make_shared<InputHandler>(gameState);
+    inputHandler = std::make_shared<ActionDispatcher>(gameState);
     eventReceiver = std::make_shared<IrrlichtEventReceiver>(inputHandler, smgr, camera);
 
     device->setEventReceiver(eventReceiver.get());

@@ -109,7 +109,7 @@ public:
     const std::shared_ptr<Level> getNextLevel() const;
 
 private:
-    friend class InputHandler;
+    friend class ActionDispatcher;
 
     void timeElapsed(unsigned long time);
 

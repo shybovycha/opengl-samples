@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "GameState.h"
-#include "InputHandler.h"
+#include "ActionDispatcher.h"
 #include "ResourceManager.h"
 #include "Renderer.h"
 
@@ -16,6 +16,6 @@ public:
 private:
     std::shared_ptr<GameState> gameState;
     std::shared_ptr<Renderer> renderer;
-    std::shared_ptr<InputHandler> inputHandler;
+    std::shared_ptr<ActionDispatcher> inputHandler;
     std::shared_ptr<ResourceManager> resourceManager;
 };
