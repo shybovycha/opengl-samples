@@ -1,7 +1,7 @@
 #include "IrrlichtEventReceiver.h"
 
-IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<ActionDispatcher> _inputHandler, std::shared_ptr<irr::scene::ISceneManager> _sceneManager, std::shared_ptr<irr::scene::ICameraSceneNode> _camera) :
-    inputHandler(std::move(_inputHandler)),
+IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<ActionDispatcher> _actionDispatcher, std::shared_ptr<irr::scene::ISceneManager> _sceneManager, std::shared_ptr<irr::scene::ICameraSceneNode> _camera) :
+    actionDispatcher(std::move(_actionDispatcher)),
     sceneManager(std::move(_sceneManager)),
     camera(std::move(_camera))
 {}
@@ -11,15 +11,15 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
         if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
             irr::scene::ISceneNode* objectAtCursor = sceneManager->getSceneCollisionManager()->getSceneNodeFromCameraBB(camera.get());
 
-            inputHandler->shoot(objectAtCursor);
+            actionDispatcher->shoot(objectAtCursor);
         }
         else if (event.MouseInput.Event == irr::EMIE_RMOUSE_PRESSED_DOWN) {
-            inputHandler->reload();
+            actionDispatcher->reload();
         }
     }
     else if (event.EventType == irr::EET_KEY_INPUT_EVENT) {
         if (event.KeyInput.Key == irr::KEY_ESCAPE) {
-            inputHandler->mainMenu();
+            actionDispatcher->mainMenu();
         }
     }
 

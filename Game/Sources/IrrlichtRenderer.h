@@ -45,7 +45,7 @@ protected:
 
 private:
     std::shared_ptr<irr::IEventReceiver> eventReceiver;
-    std::shared_ptr<ActionDispatcher> inputHandler;
+    std::shared_ptr<ActionDispatcher> actionDispatcher;
 
     // TODO: load from level?
     int Tm = MAX_TIME;

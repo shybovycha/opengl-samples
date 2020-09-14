@@ -16,6 +16,6 @@ public:
 private:
     std::shared_ptr<GameState> gameState;
     std::shared_ptr<Renderer> renderer;
-    std::shared_ptr<ActionDispatcher> inputHandler;
+    std::shared_ptr<ActionDispatcher> actionDispatcher;
     std::shared_ptr<ResourceManager> resourceManager;
 };

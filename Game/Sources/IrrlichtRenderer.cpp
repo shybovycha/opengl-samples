@@ -52,12 +52,12 @@ void IrrlichtRenderer::init(Settings settings) {
     player->setParent(camera.get());
 
     // TODO: should these be initialized here???
-    inputHandler = std::make_shared<ActionDispatcher>(gameState);
-    eventReceiver = std::make_shared<IrrlichtEventReceiver>(inputHandler, smgr, camera);
+    actionDispatcher = std::make_shared<ActionDispatcher>(gameState);
+    eventReceiver = std::make_shared<IrrlichtEventReceiver>(actionDispatcher, smgr, camera);
 
     device->setEventReceiver(eventReceiver.get());
 
-    inputHandler->loadFirstLevel();
+    actionDispatcher->loadFirstLevel();
 }
 
 void IrrlichtRenderer::processActionQueue() {
@@ -145,16 +145,16 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
     }
 
     action->getNextLevel()->setTargets(targets);
-    inputHandler->nextLevelLoaded();
+    actionDispatcher->nextLevelLoaded();
 }
 
 void IrrlichtRenderer::processAction(TargetEliminatedAction* action) {
     action->getTarget()->setVisible(false);
-    inputHandler->targetEliminated();
+    actionDispatcher->targetEliminated();
 
     if (gameState->getCurrentScore()->getTargetsEliminated() >= gameState->getCurrentLevel()->getTargets().size()) {
         // TODO: show next level menu
-        inputHandler->loadNextLevel();
+        actionDispatcher->loadNextLevel();
     }
 }
 
