@@ -37,6 +37,10 @@ public:
 
     virtual bool isRunning();
 
+    void updateCrosshair();
+
+    void updatePostProcessingEffects();
+
 protected:
     // TODO: this is the endgame screen
     void showResult();

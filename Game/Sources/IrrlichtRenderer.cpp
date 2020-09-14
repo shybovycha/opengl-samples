@@ -88,12 +88,17 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
 
     std::shared_ptr<irr::scene::IAnimatedMeshSceneNode> level(smgr->addAnimatedMeshSceneNode(levelMesh));
 
+    std::wstring levelName = L"level-" + gameState->getCurrentLevelIndex();
+    level->setName(levelName.c_str());
+
     action->getLevel()->setModel(level);
 
     selector = std::shared_ptr<irr::scene::ITriangleSelector>(smgr->createOctTreeTriangleSelector(levelMesh->getMesh(0), level.get(), 128));
 
     irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
     std::vector<std::shared_ptr<irr::scene::ISceneNode>> targets;
+
+    int targetIdx = 0;
 
     for (auto position : action->getLevel()->getTargetPositions()) {
         std::shared_ptr<irr::scene::ISceneNode> target(smgr->addAnimatedMeshSceneNode(targetMesh));
@@ -103,6 +108,13 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
         target->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
         target->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
         target->setPosition(position);
+
+        std::wostringstream targetName;
+        targetName << "target-";
+        targetName << gameState->getCurrentLevelIndex();
+        targetName << "-";
+        targetName << targetIdx++;
+        target->setName(targetName.str().c_str());
 
         targets.push_back(std::move(target));
     }
@@ -124,6 +136,9 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 
     std::shared_ptr<irr::scene::IAnimatedMeshSceneNode> level(smgr->addAnimatedMeshSceneNode(levelMesh));
 
+    std::wstring levelName = L"level-" + gameState->getCurrentLevelIndex();
+    level->setName(levelName.c_str());
+
     action->getNextLevel()->setModel(level);
 
     selector = std::shared_ptr<irr::scene::ITriangleSelector>(smgr->createOctTreeTriangleSelector(levelMesh->getMesh(0), level.get(), 128));
@@ -131,6 +146,8 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
     irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
 
     std::vector<std::shared_ptr<irr::scene::ISceneNode>> targets;
+
+    int targetIdx = 0;
 
     for (auto position : action->getNextLevel()->getTargetPositions()) {
         std::shared_ptr<irr::scene::ISceneNode> target(smgr->addAnimatedMeshSceneNode(targetMesh));
@@ -140,6 +157,13 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
         target->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
         target->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
         target->setPosition(position);
+
+        std::wostringstream targetName;
+        targetName << "target-";
+        targetName << gameState->getCurrentLevelIndex();
+        targetName << "-";
+        targetName << targetIdx++;
+        target->setName(targetName.str().c_str());
 
         targets.push_back(std::move(target));
     }
@@ -166,6 +190,8 @@ void IrrlichtRenderer::render() {
     guienv->drawAll();
 
     updateStatusBar();
+    updateCrosshair();
+    updatePostProcessingEffects();
 
     driver->endScene();
 }
@@ -231,13 +257,36 @@ void IrrlichtRenderer::updateStatusBar() {
         Tm--;
     }
 
-    /*if ((Tm <= 0 || points == targetCnt) && (endLevel == false)) {
-        showResult();
-    }*/
+    if (Tm <= 0 || points == targetCnt) {
+        if (levelIdx + 1 < levelsCnt) {
+            actionDispatcher->loadNextLevel();
+            Tm = MAX_TIME;
+        }
+        else {
+            // TODO: show endgame
+        }
+    }
 
     statusBar->setText(statusString.str().c_str());
+}
 
-    float k = (sin(abs(Tm) / 100) / (10 - gameState->getCurrentLevelIndex()));
+void IrrlichtRenderer::updateCrosshair() {
+    irr::core::line3d<irr::f32> line;
+    line.start = camera->getPosition() + (camera->getTarget() - camera->getPosition()).normalize() * 100.f;
+    line.end = line.start + (camera->getTarget() - camera->getPosition()).normalize() * 10000.0f;
+
+    irr::core::triangle3df collisionTriangle;
+    irr::core::vector3df collisionPoint;
+    irr::scene::ISceneNode* node = 0;
+
+    if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector.get(), collisionPoint, collisionTriangle, node)) {
+        bill->setPosition(collisionPoint);
+    }
+}
+
+void IrrlichtRenderer::updatePostProcessingEffects() {
+    int levelIdx = gameState->getCurrentLevelIndex();
+    float k = (sin(abs(Tm) / 100) / (10 - levelIdx));
 
     camera->setRotation(
         irr::core::vector3df(
@@ -246,17 +295,4 @@ void IrrlichtRenderer::updateStatusBar() {
             camera->getRotation().Z
         )
     );
-
-    irr::core::line3d<irr::f32> line;
-    line.start = camera->getPosition();
-    line.end = line.start + (camera->getTarget() - line.start).normalize() * 10000.0f;
-
-    irr::core::vector3df intersection;
-    irr::core::triangle3df tri;
-
-    irr::scene::ISceneNode* node = 0;
-
-    if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector.get(), intersection, tri, node)) {
-        bill->setPosition(intersection);
-    }
 }

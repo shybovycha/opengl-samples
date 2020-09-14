@@ -9,7 +9,8 @@ IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<ActionDispatcher> _
 bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
     if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
         if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
-            irr::scene::ISceneNode* objectAtCursor = sceneManager->getSceneCollisionManager()->getSceneNodeFromCameraBB(camera.get());
+            irr::core::line3df ray(camera->getAbsolutePosition(), (camera->getTarget() - camera->getAbsolutePosition()) * 10000.0f);
+            irr::scene::ISceneNode* objectAtCursor = sceneManager->getSceneCollisionManager()->getSceneNodeFromRayBB(ray); // getSceneNodeFromCameraBB(camera.get());
 
             actionDispatcher->shoot(objectAtCursor);
         }
