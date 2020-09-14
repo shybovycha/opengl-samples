@@ -57,14 +57,11 @@ void IrrlichtRenderer::init(Settings settings) {
 
     device->setEventReceiver(eventReceiver.get());
 
-    // TODO: maybe have some style?
-    gameState->enqueue(new LoadFirstLevelAction(gameState->getCurrentLevel()));
+    inputHandler->loadFirstLevel();
 }
 
 void IrrlichtRenderer::processActionQueue() {
-    while (gameState->hasActions()) {
-        auto action = gameState->nextAction();
-
+    while (auto action = gameState->nextAction()) {
         switch (action->getType()) {
         case QueueActionType::LOAD_FIRST_LEVEL:
             processAction(reinterpret_cast<LoadFirstLevelAction*>(action));
@@ -148,17 +145,16 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
     }
 
     action->getNextLevel()->setTargets(targets);
-    gameState->nextLevelLoaded();
-    gameState->getCurrentScore()->resetTargetEliminated();
+    inputHandler->nextLevelLoaded();
 }
 
 void IrrlichtRenderer::processAction(TargetEliminatedAction* action) {
     action->getTarget()->setVisible(false);
-    gameState->getCurrentScore()->targetEliminated();
+    inputHandler->targetEliminated();
 
     if (gameState->getCurrentScore()->getTargetsEliminated() >= gameState->getCurrentLevel()->getTargets().size()) {
         // TODO: show next level menu
-        gameState->enqueue(new LoadNextLevelAction(gameState->getCurrentLevel(), gameState->getNextLevel()));
+        inputHandler->loadNextLevel();
     }
 }
 

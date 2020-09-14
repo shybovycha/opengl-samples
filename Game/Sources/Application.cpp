@@ -8,7 +8,7 @@ Application::Application(std::shared_ptr<Renderer> _renderer, std::shared_ptr<Ga
 {}
 
 void Application::run() {
-    gameState->setLevels(resourceManager->loadLevels());
+    inputHandler->levelsLoaded(resourceManager->loadLevels());
 
     renderer->init(resourceManager->loadSettings());
 

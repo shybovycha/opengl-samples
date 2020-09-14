@@ -11,15 +11,15 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
         if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
             irr::scene::ISceneNode* objectAtCursor = sceneManager->getSceneCollisionManager()->getSceneNodeFromCameraBB(camera.get());
 
-            inputHandler->shootAction(objectAtCursor);
+            inputHandler->shoot(objectAtCursor);
         }
         else if (event.MouseInput.Event == irr::EMIE_RMOUSE_PRESSED_DOWN) {
-            inputHandler->reloadAction();
+            inputHandler->reload();
         }
     }
     else if (event.EventType == irr::EET_KEY_INPUT_EVENT) {
         if (event.KeyInput.Key == irr::KEY_ESCAPE) {
-            inputHandler->mainMenuAction();
+            inputHandler->mainMenu();
         }
     }
 

@@ -1,18 +1,30 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "GameState.h"
+#include "Level.h"
 
 class InputHandler {
 public:
     InputHandler(std::shared_ptr<GameState> _gameState);
 
-    void shootAction(irr::scene::ISceneNode* objectAtCursor);
+    void shoot(irr::scene::ISceneNode* objectAtCursor);
 
-    void reloadAction();
+    void reload();
 
-    void mainMenuAction();
+    void mainMenu();
+
+    void targetEliminated();
+
+    void loadNextLevel();
+
+    void loadFirstLevel();
+
+    void nextLevelLoaded();
+
+    void levelsLoaded(std::vector<std::shared_ptr<Level>> levels);
 
 private:
     std::shared_ptr<GameState> gameState;
