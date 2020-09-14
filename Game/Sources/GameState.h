@@ -90,8 +90,6 @@ class GameState {
 public:
     GameState();
 
-    void timeElapsed(unsigned long time);
-
     const std::shared_ptr<Score> getCurrentScore() const;
 
     const E_GAME_STATE getCurrentState() const;
@@ -104,20 +102,23 @@ public:
 
     const int getLevelsCnt() const;
 
-    void nextLevelLoaded();
-
-    void enqueue(QueueAction* action);
-
     const bool hasActions() const;
 
     QueueAction* nextAction();
 
-    void setLevels(std::vector<std::shared_ptr<Level>> _levels);
-
-
     const std::shared_ptr<Level> getNextLevel() const;
 
 private:
+    friend class InputHandler;
+
+    void timeElapsed(unsigned long time);
+
+    void setLevels(std::vector<std::shared_ptr<Level>> _levels);
+
+    void nextLevelLoaded();
+
+    void enqueue(QueueAction* action);
+
     E_GAME_STATE currentState;
 
     std::shared_ptr<Score> currentScore;
