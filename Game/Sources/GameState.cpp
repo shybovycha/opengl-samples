@@ -82,6 +82,10 @@ const bool GameState::hasActions() const {
 }
 
 QueueAction* GameState::nextAction() {
+    if (actionQueue.size() < 1) {
+        return nullptr;
+    }
+
     auto action = actionQueue.front();
     actionQueue.pop();
     return action;
