@@ -6,7 +6,7 @@
 
 #include "Level.h"
 
-enum class E_GAME_STATE {
+enum class GameStateType {
     MAIN_MENU,
     PLAYING,
     END_LEVEL,

@@ -221,21 +221,21 @@ void IrrlichtRenderer::render() {
 
     driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
 
-    if (gameState->getCurrentState() == E_GAME_STATE::MAIN_MENU) {
+    if (gameState->getCurrentState() == GameStateType::MAIN_MENU) {
         device->getCursorControl()->setVisible(true);
         renderMainMenu();
     }
-    else if (gameState->getCurrentState() == E_GAME_STATE::PLAYING) {
+    else if (gameState->getCurrentState() == GameStateType::PLAYING) {
         smgr->drawAll();
 
         updateStatusBar();
         updateCrosshair();
         updatePostProcessingEffects();
     }
-    else if (gameState->getCurrentState() == E_GAME_STATE::END_GAME) {
+    else if (gameState->getCurrentState() == GameStateType::END_GAME) {
         renderEndGameMenu();
     }
-    else if (gameState->getCurrentState() == E_GAME_STATE::END_LEVEL) {
+    else if (gameState->getCurrentState() == GameStateType::END_LEVEL) {
         renderEndLevelMenu();
     }
 

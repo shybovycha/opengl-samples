@@ -8,7 +8,7 @@ IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<GameState> _gameSta
 {}
 
 bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
-    if (gameState->getCurrentState() == E_GAME_STATE::PLAYING) {
+    if (gameState->getCurrentState() == GameStateType::PLAYING) {
         if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
             if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
                 irr::core::line3df ray(camera->getAbsolutePosition(), (camera->getTarget() - camera->getAbsolutePosition()) * 10000.0f);

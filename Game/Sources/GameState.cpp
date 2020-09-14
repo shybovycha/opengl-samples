@@ -1,6 +1,6 @@
 #include "GameState.h"
 
-GameState::GameState() : currentState(E_GAME_STATE::MAIN_MENU), currentScore(std::make_shared<Score>()), playerState(std::make_shared<PlayerState>()), currentLevel(0) {}
+GameState::GameState() : currentState(GameStateType::MAIN_MENU), currentScore(std::make_shared<Score>()), playerState(std::make_shared<PlayerState>()), currentLevel(0) {}
 
 void GameState::timeElapsed(unsigned long time) {
     currentScore->timeUsed(time);
@@ -10,7 +10,7 @@ const std::shared_ptr<Score> GameState::getCurrentScore() const {
     return currentScore;
 }
 
-const E_GAME_STATE GameState::getCurrentState() const {
+const GameStateType GameState::getCurrentState() const {
     return currentState;
 }
 
@@ -47,7 +47,7 @@ const bool GameState::hasActions() const {
     return actionQueue.size() > 0;
 }
 
-void GameState::setCurrentState(E_GAME_STATE _state) {
+void GameState::setCurrentState(GameStateType _state) {
     currentState = _state;
 }
 

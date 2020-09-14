@@ -16,7 +16,7 @@ public:
 
     const std::shared_ptr<Score> getCurrentScore() const;
 
-    const E_GAME_STATE getCurrentState() const;
+    const GameStateType getCurrentState() const;
 
     const std::shared_ptr<Level> getCurrentLevel() const;
 
@@ -43,9 +43,9 @@ private:
 
     void enqueue(QueueAction* action);
 
-    void setCurrentState(E_GAME_STATE _state);
+    void setCurrentState(GameStateType _state);
 
-    E_GAME_STATE currentState;
+    GameStateType currentState;
 
     std::shared_ptr<Score> currentScore;
     std::shared_ptr<PlayerState> playerState;

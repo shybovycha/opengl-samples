@@ -34,12 +34,12 @@ void ActionDispatcher::reload() {
 }
 
 void ActionDispatcher::mainMenu() {
-    gameState->setCurrentState(E_GAME_STATE::MAIN_MENU);
+    gameState->setCurrentState(GameStateType::MAIN_MENU);
     gameState->enqueue(new MainMenuAction());
 }
 
 void ActionDispatcher::hideMainMenu() {
-    gameState->setCurrentState(E_GAME_STATE::PLAYING);
+    gameState->setCurrentState(GameStateType::PLAYING);
     gameState->enqueue(new HideMainMenuAction());
 }
 
@@ -56,7 +56,7 @@ void ActionDispatcher::loadFirstLevel() {
 }
 
 void ActionDispatcher::firstLevelLoaded() {
-    gameState->setCurrentState(E_GAME_STATE::PLAYING);
+    gameState->setCurrentState(GameStateType::PLAYING);
 }
 
 void ActionDispatcher::nextLevelLoaded() {
