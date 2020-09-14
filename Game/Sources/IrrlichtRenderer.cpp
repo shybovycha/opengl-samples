@@ -1,6 +1,6 @@
 #include "IrrlichtRenderer.h"
 
-IrrlichtRenderer::IrrlichtRenderer(std::shared_ptr<GameState> _gameState) : Renderer(std::move(_gameState)) {}
+IrrlichtRenderer::IrrlichtRenderer(std::shared_ptr<GameState> _gameState, std::shared_ptr<ActionDispatcher> _actionDispatcher) : Renderer(std::move(_gameState)), actionDispatcher(_actionDispatcher) {}
 
 void IrrlichtRenderer::init(Settings settings) {
     irr::video::E_DRIVER_TYPE driverType = irr::video::EDT_OPENGL;
@@ -31,7 +31,7 @@ void IrrlichtRenderer::init(Settings settings) {
     bill->setSize(irr::core::dimension2d<irr::f32>(20.0f, 20.0f));
 
     // TODO: move this to scene config too
-    smgr->addLightSceneNode(0, irr::core::vector3df(0, 20, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
+    smgr->addLightSceneNode(nullptr, irr::core::vector3df(0, 20, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
 
     // driver->setFog(irr::video::SColor(0, 138, 125, 81), irr::video::EFT_FOG_LINEAR, 250, 1000, 0, true);
 
@@ -51,8 +51,7 @@ void IrrlichtRenderer::init(Settings settings) {
 
     player->setParent(camera.get());
 
-    // TODO: should these be initialized here???
-    actionDispatcher = std::make_shared<ActionDispatcher>(gameState);
+    // sorry, no better place for this instantiation than here, since this event receiver **has** to be bound to both camera node and scene manager
     eventReceiver = std::make_shared<IrrlichtEventReceiver>(gameState, actionDispatcher, smgr, camera);
 
     device->setEventReceiver(eventReceiver.get());

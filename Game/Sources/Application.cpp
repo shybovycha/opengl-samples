@@ -1,9 +1,9 @@
 #include "Application.h"
 
-Application::Application(std::shared_ptr<Renderer> _renderer, std::shared_ptr<GameState> _gameState, std::shared_ptr<ResourceManager> _resourceManager) :
+Application::Application(std::shared_ptr<Renderer> _renderer, std::shared_ptr<GameState> _gameState, std::shared_ptr<ResourceManager> _resourceManager, std::shared_ptr<ActionDispatcher> _actionDispatcher) :
     renderer(std::move(_renderer)),
     gameState(std::move(_gameState)),
-    actionDispatcher(std::make_shared<ActionDispatcher>(gameState)),
+    actionDispatcher(std::move(_actionDispatcher)),
     resourceManager(std::move(_resourceManager))
 {}
 

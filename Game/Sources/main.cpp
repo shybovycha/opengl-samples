@@ -1,3 +1,4 @@
+#include "ActionDispatcher.h"
 #include "Application.h"
 #include "GameState.h"
 #include "IrrlichtRenderer.h"
@@ -26,9 +27,10 @@
 int main() {
     std::shared_ptr<ResourceManager> resourceManager = std::make_shared<ModernResourceManager>();
     std::shared_ptr<GameState> gameState = std::make_shared<GameState>();
-    std::shared_ptr<Renderer> renderer = std::make_shared<IrrlichtRenderer>(gameState);
+    std::shared_ptr<ActionDispatcher> actionDispatcher = std::make_shared<ActionDispatcher>(gameState);
+    std::shared_ptr<Renderer> renderer = std::make_shared<IrrlichtRenderer>(gameState, actionDispatcher);
 
-    std::shared_ptr<Application> application = std::make_shared<Application>(renderer, gameState, resourceManager);
+    std::shared_ptr<Application> application = std::make_shared<Application>(renderer, gameState, resourceManager, actionDispatcher);
 
     application->run();
 
