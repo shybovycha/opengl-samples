@@ -23,6 +23,7 @@ This is a very simple shooting game I made many years ago. It is written in C++ 
 - [ ] add splash screen
 - [x] encapsulate logic in classes
 - [ ] `ResourceManager` is redundant
-- [ ] clean up the design - `InputHandler` (aka dispatcher) is probably redundant, `GameState` (aka state) should be read-only, maybe extract event / action queue to a separate class
+- [x] clean up the design - `InputHandler` (aka dispatcher) is probably redundant, `GameState` (aka state) should be read-only, maybe extract event / action queue to a separate class
 - [ ] rework the abuse of `std::shared_ptr` and raw pointers (according to https://www.internalpointers.com/post/move-smart-pointers-and-out-functions-modern-c and https://www.modernescpp.com/index.php/c-core-guidelines-passing-smart-pointer )
 - [ ] two targets on 3rd level are indestructable
+- [ ] when the time runs out the next level is not loaded
