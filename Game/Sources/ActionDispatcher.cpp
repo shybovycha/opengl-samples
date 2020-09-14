@@ -34,8 +34,13 @@ void ActionDispatcher::reload() {
 }
 
 void ActionDispatcher::mainMenu() {
-    // TODO: implement properly
-    exit(0);
+    gameState->setCurrentState(E_GAME_STATE::MAIN_MENU);
+    gameState->enqueue(new MainMenuAction());
+}
+
+void ActionDispatcher::hideMainMenu() {
+    gameState->setCurrentState(E_GAME_STATE::PLAYING);
+    gameState->enqueue(new HideMainMenuAction());
 }
 
 void ActionDispatcher::targetEliminated() {
@@ -50,6 +55,10 @@ void ActionDispatcher::loadFirstLevel() {
     gameState->enqueue(new LoadFirstLevelAction(gameState->getCurrentLevel()));
 }
 
+void ActionDispatcher::firstLevelLoaded() {
+    gameState->setCurrentState(E_GAME_STATE::PLAYING);
+}
+
 void ActionDispatcher::nextLevelLoaded() {
     gameState->nextLevelLoaded();
     gameState->getCurrentScore()->resetTargetEliminated();
@@ -57,4 +66,12 @@ void ActionDispatcher::nextLevelLoaded() {
 
 void ActionDispatcher::levelsLoaded(std::vector<std::shared_ptr<Level>> levels) {
     gameState->setLevels(levels);
+}
+
+void ActionDispatcher::startNewGame() {
+    gameState->enqueue(new StartNewGameAction());
+}
+
+void ActionDispatcher::quit() {
+    gameState->enqueue(new QuitAction());
 }

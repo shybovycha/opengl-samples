@@ -34,6 +34,14 @@ const std::shared_ptr<irr::scene::ISceneNode> TargetEliminatedAction::getTarget(
     return target;
 }
 
+StartNewGameAction::StartNewGameAction() : QueueAction(QueueActionType::START_NEW_GAME) {}
+
+QuitAction::QuitAction() : QueueAction(QueueActionType::QUIT) {}
+
+MainMenuAction::MainMenuAction() : QueueAction(QueueActionType::MAIN_MENU) {}
+
+HideMainMenuAction::HideMainMenuAction() : QueueAction(QueueActionType::HIDE_MAIN_MENU) {}
+
 GameState::GameState() : currentState(E_GAME_STATE::MAIN_MENU), currentScore(std::make_shared<Score>()), playerState(std::make_shared<PlayerState>()), currentLevel(0) {}
 
 void GameState::timeElapsed(unsigned long time) {
@@ -79,6 +87,10 @@ void GameState::enqueue(QueueAction* action) {
 
 const bool GameState::hasActions() const {
     return actionQueue.size() > 0;
+}
+
+void GameState::setCurrentState(E_GAME_STATE _state) {
+    currentState = _state;
 }
 
 QueueAction* GameState::nextAction() {

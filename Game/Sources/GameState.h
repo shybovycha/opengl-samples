@@ -26,10 +26,14 @@ enum class E_GAME_STATE {
 * Also, I want to keep all the engine-specific logic in one place.
 */
 enum class QueueActionType {
-    PLAY_SOUND,
+    HIDE_MAIN_MENU,
     LOAD_FIRST_LEVEL,
     LOAD_NEXT_LEVEL,
-    TARGET_ELIMINATED,
+    MAIN_MENU,
+    PLAY_SOUND,
+    QUIT,
+    START_NEW_GAME,
+    TARGET_ELIMINATED
 };
 
 class QueueAction {
@@ -86,6 +90,26 @@ private:
     std::shared_ptr<irr::scene::ISceneNode> target;
 };
 
+class StartNewGameAction : public QueueAction {
+public:
+    StartNewGameAction();
+};
+
+class QuitAction : public QueueAction {
+public:
+    QuitAction();
+};
+
+class MainMenuAction : public QueueAction {
+public:
+    MainMenuAction();
+};
+
+class HideMainMenuAction : public QueueAction {
+public:
+    HideMainMenuAction();
+};
+
 class GameState {
 public:
     GameState();
@@ -118,6 +142,8 @@ private:
     void nextLevelLoaded();
 
     void enqueue(QueueAction* action);
+
+    void setCurrentState(E_GAME_STATE _state);
 
     E_GAME_STATE currentState;
 

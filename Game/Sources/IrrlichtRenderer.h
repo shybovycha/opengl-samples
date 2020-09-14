@@ -31,6 +31,14 @@ public:
 
     void processAction(TargetEliminatedAction* action);
 
+    void processAction(StartNewGameAction* action);
+
+    void processAction(MainMenuAction* action);
+
+    void processAction(HideMainMenuAction* action);
+
+    void processAction(QuitAction* action);
+
     virtual void render();
 
     virtual void shutdown();
@@ -40,6 +48,12 @@ public:
     void updateCrosshair();
 
     void updatePostProcessingEffects();
+
+    void renderMainMenu();
+
+    void renderEndGameMenu();
+
+    void renderEndLevelMenu();
 
 protected:
     // TODO: this is the endgame screen
@@ -58,6 +72,7 @@ private:
     irr::ITimer* timer = 0;
     irr::gui::IGUIWindow* msgbox = 0;
     irr::gui::IGUIListBox* hiscoreTable = 0;
+    irr::gui::IGUIWindow* mainMenuWindow = 0;
 
     std::shared_ptr<irr::IrrlichtDevice> device;
     std::shared_ptr<irr::video::IVideoDriver> driver;

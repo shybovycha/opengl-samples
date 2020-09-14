@@ -53,11 +53,9 @@ void IrrlichtRenderer::init(Settings settings) {
 
     // TODO: should these be initialized here???
     actionDispatcher = std::make_shared<ActionDispatcher>(gameState);
-    eventReceiver = std::make_shared<IrrlichtEventReceiver>(actionDispatcher, smgr, camera);
+    eventReceiver = std::make_shared<IrrlichtEventReceiver>(gameState, actionDispatcher, smgr, camera);
 
     device->setEventReceiver(eventReceiver.get());
-
-    actionDispatcher->loadFirstLevel();
 }
 
 void IrrlichtRenderer::processActionQueue() {
@@ -74,6 +72,18 @@ void IrrlichtRenderer::processActionQueue() {
             break;
         case QueueActionType::TARGET_ELIMINATED:
             processAction(reinterpret_cast<TargetEliminatedAction*>(action));
+            break;
+        case QueueActionType::START_NEW_GAME:
+            processAction(reinterpret_cast<StartNewGameAction*>(action));
+            break;
+        case QueueActionType::QUIT:
+            processAction(reinterpret_cast<QuitAction*>(action));
+            break;
+        case QueueActionType::MAIN_MENU:
+            processAction(reinterpret_cast<MainMenuAction*>(action));
+            break;
+        case QueueActionType::HIDE_MAIN_MENU:
+            processAction(reinterpret_cast<HideMainMenuAction*>(action));
             break;
         }
     }
@@ -120,6 +130,7 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
     }
 
     action->getLevel()->setTargets(targets);
+    actionDispatcher->firstLevelLoaded();
 }
 
 void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
@@ -182,29 +193,110 @@ void IrrlichtRenderer::processAction(TargetEliminatedAction* action) {
     }
 }
 
+void IrrlichtRenderer::processAction(StartNewGameAction* action) {
+    actionDispatcher->loadFirstLevel();
+    device->getCursorControl()->setVisible(false);
+    mainMenuWindow->setVisible(false);
+}
+
+void IrrlichtRenderer::processAction(MainMenuAction* action) {
+    mainMenuWindow->setVisible(true);
+    mainMenuWindow->getElementFromId(CONTINUE_BUTTON_ID)->setEnabled(true);
+    device->getCursorControl()->setVisible(true);
+}
+
+void IrrlichtRenderer::processAction(QuitAction* action) {
+    device->closeDevice();
+}
+
+void IrrlichtRenderer::processAction(HideMainMenuAction* action) {
+    device->getCursorControl()->setVisible(false);
+    mainMenuWindow->setVisible(false);
+}
+
 void IrrlichtRenderer::render() {
-    // TODO: here should the menu logic be
+    if (!device->isWindowActive()) {
+        return;
+    }
+
     driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
 
-    smgr->drawAll();
-    guienv->drawAll();
+    if (gameState->getCurrentState() == E_GAME_STATE::MAIN_MENU) {
+        device->getCursorControl()->setVisible(true);
+        renderMainMenu();
+    }
+    else if (gameState->getCurrentState() == E_GAME_STATE::PLAYING) {
+        smgr->drawAll();
 
-    updateStatusBar();
-    updateCrosshair();
-    updatePostProcessingEffects();
+        updateStatusBar();
+        updateCrosshair();
+        updatePostProcessingEffects();
+    }
+    else if (gameState->getCurrentState() == E_GAME_STATE::END_GAME) {
+        renderEndGameMenu();
+    }
+    else if (gameState->getCurrentState() == E_GAME_STATE::END_LEVEL) {
+        renderEndLevelMenu();
+    }
+
+    guienv->drawAll();
 
     driver->endScene();
 }
 
+void IrrlichtRenderer::renderMainMenu() {
+    if (mainMenuWindow) {
+        return;
+    }
+
+    mainMenuWindow = guienv->addWindow(
+        irr::core::rect<irr::s32>(100, 100, 300, 300),
+        false,
+        L"Main menu"
+    );
+
+    guienv->addButton(
+        irr::core::rect<irr::s32>(35, 35, 100, 60),
+        mainMenuWindow,
+        NEW_GAME_BUTTON_ID,
+        L"New game"
+    );
+
+    irr::gui::IGUIButton* continueButton = guienv->addButton(
+        irr::core::rect<irr::s32>(35, 70, 100, 95),
+        mainMenuWindow,
+        CONTINUE_BUTTON_ID,
+        L"Back to the game"
+    );
+
+    continueButton->setEnabled(false);
+
+    guienv->addButton(
+        irr::core::rect<irr::s32>(35, 105, 100, 130),
+        mainMenuWindow,
+        QUIT_BUTTON_ID,
+        L"Quit"
+    );
+}
+
+void IrrlichtRenderer::renderEndGameMenu() {
+    // TODO: implement
+}
+
+void IrrlichtRenderer::renderEndLevelMenu() {
+    // TODO: implement
+}
+
 void IrrlichtRenderer::shutdown() {
+    smgr->drop();
+    guienv->drop();
     device->drop();
-    soundEngine->drop();
+    // soundEngine->drop();
 
     timer->stop();
 }
 
 bool IrrlichtRenderer::isRunning() {
-    // TODO: add (main menu) state checks
     return device->run();
 }
 
