@@ -2,8 +2,53 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 project(shoot-them VERSION 1.0.1 LANGUAGES CXX)
 
-set(IRRLICHT_PATH ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.3)
-set(IRRKLANG_PATH ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrKlang-1.5.0)
+include(ExternalProject)
+
+if (APPLE)
+    set(MAKE_COMMAND make)
+    # find_program(MAKE_COMMAND NAMES gmake nmake make)
+endif()
+
+if (UNIX)
+    set(MAKE_COMMAND make)
+    # find_program(MAKE_COMMAND NAMES gmake nmake make)
+endif()
+
+if(WIN32)
+    set(MAKE_COMMAND "")
+endif()
+
+ExternalProject_Add(irrlicht-dep
+    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.3.zip
+    PREFIX Dependencies/irrlicht
+    SOURCE_SUBDIR source/Irrlicht
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND "${MAKE_COMMAND}"
+    INSTALL_COMMAND ""
+)
+
+ExternalProject_Get_Property(irrlicht-dep SOURCE_DIR)
+set(IRRLICHT_PATH ${SOURCE_DIR})
+
+ExternalProject_Add(irrklang-dep
+    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrKlang-64bit-1.5.0.zip
+    PREFIX Dependencies/irrklang
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+)
+
+ExternalProject_Get_Property(irrklang-dep SOURCE_DIR)
+set(IRRKLANG_PATH ${SOURCE_DIR})
+
+ExternalProject_Add(tinyxml2-dep
+    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/tinyxml2-master.zip
+    PREFIX Dependencies/tinyxml2
+    INSTALL_COMMAND ""
+)
+
+ExternalProject_Get_Property(tinyxml2-dep SOURCE_DIR)
+set(TINYXML2_PATH ${SOURCE_DIR})
 
 if(CMAKE_GENERATOR_PLATFORM EQUAL Win32)
     message("32 bit platform detected")
@@ -38,12 +83,16 @@ if(NOT IRRLICHT_LIBRARY_PATH)
         endif()
     endif()
 
-    find_library(IRRLICHT_LIBRARY_PATH
-            Irrlicht
-            PATHS ${IRRLICHT_PATH}/lib/
-            PATH_SUFFIXES ${IRRLICHT_PATH_SUFFIX})
+    add_library(irrlicht SHARED IMPORTED GLOBAL)
 
-    message("Found Irrlicht: ${IRRLICHT_LIBRARY_PATH}")
+    set_target_properties(
+        irrlicht PROPERTIES
+        IMPORTED_LOCATION ${IRRLICHT_PATH}/lib/${IRRLICHT_PATH_SUFFIX}/Irrlicht${CMAKE_LINK_LIBRARY_SUFFIX}
+        IMPORTED_IMPLIB ${IRRLICHT_PATH}/lib/${IRRLICHT_PATH_SUFFIX}/Irrlicht${CMAKE_IMPORT_LIBRARY_SUFFIX}
+        INTERFACE_INCLUDE_DIRECTORIES ${IRRLICHT_PATH}/include
+    )
+
+    message(">>> IRRLICHT INCLUDE DIRS ${IRRLICHT_PATH}/include")
 endif()
 
 if(NOT IRRKLANG_LIBRARY_PATH)
@@ -57,17 +106,19 @@ if(NOT IRRKLANG_LIBRARY_PATH)
 
     if(WIN32)
         if(MSVC)
-            set(IRRKLANG_PATH_SUFFIX Winx64-visualStudio dotnet-4)
+            set(IRRKLANG_PATH_SUFFIX Winx64-visualStudio)
         endif()
     endif()
 
-    find_library(IRRKLANG_LIBRARY_PATH
-            irrKlang
-            PATHS ${IRRKLANG_PATH}/lib/
-            PATH_SUFFIXES ${IRRKLANG_PATH_SUFFIX})
+    add_library(irrklang SHARED IMPORTED GLOBAL)
 
-    message("Found IrrKlang: ${IRRKLANG_LIBRARY_PATH}")
+    set_target_properties(
+        irrklang PROPERTIES
+        IMPORTED_LOCATION ${IRRKLANG_PATH}/lib/${IRRKLANG_PATH_SUFFIX}/irrKlang${CMAKE_LINK_LIBRARY_SUFFIX}
+        IMPORTED_IMPLIB ${IRRKLANG_PATH}/lib/${IRRKLANG_PATH_SUFFIX}/irrKlang${CMAKE_IMPORT_LIBRARY_SUFFIX}
+        INTERFACE_INCLUDE_DIRECTORIES ${IRRKLANG_PATH}/include
+    )
 endif()
 
-add_subdirectory(Dependencies/tinyxml2)
+add_subdirectory(${TINYXML2_PATH})
 add_subdirectory(Game)

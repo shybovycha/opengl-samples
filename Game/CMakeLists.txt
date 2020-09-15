@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 project(Game VERSION 1.0.1 LANGUAGES CXX)
 
-set(SOURCE_FILES 
+set(SOURCES
     "Sources/main.cpp" 
     "Sources/Settings.h" 
     "Sources/Level.h"
@@ -27,19 +27,10 @@ set(SOURCE_FILES
     "Sources/PlayerState.cpp"
     "Sources/Score.cpp"
     "Sources/QueueAction.cpp")
+
 set(EXECUTABLE_NAME Game)
 
-if(NOT IRRLICHT_LIBRARY_PATH)
-    message("[ERROR]" "Found Irrlicht: ${IRRLICHT_LIBRARY_PATH}")
-endif()
-
-if(NOT IRRKLANG_LIBRARY_PATH)
-    message("[ERROR]" "Found IrrKlang: ${IRRKLANG_LIBRARY_PATH}")
-endif()
-
 set(LIBRARIES
-        ${IRRLICHT_LIBRARY_PATH}
-        ${IRRKLANG_LIBRARY_PATH}
         ${X11_LIBRARIES}
         ${OPENGL_LIBRARIES}
         ${ZLIB_LIBRARIES})
@@ -62,10 +53,12 @@ if(APPLE)
 
     add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCE_FILES} ${RESOURCE_FILES})
 else()
-    add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
+    add_executable(${EXECUTABLE_NAME})
 
-    file(COPY Resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-    file(COPY Data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    target_sources(${EXECUTABLE_NAME} PRIVATE ${SOURCES})
+
+    # file(COPY Resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    # file(COPY Data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 set_target_properties(${EXECUTABLE_NAME} PROPERTIES
@@ -74,13 +67,6 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
     CXX_EXTENSIONS ON
 )
 
-set(LIBRARIES ${LIBRARIES} tinyxml2)
+add_dependencies(${EXECUTABLE_NAME} tinyxml2 irrlicht irrklang)
 
-message("Found Irrlicht headers at: ${IRRLICHT_PATH}/include")
-message("Found IrrKlang headers at: ${IRRKLANG_PATH}/include")
-message("Linking libraries: ${LIBRARIES}")
-
-target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRLICHT_PATH}/include)
-target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRKLANG_PATH}/include)
-
-target_link_libraries(${EXECUTABLE_NAME} ${LIBRARIES})
+target_link_libraries(${EXECUTABLE_NAME} PUBLIC ${LIBRARIES} tinyxml2 irrlicht irrklang)
