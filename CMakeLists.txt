@@ -18,38 +18,6 @@ if(WIN32)
     set(MAKE_COMMAND "")
 endif()
 
-ExternalProject_Add(irrlicht-dep
-    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.3.zip
-    PREFIX Dependencies/irrlicht
-    SOURCE_SUBDIR source/Irrlicht
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND "${MAKE_COMMAND}"
-    INSTALL_COMMAND ""
-)
-
-ExternalProject_Get_Property(irrlicht-dep SOURCE_DIR)
-set(IRRLICHT_PATH ${SOURCE_DIR})
-
-ExternalProject_Add(irrklang-dep
-    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrKlang-64bit-1.5.0.zip
-    PREFIX Dependencies/irrklang
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-)
-
-ExternalProject_Get_Property(irrklang-dep SOURCE_DIR)
-set(IRRKLANG_PATH ${SOURCE_DIR})
-
-ExternalProject_Add(tinyxml2-dep
-    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/tinyxml2-master.zip
-    PREFIX Dependencies/tinyxml2
-    INSTALL_COMMAND ""
-)
-
-ExternalProject_Get_Property(tinyxml2-dep SOURCE_DIR)
-set(TINYXML2_PATH ${SOURCE_DIR})
-
 if(CMAKE_GENERATOR_PLATFORM EQUAL Win32)
     message("32 bit platform detected")
     set(EX_PLATFORM 32)
@@ -83,6 +51,18 @@ if(NOT IRRLICHT_LIBRARY_PATH)
         endif()
     endif()
 
+    ExternalProject_Add(irrlicht-dep
+        URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.3.zip
+        PREFIX Dependencies/irrlicht
+        SOURCE_SUBDIR source/Irrlicht
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND "${MAKE_COMMAND}"
+        INSTALL_COMMAND ""
+    )
+
+    ExternalProject_Get_Property(irrlicht-dep SOURCE_DIR)
+    set(IRRLICHT_PATH ${SOURCE_DIR})
+
     add_library(irrlicht SHARED IMPORTED GLOBAL)
 
     set_target_properties(
@@ -91,8 +71,6 @@ if(NOT IRRLICHT_LIBRARY_PATH)
         IMPORTED_IMPLIB ${IRRLICHT_PATH}/lib/${IRRLICHT_PATH_SUFFIX}/Irrlicht${CMAKE_IMPORT_LIBRARY_SUFFIX}
         INTERFACE_INCLUDE_DIRECTORIES ${IRRLICHT_PATH}/include
     )
-
-    message(">>> IRRLICHT INCLUDE DIRS ${IRRLICHT_PATH}/include")
 endif()
 
 if(NOT IRRKLANG_LIBRARY_PATH)
@@ -110,6 +88,17 @@ if(NOT IRRKLANG_LIBRARY_PATH)
         endif()
     endif()
 
+    ExternalProject_Add(irrklang-dep
+        URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrKlang-64bit-1.5.0.zip
+        PREFIX Dependencies/irrklang
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+    )
+
+    ExternalProject_Get_Property(irrklang-dep SOURCE_DIR)
+    set(IRRKLANG_PATH ${SOURCE_DIR})
+
     add_library(irrklang SHARED IMPORTED GLOBAL)
 
     set_target_properties(
@@ -120,5 +109,15 @@ if(NOT IRRKLANG_LIBRARY_PATH)
     )
 endif()
 
+ExternalProject_Add(tinyxml2-dep
+    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/tinyxml2-master.zip
+    PREFIX Dependencies/tinyxml2
+    INSTALL_COMMAND ""
+)
+
+ExternalProject_Get_Property(tinyxml2-dep SOURCE_DIR)
+set(TINYXML2_PATH ${SOURCE_DIR})
+
 add_subdirectory(${TINYXML2_PATH})
+
 add_subdirectory(Game)

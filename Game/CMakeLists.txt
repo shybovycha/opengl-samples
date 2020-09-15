@@ -70,3 +70,31 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
 add_dependencies(${EXECUTABLE_NAME} tinyxml2 irrlicht irrklang)
 
 target_link_libraries(${EXECUTABLE_NAME} PUBLIC ${LIBRARIES} tinyxml2 irrlicht irrklang)
+
+# Copy libraries' DLLs
+add_custom_command(
+    TARGET ${EXECUTABLE_NAME} POST_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tinyxml2> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+)
+
+# TODO: copy DLLs, not LIBs
+# add_custom_command(
+#     TARGET ${EXECUTABLE_NAME} POST_BUILD 
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:irrlicht> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+# )
+
+# add_custom_command(
+#     TARGET ${EXECUTABLE_NAME} POST_BUILD 
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:irrklang> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+# )
+
+# Copy resources
+add_custom_command(
+    TARGET ${EXECUTABLE_NAME} POST_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/Resources $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/Resources
+)
+
+add_custom_command(
+    TARGET ${EXECUTABLE_NAME} POST_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/Data $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/Data
+)
