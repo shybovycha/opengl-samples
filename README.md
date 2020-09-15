@@ -6,8 +6,7 @@ This is a very simple shooting game I made many years ago. It is written in C++ 
 
 ## Build
 
-1. Unpack the dependencies from the `Dependencies/` directory: `irrKlang`, `irrlicht` and `tinyxml2` to the same `Dependencies` directory
-2. Run CMake: `cmake -Bbuild -H. && cmake --build build`
+Run CMake: `cmake -Bbuild -H. && cmake --build build`
 
 ## TODO
 
@@ -31,6 +30,9 @@ This is a very simple shooting game I made many years ago. It is written in C++ 
 - [ ] change 3D models to the artwork
 - [ ] change the default GUI theme
 - [ ] do not use exceptions (https://google.github.io/styleguide/cppguide.html#Exceptions)
+- [ ] new game in the middle of the game should reset everything
+- [x] properly copy resources to the directory with the binary
+- [ ] copy the DLLs to the directory with the binary
 
 ## Other notes
 
@@ -105,3 +107,7 @@ Also, as [noted by Brad King](https://gitlab.kitware.com/cmake/cmake/-/issues/19
 >
 > That is true if you want to use ExternalProject_Add for a dependency and add_executable for your own project in a single CMake project.  However, typically ExternalProject is used in a pure "superbuild" project that does not compile anything itself and instead builds a bunch of external projects using their independent native build systems while respecting inter-project dependencies expressed in the ExternalProject_Add calls.  Each package is built after its dependencies and is simply told by the superbuild where to look for them as complete packages.  No low-level header or artifact locations need to be spelled out manually.  No deep integration of distinct build systems is needed.
 
+Few other resources on CMake "best practices":
+
+* http://mesos.apache.org/documentation/latest/cmake-examples/
+* https://www.youtube.com/watch?v=y9kSr5enrSk
