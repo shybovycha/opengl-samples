@@ -2,6 +2,30 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 project(shoot-them VERSION 1.0.1 LANGUAGES CXX)
 
+include(ExternalProject)
+
+find_program(MAKE_EXE NAMES gmake nmake make)
+
+ExternalProject_Add(irrlicht-dep
+    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.3.zip
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/Dependencies
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ${MAKE_EXE}
+    SOURCE_SUBDIR source/Irrlicht
+)
+
+ExternalProject_Add(irrklang-dep
+    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrKlang-64bit-1.5.0.zip
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/Dependencies
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+)
+
+ExternalProject_Add(tinyxml2-dep
+    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/tinyxml2-master.zip
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/Dependencies
+)
+
 set(IRRLICHT_PATH ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.3)
 set(IRRKLANG_PATH ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrKlang-1.5.0)
 
