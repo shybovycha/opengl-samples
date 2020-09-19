@@ -97,8 +97,9 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
 
     std::shared_ptr<irr::scene::IAnimatedMeshSceneNode> level(smgr->addAnimatedMeshSceneNode(levelMesh));
 
-    std::wstring levelName = L"level-" + gameState->getCurrentLevelIndex();
-    level->setName(levelName.c_str());
+    std::wostringstream levelName;
+    levelName<< L"level-" << gameState->getCurrentLevelIndex();
+    level->setName(levelName.str().c_str());
 
     action->getLevel()->setModel(level);
 
@@ -146,8 +147,9 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 
     std::shared_ptr<irr::scene::IAnimatedMeshSceneNode> level(smgr->addAnimatedMeshSceneNode(levelMesh));
 
-    std::wstring levelName = L"level-" + gameState->getCurrentLevelIndex();
-    level->setName(levelName.c_str());
+    std::wostringstream levelName;
+    levelName << L"level-" << gameState->getCurrentLevelIndex();
+    level->setName(levelName.str().c_str());
 
     action->getNextLevel()->setModel(level);
 
