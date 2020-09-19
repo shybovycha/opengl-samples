@@ -5,7 +5,7 @@ Application::Application() {}
 void Application::run() {
     device = std::shared_ptr<irr::IrrlichtDevice>(irr::createDevice(
         irr::video::EDT_OPENGL,
-        irr::core::dimension2d<irr::u32>(640, 480),
+        irr::core::dimension2d<irr::u32>(1024, 768),
         32,
         false,
         false,
@@ -22,15 +22,6 @@ void Application::run() {
     device->setEventReceiver(receiver.get());
 
     delegate->init();
-
-    // irr::scene::ILightSceneNode* light = smgr->addLightSceneNode(0, irr::core::vector3df(0, 0, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
-
-    // device->getCursorControl()->setVisible(false);
-
-    // irr::gui::IGUIStaticText* text = guienv->addStaticText(L"", irr::core::rect<irr::s32>(10, 10, 200, 22), true);
-
-    /*irr::scene::IAnimatedMesh* mesh = smgr->getMesh(argv[1]);
-    irr::scene::IAnimatedMeshSceneNode* node = smgr->addAnimatedMeshSceneNode(mesh);*/
 
     while (device->run()) {
         delegate->update();
