@@ -12,7 +12,6 @@ int pointCnt = 0;
 char* fileout = "";
 
 irr::video::IVideoDriver* driver = 0;
-irr::scene::ISceneManager* smgr = 0;
 irr::gui::IGUIEnvironment* guienv = 0;
 irr::gui::IGUIStaticText* text = 0;
 irr::scene::IAnimatedMesh* mesh = 0;
@@ -24,7 +23,7 @@ void saveData(char* filename);
 
 class EventReceiver : public irr::IEventReceiver {
 public:
-    EventReceiver(std::shared_ptr<irr::IrrlichtDevice> _device) : device(_device) {}
+    EventReceiver(std::shared_ptr<irr::IrrlichtDevice> _device, std::shared_ptr<irr::scene::ISceneManager> _smgr) : device(_device), smgr(_smgr) {}
 
     virtual bool OnEvent(const irr::SEvent& event) {
         if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
@@ -57,6 +56,7 @@ public:
 
 private:
     std::shared_ptr<irr::IrrlichtDevice> device;
+    std::shared_ptr<irr::scene::ISceneManager> smgr;
 };
 
 void saveData(char* filename) {
@@ -84,15 +84,17 @@ int main(int argc, char* argv[]) {
         0
     ));
 
-    std::unique_ptr<EventReceiver> receiver = std::make_unique<EventReceiver>(device);
-
-    device->setEventReceiver(receiver.get());
-
     device->setWindowCaption(L"Shoot Them! Editor");
 
     driver = device->getVideoDriver();
-    smgr = device->getSceneManager();
+
+    std::shared_ptr<irr::scene::ISceneManager> smgr(device->getSceneManager());
+    
     guienv = device->getGUIEnvironment();
+
+    std::unique_ptr<EventReceiver> receiver = std::make_unique<EventReceiver>(device, smgr);
+
+    device->setEventReceiver(receiver.get());
 
     light = smgr->addLightSceneNode(0, irr::core::vector3df(0, 0, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
 
