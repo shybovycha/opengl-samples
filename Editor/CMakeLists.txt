@@ -54,3 +54,9 @@ add_custom_command(
 #     TARGET ${EXECUTABLE_NAME} POST_BUILD 
 #     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:irrlicht> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
 # )
+
+# Copy resources
+add_custom_command(
+    TARGET ${EXECUTABLE_NAME} POST_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/Resources $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/Resources
+)
