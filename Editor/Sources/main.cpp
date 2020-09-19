@@ -1,4 +1,6 @@
 #include <fstream>
+#include <memory>
+#include <vector>
 
 #include "irrlicht.h"
 #include "tinyxml2.h"
@@ -9,7 +11,6 @@ irr::core::vector3df point[100];
 int pointCnt = 0;
 char* fileout = "";
 
-irr::IrrlichtDevice* device = 0;
 irr::video::IVideoDriver* driver = 0;
 irr::scene::ISceneManager* smgr = 0;
 irr::gui::IGUIEnvironment* guienv = 0;
@@ -21,9 +22,10 @@ irr::scene::ILightSceneNode* light = 0;
 
 void saveData(char* filename);
 
-class EventReceiver : public irr::IEventReceiver
-{
+class EventReceiver : public irr::IEventReceiver {
 public:
+    EventReceiver(std::shared_ptr<irr::IrrlichtDevice> _device) : device(_device) {}
+
     virtual bool OnEvent(const irr::SEvent& event) {
         if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
             if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
@@ -52,6 +54,9 @@ public:
 
         return false;
     }
+
+private:
+    std::shared_ptr<irr::IrrlichtDevice> device;
 };
 
 void saveData(char* filename) {
@@ -69,12 +74,19 @@ void saveData(char* filename) {
 int main(int argc, char* argv[]) {
     fileout = argv[2];
 
-    EventReceiver receiver;
+    std::shared_ptr<irr::IrrlichtDevice> device(irr::createDevice(
+        irr::video::EDT_OPENGL, 
+        irr::core::dimension2d<irr::u32>(640, 480), 
+        32,
+        false, 
+        false, 
+        false, 
+        0
+    ));
 
-    device = irr::createDevice(irr::video::EDT_OPENGL, irr::core::dimension2d<irr::u32>(640, 480), 32,
-        false, false, false, 0);
+    std::unique_ptr<EventReceiver> receiver = std::make_unique<EventReceiver>(device);
 
-    device->setEventReceiver(&receiver);
+    device->setEventReceiver(receiver.get());
 
     device->setWindowCaption(L"Shoot Them! Editor");
 
