@@ -52,7 +52,7 @@ if(NOT IRRLICHT_LIBRARY_PATH)
     endif()
 
     ExternalProject_Add(irrlicht-dep
-        URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.3.zip
+        URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.4.zip
         PREFIX Dependencies/irrlicht
         SOURCE_SUBDIR source/Irrlicht
         CONFIGURE_COMMAND ""
