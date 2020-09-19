@@ -9,9 +9,9 @@
 
 const std::string LEVEL_FILENAME = "level.dat";
 
-class EventReceiver : public irr::IEventReceiver {
+class ApplicationDelegate {
 public:
-    EventReceiver(
+    ApplicationDelegate(
         std::shared_ptr<irr::IrrlichtDevice> _device,
         std::shared_ptr<irr::scene::ISceneManager> _smgr,
         std::shared_ptr<irr::gui::IGUIEnvironment> _guienv,
@@ -19,33 +19,25 @@ public:
     ) : device(_device), smgr(_smgr), guienv(_guienv), camera(_camera)
     {}
 
-    virtual bool OnEvent(const irr::SEvent& event) {
-        if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
-            if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
-                points.push_back(camera->getPosition());
+    void placeTarget() {
+        points.push_back(camera->getPosition());
 
-                smgr->addSphereSceneNode(10, 64, 0, 0, camera->getPosition(),
-                    irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
+        smgr->addSphereSceneNode(10, 64, 0, 0, camera->getPosition(),
+            irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
 
-                // smgr->addLightSceneNode(0, point[pointCnt], irr::video::SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
-            }
-        }
+        // smgr->addLightSceneNode(0, point[pointCnt], irr::video::SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
+    }
 
-        if (event.EventType == irr::EET_KEY_INPUT_EVENT) {
-            if (event.KeyInput.Key == irr::KEY_ESCAPE) {
-                device->drop();
+    void placeLight() {}
 
-                saveData(LEVEL_FILENAME);
+    void saveLevel() {
+        device->drop();
 
-                exit(1);
-            }
+        saveData(LEVEL_FILENAME);
+    }
 
-            if (event.KeyInput.Key == irr::KEY_F2) {
-                saveData(LEVEL_FILENAME);
-            }
-        }
-
-        return false;
+    void quit() {
+        device->drop();
     }
 
 protected:
@@ -69,6 +61,35 @@ private:
     std::vector<irr::core::vector3df> points;
 };
 
+class EventReceiver : public irr::IEventReceiver {
+public:
+    EventReceiver(std::shared_ptr<ApplicationDelegate> _delegate) : delegate(_delegate) {}
+
+    virtual bool OnEvent(const irr::SEvent& event) {
+        if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
+            if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
+                delegate->placeTarget();
+            }
+        }
+
+        if (event.EventType == irr::EET_KEY_INPUT_EVENT) {
+            if (event.KeyInput.Key == irr::KEY_ESCAPE) {
+                delegate->saveLevel();
+                delegate->quit();
+            }
+
+            if (event.KeyInput.Key == irr::KEY_F2) {
+                delegate->saveLevel();
+            }
+        }
+
+        return false;
+    }
+
+private:
+    std::shared_ptr<ApplicationDelegate> delegate;
+};
+
 int main(int argc, char* argv[]) {
     std::shared_ptr<irr::IrrlichtDevice> device(irr::createDevice(
         irr::video::EDT_OPENGL, 
@@ -87,7 +108,9 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<irr::gui::IGUIEnvironment> guienv(device->getGUIEnvironment());
     std::shared_ptr<irr::scene::ICameraSceneNode> camera(smgr->addCameraSceneNodeFPS());
 
-    std::unique_ptr<EventReceiver> receiver = std::make_unique<EventReceiver>(device, smgr, guienv, camera);
+    std::unique_ptr<ApplicationDelegate> delegate = std::make_unique<ApplicationDelegate>(device, smgr, guienv, camera);
+
+    std::unique_ptr<EventReceiver> receiver = std::make_unique<EventReceiver>(delegate);
 
     device->setEventReceiver(receiver.get());
 
