@@ -11,13 +11,33 @@ const std::string LEVEL_FILENAME = "level.dat";
 
 class ApplicationDelegate {
 public:
-    ApplicationDelegate(
-        std::shared_ptr<irr::IrrlichtDevice> _device,
-        std::shared_ptr<irr::scene::ISceneManager> _smgr,
-        std::shared_ptr<irr::gui::IGUIEnvironment> _guienv,
-        std::shared_ptr<irr::scene::ICameraSceneNode> _camera
-    ) : device(_device), smgr(_smgr), guienv(_guienv), camera(_camera)
+    ApplicationDelegate(std::shared_ptr<irr::IrrlichtDevice> _device) :
+        device(_device), 
+        smgr(std::shared_ptr<irr::scene::ISceneManager>(device->getSceneManager())), 
+        guienv(std::shared_ptr<irr::gui::IGUIEnvironment>(device->getGUIEnvironment())),
+        driver(std::shared_ptr<irr::video::IVideoDriver>(device->getVideoDriver()))
     {}
+
+    void init() {
+        camera = std::shared_ptr<irr::scene::ICameraSceneNode>(smgr->addCameraSceneNodeFPS());
+    }
+
+    void update() {
+        // TODO: update UI
+
+        driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
+
+        smgr->drawAll();
+        guienv->drawAll();
+
+        // irr::core::stringw str = L"Points: ";
+        // str += pointCnt;
+        // text->setText(str.c_str());
+
+        // light->setPosition(camera->getPosition());
+
+        driver->endScene();
+    }
 
     void placeTarget() {
         points.push_back(camera->getPosition());
@@ -55,6 +75,7 @@ protected:
 
 private:
     std::shared_ptr<irr::IrrlichtDevice> device;
+    std::shared_ptr<irr::video::IVideoDriver> driver;
     std::shared_ptr<irr::scene::ISceneManager> smgr;
     std::shared_ptr<irr::gui::IGUIEnvironment> guienv;
     std::shared_ptr<irr::scene::ICameraSceneNode> camera;
@@ -103,39 +124,25 @@ int main(int argc, char* argv[]) {
 
     device->setWindowCaption(L"Shoot Them! Editor");
 
-    std::shared_ptr<irr::video::IVideoDriver> driver(device->getVideoDriver());
-    std::shared_ptr<irr::scene::ISceneManager> smgr(device->getSceneManager());
-    std::shared_ptr<irr::gui::IGUIEnvironment> guienv(device->getGUIEnvironment());
-    std::shared_ptr<irr::scene::ICameraSceneNode> camera(smgr->addCameraSceneNodeFPS());
-
-    std::unique_ptr<ApplicationDelegate> delegate = std::make_unique<ApplicationDelegate>(device, smgr, guienv, camera);
+    std::unique_ptr<ApplicationDelegate> delegate = std::make_unique<ApplicationDelegate>(device);
 
     std::unique_ptr<EventReceiver> receiver = std::make_unique<EventReceiver>(delegate);
 
     device->setEventReceiver(receiver.get());
 
-    irr::scene::ILightSceneNode* light = smgr->addLightSceneNode(0, irr::core::vector3df(0, 0, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
+    delegate->init();
 
-    device->getCursorControl()->setVisible(false);
+    // irr::scene::ILightSceneNode* light = smgr->addLightSceneNode(0, irr::core::vector3df(0, 0, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
+
+    // device->getCursorControl()->setVisible(false);
 
     // irr::gui::IGUIStaticText* text = guienv->addStaticText(L"", irr::core::rect<irr::s32>(10, 10, 200, 22), true);
 
-    irr::scene::IAnimatedMesh* mesh = smgr->getMesh(argv[1]);
-    irr::scene::IAnimatedMeshSceneNode* node = smgr->addAnimatedMeshSceneNode(mesh);
+    /*irr::scene::IAnimatedMesh* mesh = smgr->getMesh(argv[1]);
+    irr::scene::IAnimatedMeshSceneNode* node = smgr->addAnimatedMeshSceneNode(mesh);*/
 
     while (device->run()) {
-        driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
-
-        smgr->drawAll();
-        guienv->drawAll();
-
-        // irr::core::stringw str = L"Points: ";
-        // str += pointCnt;
-        // text->setText(str.c_str());
-
-        light->setPosition(camera->getPosition());
-
-        driver->endScene();
+        delegate->update();
     }
 
     device->drop();
