@@ -11,15 +11,15 @@ void IrrlichtRenderer::init(Settings settings) {
 
     irr::core::dimension2d<irr::u32> resolution = irr::core::dimension2d<irr::u32>(settings.resolutionWidth, settings.resolutionHeight);
 
-    device = std::shared_ptr<irr::IrrlichtDevice>(irr::createDevice(driverType, resolution, settings.colorDepth, settings.fullScreen, settings.stencil, settings.vsync));
+    device = irr::createDevice(driverType, resolution, settings.colorDepth, settings.fullScreen, settings.stencil, settings.vsync);
 
     device->setWindowCaption(L"ShootThem!");
 
-    driver = std::shared_ptr<irr::video::IVideoDriver>(device->getVideoDriver());
-    smgr = std::shared_ptr<irr::scene::ISceneManager>(device->getSceneManager());
-    guienv = std::shared_ptr<irr::gui::IGUIEnvironment>(device->getGUIEnvironment());
+    driver = device->getVideoDriver();
+    smgr = device->getSceneManager();
+    guienv = device->getGUIEnvironment();
 
-    soundEngine = std::shared_ptr<irrklang::ISoundEngine>(irrklang::createIrrKlangDevice());
+    soundEngine = irrklang::createIrrKlangDevice();
 
     device->getFileSystem()->addZipFileArchive("Resources/Packs/data.pk3");
 
@@ -36,7 +36,7 @@ void IrrlichtRenderer::init(Settings settings) {
     // driver->setFog(irr::video::SColor(0, 138, 125, 81), irr::video::EFT_FOG_LINEAR, 250, 1000, 0, true);
 
     // TODO: move this to scene config too as a player initial position
-    camera = std::shared_ptr<irr::scene::ICameraSceneNode>(smgr->addCameraSceneNodeFPS(0, 100, 0, 0));
+    camera = smgr->addCameraSceneNodeFPS(0, 100, 0, 0);
     device->getCursorControl()->setVisible(false);
 
     statusBar = guienv->addStaticText(L"New game", irr::core::rect<irr::s32>(10, 10, 260, 22), true, true, 0, 0, true);
@@ -49,7 +49,7 @@ void IrrlichtRenderer::init(Settings settings) {
     // TODO: player model offset relative to camera position
     player->setPosition(irr::core::vector3df(0.5f, -1.0f, 1.0f));
 
-    player->setParent(camera.get());
+    player->setParent(camera);
 
     // sorry, no better place for this instantiation than here, since this event receiver **has** to be bound to both camera node and scene manager
     eventReceiver = std::make_shared<IrrlichtEventReceiver>(gameState, actionDispatcher, smgr, camera);
@@ -95,23 +95,23 @@ void IrrlichtRenderer::processAction(PlaySoundAction* action) {
 void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
     irr::scene::IAnimatedMesh* levelMesh = smgr->getMesh(action->getLevel()->getModelFilename().c_str());
 
-    std::shared_ptr<irr::scene::IAnimatedMeshSceneNode> level(smgr->addAnimatedMeshSceneNode(levelMesh));
+    irr::scene::IAnimatedMeshSceneNode* level = smgr->addAnimatedMeshSceneNode(levelMesh);
 
     std::wostringstream levelName;
-    levelName<< L"level-" << gameState->getCurrentLevelIndex();
+    levelName << L"level-" << gameState->getCurrentLevelIndex();
     level->setName(levelName.str().c_str());
 
     action->getLevel()->setModel(level);
 
-    selector = std::shared_ptr<irr::scene::ITriangleSelector>(smgr->createOctTreeTriangleSelector(levelMesh->getMesh(0), level.get(), 128));
+    selector = smgr->createOctTreeTriangleSelector(levelMesh->getMesh(0), level, 128);
 
     irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
-    std::vector<std::shared_ptr<irr::scene::ISceneNode>> targets;
+    std::vector<irr::scene::ISceneNode*> targets;
 
     int targetIdx = 0;
 
     for (auto position : action->getLevel()->getTargetPositions()) {
-        std::shared_ptr<irr::scene::ISceneNode> target(smgr->addAnimatedMeshSceneNode(targetMesh));
+        irr::scene::ISceneNode* target = smgr->addAnimatedMeshSceneNode(targetMesh);
 
         target->setVisible(true);
 
@@ -145,7 +145,7 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
     // load next level
     irr::scene::IAnimatedMesh* levelMesh = smgr->getMesh(action->getNextLevel()->getModelFilename().c_str());
 
-    std::shared_ptr<irr::scene::IAnimatedMeshSceneNode> level(smgr->addAnimatedMeshSceneNode(levelMesh));
+    irr::scene::IAnimatedMeshSceneNode* level = smgr->addAnimatedMeshSceneNode(levelMesh);
 
     std::wostringstream levelName;
     levelName << L"level-" << gameState->getCurrentLevelIndex();
@@ -153,16 +153,16 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 
     action->getNextLevel()->setModel(level);
 
-    selector = std::shared_ptr<irr::scene::ITriangleSelector>(smgr->createOctTreeTriangleSelector(levelMesh->getMesh(0), level.get(), 128));
+    selector = smgr->createOctTreeTriangleSelector(levelMesh->getMesh(0), level, 128);
 
     irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
 
-    std::vector<std::shared_ptr<irr::scene::ISceneNode>> targets;
+    std::vector<irr::scene::ISceneNode*> targets;
 
     int targetIdx = 0;
 
     for (auto position : action->getNextLevel()->getTargetPositions()) {
-        std::shared_ptr<irr::scene::ISceneNode> target(smgr->addAnimatedMeshSceneNode(targetMesh));
+        irr::scene::ISceneNode* target = smgr->addAnimatedMeshSceneNode(targetMesh);
 
         target->setVisible(true);
 
@@ -177,7 +177,7 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
         targetName << targetIdx++;
         target->setName(targetName.str().c_str());
 
-        targets.push_back(std::move(target));
+        targets.push_back(target);
     }
 
     action->getNextLevel()->setTargets(targets);
@@ -372,7 +372,7 @@ void IrrlichtRenderer::updateCrosshair() {
     irr::core::vector3df collisionPoint;
     irr::scene::ISceneNode* node = 0;
 
-    if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector.get(), collisionPoint, collisionTriangle, node)) {
+    if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector, collisionPoint, collisionTriangle, node)) {
         bill->setPosition(collisionPoint);
     }
 }

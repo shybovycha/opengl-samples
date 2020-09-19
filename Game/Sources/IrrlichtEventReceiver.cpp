@@ -1,10 +1,10 @@
 #include "IrrlichtEventReceiver.h"
 
-IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<GameState> _gameState, std::shared_ptr<ActionDispatcher> _actionDispatcher, std::shared_ptr<irr::scene::ISceneManager> _sceneManager, std::shared_ptr<irr::scene::ICameraSceneNode> _camera) :
+IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<GameState> _gameState, std::shared_ptr<ActionDispatcher> _actionDispatcher, irr::scene::ISceneManager* _sceneManager, irr::scene::ICameraSceneNode* _camera) :
     actionDispatcher(std::move(_actionDispatcher)),
     gameState(std::move(_gameState)),
-    sceneManager(std::move(_sceneManager)),
-    camera(std::move(_camera))
+    sceneManager(_sceneManager),
+    camera(_camera)
 {}
 
 bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {

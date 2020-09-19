@@ -1,10 +1,10 @@
 #include "ApplicationDelegate.h"
 
-ApplicationDelegate::ApplicationDelegate(std::shared_ptr<irr::IrrlichtDevice> _device) :
+ApplicationDelegate::ApplicationDelegate(irr::IrrlichtDevice* _device) :
     device(_device),
-    smgr(std::shared_ptr<irr::scene::ISceneManager>(device->getSceneManager())),
-    guienv(std::shared_ptr<irr::gui::IGUIEnvironment>(device->getGUIEnvironment())),
-    driver(std::shared_ptr<irr::video::IVideoDriver>(device->getVideoDriver())),
+    smgr(device->getSceneManager()),
+    guienv(device->getGUIEnvironment()),
+    driver(device->getVideoDriver()),
     levelsFilename(std::nullopt),
     loadLevelsDialogIsShown(false),
     saveLevelsDialogIsShown(false),
@@ -13,7 +13,7 @@ ApplicationDelegate::ApplicationDelegate(std::shared_ptr<irr::IrrlichtDevice> _d
 {}
 
 void ApplicationDelegate::init() {
-    camera = std::shared_ptr<irr::scene::ICameraSceneNode>(smgr->addCameraSceneNodeMaya());
+    camera = smgr->addCameraSceneNodeMaya();
 
     initUI();
 }

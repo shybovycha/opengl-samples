@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <irrlicht.h>
@@ -79,12 +80,12 @@ private:
 
 class TargetEliminatedAction : public QueueAction {
 public:
-    TargetEliminatedAction(std::shared_ptr<irr::scene::ISceneNode> _target);
+    TargetEliminatedAction(irr::scene::ISceneNode* _target);
 
-    const std::shared_ptr<irr::scene::ISceneNode> getTarget() const;
+    irr::scene::ISceneNode* getTarget() const;
 
 private:
-    std::shared_ptr<irr::scene::ISceneNode> target;
+    irr::scene::ISceneNode* target;
 };
 
 class StartNewGameAction : public QueueAction {

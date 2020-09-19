@@ -74,18 +74,18 @@ private:
     irr::gui::IGUIListBox* hiscoreTable = 0;
     irr::gui::IGUIWindow* mainMenuWindow = 0;
 
-    std::shared_ptr<irr::IrrlichtDevice> device;
-    std::shared_ptr<irr::video::IVideoDriver> driver;
-    std::shared_ptr<irr::scene::ISceneManager> smgr;
-    std::shared_ptr<irr::gui::IGUIEnvironment> guienv;
+    irr::IrrlichtDevice* device = 0;
+    irr::video::IVideoDriver* driver = 0;
+    irr::scene::ISceneManager* smgr = 0;
+    irr::gui::IGUIEnvironment* guienv = 0;
 
-    std::shared_ptr<irr::scene::ICameraSceneNode> camera;
+    irr::scene::ICameraSceneNode* camera = 0;
 
     irr::scene::IAnimatedMesh* playermesh = 0;
     irr::scene::IAnimatedMeshSceneNode* player = 0;
 
     irr::scene::IBillboardSceneNode* bill = 0;
-    std::shared_ptr<irr::scene::ITriangleSelector> selector;
+    irr::scene::ITriangleSelector* selector = 0;
 
-    std::shared_ptr<irrklang::ISoundEngine> soundEngine;
+    irrklang::ISoundEngine* soundEngine = 0;
 };

@@ -28,9 +28,9 @@ const std::shared_ptr<Level> LoadFirstLevelAction::getLevel() const {
     return level;
 }
 
-TargetEliminatedAction::TargetEliminatedAction(std::shared_ptr<irr::scene::ISceneNode> _target) : QueueAction(QueueActionType::TARGET_ELIMINATED), target(_target) {}
+TargetEliminatedAction::TargetEliminatedAction(irr::scene::ISceneNode* _target) : QueueAction(QueueActionType::TARGET_ELIMINATED), target(_target) {}
 
-const std::shared_ptr<irr::scene::ISceneNode> TargetEliminatedAction::getTarget() const {
+irr::scene::ISceneNode* TargetEliminatedAction::getTarget() const {
     return target;
 }
 

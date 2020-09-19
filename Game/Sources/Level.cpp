@@ -14,18 +14,18 @@ const std::vector<irr::core::vector3df> Level::getTargetPositions() const {
     return targetPositions;
 }
 
-void Level::setModel(std::shared_ptr<irr::scene::ISceneNode> mesh) {
+void Level::setModel(irr::scene::ISceneNode* mesh) {
     model = mesh;
 }
 
-const std::shared_ptr<irr::scene::ISceneNode> Level::getModel() const {
+irr::scene::ISceneNode* Level::getModel() const {
     return model;
 }
 
-const std::vector<std::shared_ptr<irr::scene::ISceneNode>> Level::getTargets() const {
+const std::vector<irr::scene::ISceneNode*> Level::getTargets() const {
     return targets;
 }
 
-void Level::setTargets(std::vector<std::shared_ptr<irr::scene::ISceneNode>> _targets) {
+void Level::setTargets(std::vector<irr::scene::ISceneNode*> _targets) {
     targets = _targets;
 }

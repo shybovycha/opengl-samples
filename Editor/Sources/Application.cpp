@@ -3,7 +3,7 @@
 Application::Application() {}
 
 void Application::run() {
-    device = std::shared_ptr<irr::IrrlichtDevice>(irr::createDevice(
+    device = irr::createDevice(
         irr::video::EDT_OPENGL,
         irr::core::dimension2d<irr::u32>(1024, 768),
         32,
@@ -11,7 +11,7 @@ void Application::run() {
         false,
         false,
         0
-    ));
+    );
 
     device->setWindowCaption(L"Shoot Them! Editor");
 

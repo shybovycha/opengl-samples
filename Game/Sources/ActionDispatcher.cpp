@@ -12,12 +12,12 @@ void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor) {
 
     gameState->getPlayerState()->shoot();
 
-    if (objectAtCursor == gameState->getCurrentLevel()->getModel().get()) {
+    if (objectAtCursor == gameState->getCurrentLevel()->getModel()) {
         return;
     }
 
     for (auto target : gameState->getCurrentLevel()->getTargets()) {
-        if (target.get() != objectAtCursor) {
+        if (target != objectAtCursor) {
             continue;
         }
 

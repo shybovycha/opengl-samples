@@ -35,7 +35,7 @@ enum class GuiElementID {
 
 class ApplicationDelegate {
 public:
-    ApplicationDelegate(std::shared_ptr<irr::IrrlichtDevice> _device);
+    ApplicationDelegate(irr::IrrlichtDevice* _device);
 
     void init();
 
@@ -84,11 +84,11 @@ private:
 
     void setFont();
 
-    std::shared_ptr<irr::IrrlichtDevice> device;
-    std::shared_ptr<irr::video::IVideoDriver> driver;
-    std::shared_ptr<irr::scene::ISceneManager> smgr;
-    std::shared_ptr<irr::gui::IGUIEnvironment> guienv;
-    std::shared_ptr<irr::scene::ICameraSceneNode> camera;
+    irr::IrrlichtDevice* device;
+    irr::video::IVideoDriver* driver;
+    irr::scene::ISceneManager* smgr;
+    irr::gui::IGUIEnvironment* guienv;
+    irr::scene::ICameraSceneNode* camera;
     
     std::optional<std::wstring> levelsFilename;
 

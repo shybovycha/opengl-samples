@@ -14,5 +14,5 @@ public:
     void run();
 
 private:
-    std::shared_ptr<irr::IrrlichtDevice> device;
+    irr::IrrlichtDevice* device;
 };
