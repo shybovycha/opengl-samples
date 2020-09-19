@@ -6,7 +6,9 @@
 #include "Renderer.h"
 #include "ResourceManager.h"
 
+#ifdef _IRR_WINDOWS_
 #pragma comment(lib, "Irrlicht.lib")
+#endif
 
 /*
     --------------------------------------------
