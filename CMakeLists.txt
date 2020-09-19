@@ -121,3 +121,4 @@ set(TINYXML2_PATH ${SOURCE_DIR})
 add_subdirectory(${TINYXML2_PATH})
 
 add_subdirectory(Game)
+add_subdirectory(Editor)
