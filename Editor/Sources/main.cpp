@@ -7,33 +7,27 @@
 
 #pragma comment(lib, "irrlicht.lib")
 
-irr::core::vector3df point[100];
-int pointCnt = 0;
-char* fileout = "";
-
-irr::video::IVideoDriver* driver = 0;
-irr::gui::IGUIEnvironment* guienv = 0;
-irr::gui::IGUIStaticText* text = 0;
-irr::scene::IAnimatedMesh* mesh = 0;
-irr::scene::IAnimatedMeshSceneNode* node = 0;
-irr::scene::ICameraSceneNode* camera = 0;
-irr::scene::ILightSceneNode* light = 0;
-
-void saveData(char* filename);
+const std::string LEVEL_FILENAME = "level.dat";
 
 class EventReceiver : public irr::IEventReceiver {
 public:
-    EventReceiver(std::shared_ptr<irr::IrrlichtDevice> _device, std::shared_ptr<irr::scene::ISceneManager> _smgr) : device(_device), smgr(_smgr) {}
+    EventReceiver(
+        std::shared_ptr<irr::IrrlichtDevice> _device,
+        std::shared_ptr<irr::scene::ISceneManager> _smgr,
+        std::shared_ptr<irr::gui::IGUIEnvironment> _guienv,
+        std::shared_ptr<irr::scene::ICameraSceneNode> _camera
+    ) : device(_device), smgr(_smgr), guienv(_guienv), camera(_camera)
+    {}
 
     virtual bool OnEvent(const irr::SEvent& event) {
         if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
             if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
-                point[pointCnt++] = camera->getPosition();
+                points.push_back(camera->getPosition());
 
                 smgr->addSphereSceneNode(10, 64, 0, 0, camera->getPosition(),
                     irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
 
-                smgr->addLightSceneNode(0, point[pointCnt], irr::video::SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
+                // smgr->addLightSceneNode(0, point[pointCnt], irr::video::SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
             }
         }
 
@@ -41,39 +35,41 @@ public:
             if (event.KeyInput.Key == irr::KEY_ESCAPE) {
                 device->drop();
 
-                saveData(fileout);
+                saveData(LEVEL_FILENAME);
 
                 exit(1);
             }
 
             if (event.KeyInput.Key == irr::KEY_F2) {
-                saveData(fileout);
+                saveData(LEVEL_FILENAME);
             }
         }
 
         return false;
     }
 
+protected:
+    void saveData(const std::string& filename) {
+        std::ofstream outf(filename);
+
+        outf << points.size() << std::endl;
+
+        for (irr::core::vector3df point : points) {
+            outf << point.X << " " << point.Y << " " << point.Z << std::endl;
+        }
+
+        outf.close();
+    }
+
 private:
     std::shared_ptr<irr::IrrlichtDevice> device;
     std::shared_ptr<irr::scene::ISceneManager> smgr;
+    std::shared_ptr<irr::gui::IGUIEnvironment> guienv;
+    std::shared_ptr<irr::scene::ICameraSceneNode> camera;
+    std::vector<irr::core::vector3df> points;
 };
 
-void saveData(char* filename) {
-    std::ofstream outf(filename);
-
-    outf << pointCnt << std::endl;
-
-    for (int i = 0; i <= pointCnt - 1; i++) {
-        outf << point[i].X << " " << point[i].Y << " " << point[i].Z << std::endl;
-    }
-
-    outf.close();
-}
-
 int main(int argc, char* argv[]) {
-    fileout = argv[2];
-
     std::shared_ptr<irr::IrrlichtDevice> device(irr::createDevice(
         irr::video::EDT_OPENGL, 
         irr::core::dimension2d<irr::u32>(640, 480), 
@@ -86,26 +82,23 @@ int main(int argc, char* argv[]) {
 
     device->setWindowCaption(L"Shoot Them! Editor");
 
-    driver = device->getVideoDriver();
-
+    std::shared_ptr<irr::video::IVideoDriver> driver(device->getVideoDriver());
     std::shared_ptr<irr::scene::ISceneManager> smgr(device->getSceneManager());
-    
-    guienv = device->getGUIEnvironment();
+    std::shared_ptr<irr::gui::IGUIEnvironment> guienv(device->getGUIEnvironment());
+    std::shared_ptr<irr::scene::ICameraSceneNode> camera(smgr->addCameraSceneNodeFPS());
 
-    std::unique_ptr<EventReceiver> receiver = std::make_unique<EventReceiver>(device, smgr);
+    std::unique_ptr<EventReceiver> receiver = std::make_unique<EventReceiver>(device, smgr, guienv, camera);
 
     device->setEventReceiver(receiver.get());
 
-    light = smgr->addLightSceneNode(0, irr::core::vector3df(0, 0, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
+    irr::scene::ILightSceneNode* light = smgr->addLightSceneNode(0, irr::core::vector3df(0, 0, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0), 50, 0);
 
     device->getCursorControl()->setVisible(false);
 
-    text = guienv->addStaticText(L"", irr::core::rect<irr::s32>(10, 10, 200, 22), true);
+    // irr::gui::IGUIStaticText* text = guienv->addStaticText(L"", irr::core::rect<irr::s32>(10, 10, 200, 22), true);
 
-    mesh = smgr->getMesh(argv[1]);
-    node = smgr->addAnimatedMeshSceneNode(mesh);
-
-    camera = smgr->addCameraSceneNodeFPS();
+    irr::scene::IAnimatedMesh* mesh = smgr->getMesh(argv[1]);
+    irr::scene::IAnimatedMeshSceneNode* node = smgr->addAnimatedMeshSceneNode(mesh);
 
     while (device->run()) {
         driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
@@ -113,9 +106,9 @@ int main(int argc, char* argv[]) {
         smgr->drawAll();
         guienv->drawAll();
 
-        irr::core::stringw str = L"Points: ";
-        str += pointCnt;
-        text->setText(str.c_str());
+        // irr::core::stringw str = L"Points: ";
+        // str += pointCnt;
+        // text->setText(str.c_str());
 
         light->setPosition(camera->getPosition());
 
