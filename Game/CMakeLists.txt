@@ -53,9 +53,7 @@ if(APPLE)
 
     add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCE_FILES} ${RESOURCE_FILES})
 else()
-    add_executable(${EXECUTABLE_NAME})
-
-    target_sources(${EXECUTABLE_NAME} PRIVATE ${SOURCES})
+    add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
     # file(COPY Resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     # file(COPY Data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
