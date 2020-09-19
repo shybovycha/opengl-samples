@@ -10,13 +10,15 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 
 ## TODO
 
+### Game
+
 - [x] remove implicit namespace imports
 - [ ] replace explicit colors with named constants
 - [x] replace raw pointers with smart pointers
 - [x] fix wobbling effect
 - [x] record a video (https://youtu.be/m65z9kvWdYA)
 - [x] fix timer speed
-- [ ] display endgame screen with high scores ¯\\_(ツ)_/¯
+- [ ] display endgame screen with high scores `¯\_(ツ)_/¯`
 - [x] import each scene from a scene file rather than DAT files with questionable undocumented format
 - [x] load game settings from a separate file rather than being hard-coded vector population code O_o
 - [ ] add splash screen
@@ -33,6 +35,35 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [ ] new game in the middle of the game should reset everything
 - [x] properly copy resources to the directory with the binary
 - [ ] copy the DLLs to the directory with the binary
+- [ ] replace status text with some sane HUD
+- [ ] add settings menu
+- [ ] write settings to file
+- [x] read settings from file
+
+### Editor
+
+- [x] add UI
+- [ ] manage targets with UI elements, not keyboard and mouse click
+- [ ] display the structure of a level in UI
+- [ ] add multiple levels in one run
+- [ ] allow for level removal
+- [ ] remove targets
+- [ ] change target position
+- [ ] place target in front of camera instead of in place of camera
+- [x] replace FPS camera with mouse-controlled one
+- [ ] add helpful help in UI
+- [ ] update the default low-res font with something more readable
+- [ ] make button icons use transparency
+- [ ] prevent game manager window from closing
+
+### Miscellanious
+
+- [ ] extract level reader & writer into separate library
+- [x] update Irrlicht
+- [ ] replace Irrlicht with Ogre (?)
+- [ ] add github releases
+- [ ] document progress
+- [ ] add screenshots to github page
 
 ## Other notes
 
