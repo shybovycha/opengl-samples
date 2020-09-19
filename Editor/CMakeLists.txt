@@ -5,7 +5,7 @@ project(Editor VERSION 1.0.1 LANGUAGES CXX)
 set(EXECUTABLE_NAME Editor)
 
 set(SOURCES
-    "Sources/main.cpp")
+    "Sources/main.cpp" "Sources/ApplicationDelegate.h" "Sources/ApplicationDelegate.cpp" "Sources/IrrlichtEventReceiver.h" "Sources/IrrlichtEventReceiver.cpp" "Sources/Application.h" "Sources/Application.cpp")
 
 set(LIBRARIES
         ${X11_LIBRARIES}
