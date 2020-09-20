@@ -114,7 +114,37 @@ void ApplicationDelegate::saveLevels() {
 }
 
 void ApplicationDelegate::saveLevels(const std::wstring& filename) {
-    // TODO: implement
+    std::wofstream file(filename);
+
+    file << "<levels>" << std::endl;
+
+    for (std::shared_ptr<Level> level : levels) {
+        file << "<level>" << std::endl;
+        file << "<model>" << level->getMeshFilename() << "</model>" << std::endl;
+        
+        file << "<targets>" << std::endl;
+
+        for (irr::core::vector3df target : level->getTargets()) {
+            file << "<target>" << std::endl;
+
+            file << "<position x=\"" << target.X << "\" y=\"" << target.Y << "\" z=\"" << target.Z << "\" />" << std::endl;
+
+            file << "</target>" << std::endl;
+        }
+
+        file << "</targets>" << std::endl;
+
+        file << "</level>" << std::endl;
+            <model>room1.x< / model>
+            <targets>
+            <target>
+            <position x = "-16.346" y = "393.417" z = "962.377" / >
+            < / target>
+    }
+
+    file << "</levels>" << std::endl;
+
+    file.close();
 
     loadLevelsDialogIsShown = false;
     levelsFilename = filename;

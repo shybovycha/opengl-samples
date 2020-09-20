@@ -17,6 +17,8 @@ public:
 
     void updateTargetAt(size_t index, irr::core::vector3df newPosition);
 
+    std::wstring getMeshFilename() const;
+
 private:
     std::vector<irr::core::vector3df> targets;
     std::wstring meshFilename;

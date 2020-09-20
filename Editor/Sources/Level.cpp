@@ -18,3 +18,7 @@ void Level::deleteTargetAt(size_t index) {
 void Level::updateTargetAt(size_t index, irr::core::vector3df newPosition) {
     targets[index] = newPosition;
 }
+
+std::wstring Level::getMeshFilename() const {
+    return meshFilename;
+}
