@@ -114,37 +114,47 @@ void ApplicationDelegate::saveLevels() {
 }
 
 void ApplicationDelegate::saveLevels(const std::wstring& filename) {
-    std::wofstream file(filename);
+    irr::io::IXMLWriter* writer = device->getFileSystem()->createXMLWriter(filename.c_str());
 
-    file << "<levels>" << std::endl;
+    writer->writeElement(L"levels");
 
     for (std::shared_ptr<Level> level : levels) {
-        file << "<level>" << std::endl;
-        file << "<model>" << level->getMeshFilename() << "</model>" << std::endl;
+        writer->writeElement(L"level");
         
-        file << "<targets>" << std::endl;
+        writer->writeElement(L"model");
+
+        irr::io::path path = device->getFileSystem()->getFileBasename(level->getMeshFilename().c_str());
+        std::wostringstream meshFilename;
+        meshFilename << path.c_str();
+
+        writer->writeText(meshFilename.str().c_str());
+        writer->writeClosingTag(L"model");
+        
+        writer->writeElement(L"targets");
 
         for (irr::core::vector3df target : level->getTargets()) {
-            file << "<target>" << std::endl;
+            writer->writeElement(L"target");
 
-            file << "<position x=\"" << target.X << "\" y=\"" << target.Y << "\" z=\"" << target.Z << "\" />" << std::endl;
+            std::wostringstream positionX;
+            positionX << target.X;
 
-            file << "</target>" << std::endl;
+            std::wostringstream positionY;
+            positionY << target.Y;
+
+            std::wostringstream positionZ;
+            positionZ << target.Z;
+
+            writer->writeElement(L"position", true, L"x", positionX.str().c_str(), L"y", positionY.str().c_str(), L"z", positionZ.str().c_str());
+
+            writer->writeClosingTag(L"target");
         }
 
-        file << "</targets>" << std::endl;
+        writer->writeClosingTag(L"targets");
 
-        file << "</level>" << std::endl;
-            <model>room1.x< / model>
-            <targets>
-            <target>
-            <position x = "-16.346" y = "393.417" z = "962.377" / >
-            < / target>
+        writer->writeClosingTag(L"level");
     }
 
-    file << "</levels>" << std::endl;
-
-    file.close();
+    writer->writeClosingTag(L"levels");
 
     loadLevelsDialogIsShown = false;
     levelsFilename = filename;
