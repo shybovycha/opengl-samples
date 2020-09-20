@@ -6,6 +6,8 @@ void IrrlichtHUD::init() {
     bulletTexture = driver->getTexture("Resources/Sprites/bullet.png");
     targetTexture = driver->getTexture("Resources/Sprites/chicken_head.png");
 
+    blobTexture = driver->getTexture("Resources/Sprites/blob.png");
+
     statsFont = guienv->getFont("Resources/Fonts/candyshop_24px.xml");
 }
 
@@ -34,6 +36,20 @@ void IrrlichtHUD::renderAmmo() {
 }
 
 void IrrlichtHUD::renderTargets() {
+    /*driver->draw2DImage(
+        blobTexture,
+        irr::core::position2d<irr::s32>(115, -25),
+        irr::core::recti(
+            0,
+            0,
+            blobTexture->getOriginalSize().Width,
+            blobTexture->getOriginalSize().Height
+        ),
+        0,
+        irr::video::SColor(255, 255, 255, 255),
+        true
+    );*/
+
     driver->draw2DImage(
         targetTexture,
         irr::core::position2d<irr::s32>(150, 10),
