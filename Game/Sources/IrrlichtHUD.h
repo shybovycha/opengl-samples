@@ -30,8 +30,6 @@ private:
     irr::video::ITexture* bulletTexture;
     irr::video::ITexture* targetTexture;
 
-    irr::video::ITexture* blobTexture;
-
     irr::gui::IGUIFont* statsFont;
 
     std::shared_ptr<GameState> gameState;
