@@ -81,9 +81,11 @@ private:
 
     irr::gui::IGUITreeView* getGameTreeView();
 
-    void addManagerTreeNodeToRootNode(std::wstring label, GameManagerNodeData* nodeData);
+    irr::gui::IGUITreeViewNode* addManagerTreeNodeToRootNode(std::wstring label, GameManagerNodeData* nodeData);
 
-    void addManagerTreeNodeToSelectedNode(std::wstring label, GameManagerNodeData* nodeData);
+    irr::gui::IGUITreeViewNode* addManagerTreeNodeToSelectedNode(std::wstring label, GameManagerNodeData* nodeData);
+
+    irr::gui::IGUITreeViewNode* addManagerTreeNodeToNode(std::wstring label, GameManagerNodeData* nodeData, irr::gui::IGUITreeViewNode* parentNode);
 
     void setFont();
 

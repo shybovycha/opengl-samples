@@ -211,7 +211,11 @@ void ApplicationDelegate::loadLevels(const std::wstring& filename) {
     while (levelNode != nullptr) {
         std::string meshName = levelNode->FirstChildElement("model")->GetText();
 
-        auto levelDescriptor = std::make_shared<Level>(meshName);
+        auto levelDescriptor = std::make_shared<Level>(wstringConverter.from_bytes(meshName.c_str()));
+
+        GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, wstringConverter.from_bytes(meshName.c_str()));
+
+        auto levelTreeNode = addManagerTreeNodeToRootNode(wstringConverter.from_bytes(meshName.c_str()), levelNodeData);
 
         auto targetsNode = levelNode->FirstChildElement("targets");
 
@@ -222,6 +226,13 @@ void ApplicationDelegate::loadLevels(const std::wstring& filename) {
             auto positionNode = targetNode->FirstChildElement("position");
 
             irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+
+            std::wostringstream idString;
+            idString << "level-" << levels.size() << "-target-" << levelDescriptor->getTargets().size();
+
+            GameManagerNodeData* targetNodeData = new GameManagerNodeData(GameManagerNodeDataType::TARGET, idString.str());
+
+            addManagerTreeNodeToNode(idString.str(), targetNodeData, levelTreeNode);
 
             levelDescriptor->addTargetPosition(position);
 
@@ -279,12 +290,13 @@ irr::gui::IGUITreeView* ApplicationDelegate::getGameTreeView() {
     return reinterpret_cast<irr::gui::IGUITreeView*>(guienv->getRootGUIElement()->getElementFromId(static_cast<irr::s32>(GuiElementID::GAME_LEVEL_TREE), true));
 }
 
-void ApplicationDelegate::addManagerTreeNodeToRootNode(std::wstring label, GameManagerNodeData* nodeData) {
+irr::gui::IGUITreeViewNode* ApplicationDelegate::addManagerTreeNodeToRootNode(std::wstring label, GameManagerNodeData* nodeData) {
     irr::gui::IGUITreeView* tree = getGameTreeView();
-    tree->getRoot()->addChildBack(label.c_str(), nullptr, -1, -1, reinterpret_cast<void*>(nodeData));
+
+    return addManagerTreeNodeToNode(label, nodeData, tree->getRoot());
 }
 
-void ApplicationDelegate::addManagerTreeNodeToSelectedNode(std::wstring label, GameManagerNodeData* nodeData) {
+irr::gui::IGUITreeViewNode* ApplicationDelegate::addManagerTreeNodeToSelectedNode(std::wstring label, GameManagerNodeData* nodeData) {
     irr::gui::IGUITreeView* tree = getGameTreeView();
     irr::gui::IGUITreeViewNode* selectedNode = tree->getSelected();
 
@@ -292,7 +304,11 @@ void ApplicationDelegate::addManagerTreeNodeToSelectedNode(std::wstring label, G
         selectedNode = tree->getRoot();
     }
 
-    selectedNode->addChildBack(label.c_str(), nullptr, -1, -1, nodeData);
+    return addManagerTreeNodeToNode(label, nodeData, selectedNode);
+}
+
+irr::gui::IGUITreeViewNode* ApplicationDelegate::addManagerTreeNodeToNode(std::wstring label, GameManagerNodeData* nodeData, irr::gui::IGUITreeViewNode* parent) {
+    return parent->addChildBack(label.c_str(), nullptr, -1, -1, nodeData);
 }
 
 void ApplicationDelegate::setFont() {
