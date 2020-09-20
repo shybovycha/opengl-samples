@@ -35,7 +35,7 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [ ] new game in the middle of the game should reset everything
 - [x] properly copy resources to the directory with the binary
 - [ ] copy the DLLs to the directory with the binary
-- [ ] replace status text with some sane HUD
+- [x] replace status text with some sane HUD
 - [ ] add settings menu
 - [ ] write settings to file
 - [x] read settings from file
