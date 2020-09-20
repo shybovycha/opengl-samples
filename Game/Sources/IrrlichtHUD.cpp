@@ -72,7 +72,19 @@ void IrrlichtHUD::renderTime() {
     unsigned int seconds = (currentTime / 100) % 60;
 
     std::wostringstream timeStr;
-    timeStr << minutes << ":" << seconds;
+
+    if (minutes < 10) {
+        timeStr << 0;
+    }
+
+    timeStr << minutes;
+    timeStr << ":";
+    
+    if (seconds < 10) {
+        timeStr << 0;
+    }
+    
+    timeStr << seconds;;
 
     statsFont->draw(
         timeStr.str().c_str(),
