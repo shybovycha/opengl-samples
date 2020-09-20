@@ -4,12 +4,7 @@ IrrlichtHUD::IrrlichtHUD(irr::video::IVideoDriver* _driver, irr::gui::IGUIEnviro
 
 void IrrlichtHUD::init() {
     bulletTexture = driver->getTexture("Resources/Sprites/bullet.png");
-    // driver->makeColorKeyTexture(bulletTexture, irr::core::position2d<irr::s32>(0, 0));
-
     targetTexture = driver->getTexture("Resources/Sprites/chicken_head.png");
-    clockBaseTexture = driver->getTexture("Resources/Sprites/clock_base.png");
-    clockNeedleTexture = driver->getTexture("Resources/Sprites/clock_needle.png");
-    clockBellTexture = driver->getTexture("Resources/Sprites/clock_bell.png");
 
     statsFont = guienv->getFont("Resources/Fonts/zoombieland.xml");
 }
@@ -87,46 +82,4 @@ void IrrlichtHUD::renderTime() {
         ),
         TARGET_COUNT_COLOR
     );
-
-    /*driver->draw2DImage(
-        clockBaseTexture,
-        irr::core::position2d<irr::s32>(10, 50),
-        irr::core::recti(
-            0,
-            0,
-            clockBaseTexture->getOriginalSize().Width,
-            clockBaseTexture->getOriginalSize().Height
-        ),
-        0,
-        irr::video::SColor(255, 255, 255, 255),
-        true
-    );
-
-    driver->draw2DImage(
-        clockBellTexture,
-        irr::core::position2d<irr::s32>(10 + clockBellTexture->getOriginalSize().Width * 0.5, 10),
-        irr::core::recti(
-            0,
-            0,
-            clockBellTexture->getOriginalSize().Width,
-            clockBellTexture->getOriginalSize().Height
-        ),
-        0,
-        irr::video::SColor(255, 255, 255, 255),
-        true
-    );
-
-    driver->draw2DImage(
-        clockNeedleTexture,
-        irr::core::position2d<irr::s32>(10 + clockBaseTexture->getOriginalSize().Width * 0.5, 50 + clockBaseTexture->getOriginalSize().Height * 0.5),
-        irr::core::recti(
-            0,
-            0,
-            clockBellTexture->getOriginalSize().Width,
-            clockBellTexture->getOriginalSize().Height
-        ),
-        0,
-        irr::video::SColor(255, 255, 255, 255),
-        true
-    );*/
 }

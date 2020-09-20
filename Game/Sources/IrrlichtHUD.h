@@ -29,9 +29,6 @@ private:
     
     irr::video::ITexture* bulletTexture;
     irr::video::ITexture* targetTexture;
-    irr::video::ITexture* clockBaseTexture;
-    irr::video::ITexture* clockNeedleTexture;
-    irr::video::ITexture* clockBellTexture;
 
     irr::gui::IGUIFont* statsFont;
 
