@@ -44,17 +44,21 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 
 - [x] add UI
 - [ ] manage targets with UI elements, not keyboard and mouse click
-- [ ] display the structure of a level in UI
-- [ ] add multiple levels in one run
+- [x] display the structure of a level in UI
+- [x] add multiple levels in one run
 - [ ] allow for level removal
 - [ ] remove targets
 - [ ] change target position
 - [ ] place target in front of camera instead of in place of camera
 - [x] replace FPS camera with mouse-controlled one
 - [ ] add helpful help in UI
-- [ ] update the default low-res font with something more readable
+- [x] update the default low-res font with something more readable
 - [ ] make button icons use transparency
 - [ ] prevent game manager window from closing
+- [ ] save file dialog does not pick up non-existent files
+- [ ] use mesh filename when adding game manager tree node
+- [ ] store level mesh in level object
+- [ ] load level mesh when switching levels in manager
 
 ### Miscellanious
 
