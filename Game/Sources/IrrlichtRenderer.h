@@ -9,6 +9,7 @@
 
 #include "GameState.h"
 #include "ActionDispatcher.h"
+#include "IrrlichtHUD.h"
 #include "IrrlichtEventReceiver.h"
 #include "Renderer.h"
 #include "Settings.h"
@@ -59,16 +60,14 @@ protected:
     // TODO: this is the endgame screen
     void showResult();
 
-    void updateStatusBar();
-
 private:
     std::shared_ptr<irr::IEventReceiver> eventReceiver;
     std::shared_ptr<ActionDispatcher> actionDispatcher;
+    std::shared_ptr<IrrlichtHUD> hud;
 
     // TODO: load from level?
     int Tm = MAX_TIME;
 
-    irr::gui::IGUIStaticText* statusBar = 0;
     irr::ITimer* timer = 0;
     irr::gui::IGUIWindow* msgbox = 0;
     irr::gui::IGUIListBox* hiscoreTable = 0;

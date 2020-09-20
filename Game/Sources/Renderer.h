@@ -7,7 +7,7 @@
 
 class Renderer {
 public:
-    Renderer(std::shared_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
+    Renderer(std::shared_ptr<GameState> _gameState) : gameState(_gameState) {}
 
     virtual void init(Settings settings) = 0;
 

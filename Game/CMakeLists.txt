@@ -26,7 +26,9 @@ set(SOURCES
     "Sources/ModernResourceManager.cpp"
     "Sources/PlayerState.cpp"
     "Sources/Score.cpp"
-    "Sources/QueueAction.cpp")
+    "Sources/QueueAction.cpp"
+    "Sources/IrrlichtHUD.h"
+    "Sources/IrrlichtHUD.cpp")
 
 set(EXECUTABLE_NAME Game)
 

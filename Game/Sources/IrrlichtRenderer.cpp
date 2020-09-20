@@ -1,6 +1,9 @@
 #include "IrrlichtRenderer.h"
 
-IrrlichtRenderer::IrrlichtRenderer(std::shared_ptr<GameState> _gameState, std::shared_ptr<ActionDispatcher> _actionDispatcher) : Renderer(std::move(_gameState)), actionDispatcher(_actionDispatcher) {}
+IrrlichtRenderer::IrrlichtRenderer(std::shared_ptr<GameState> _gameState, std::shared_ptr<ActionDispatcher> _actionDispatcher) : 
+    Renderer(_gameState), 
+    actionDispatcher(_actionDispatcher) 
+{}
 
 void IrrlichtRenderer::init(Settings settings) {
     irr::video::E_DRIVER_TYPE driverType = irr::video::EDT_OPENGL;
@@ -39,7 +42,6 @@ void IrrlichtRenderer::init(Settings settings) {
     camera = smgr->addCameraSceneNodeFPS(0, 100, 0, 0);
     device->getCursorControl()->setVisible(false);
 
-    statusBar = guienv->addStaticText(L"New game", irr::core::rect<irr::s32>(10, 10, 260, 22), true, true, 0, 0, true);
     timer = device->getTimer();
     timer->start();
 
@@ -55,10 +57,15 @@ void IrrlichtRenderer::init(Settings settings) {
     eventReceiver = std::make_shared<IrrlichtEventReceiver>(gameState, actionDispatcher, smgr, camera);
 
     device->setEventReceiver(eventReceiver.get());
+
+    hud = std::make_shared<IrrlichtHUD>(driver, guienv, gameState);
+    hud->init();
 }
 
 void IrrlichtRenderer::processActionQueue() {
-    while (auto action = gameState->nextAction()) {
+    while (gameState->hasActions()) {
+        auto action = gameState->nextAction();
+
         switch (action->getType()) {
         case QueueActionType::LOAD_FIRST_LEVEL:
             processAction(reinterpret_cast<LoadFirstLevelAction*>(action));
@@ -126,7 +133,7 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
         targetName << targetIdx++;
         target->setName(targetName.str().c_str());
 
-        targets.push_back(std::move(target));
+        targets.push_back(target);
     }
 
     action->getLevel()->setTargets(targets);
@@ -229,9 +236,10 @@ void IrrlichtRenderer::render() {
     else if (gameState->getCurrentState() == GameStateType::PLAYING) {
         smgr->drawAll();
 
-        updateStatusBar();
         updateCrosshair();
         updatePostProcessingEffects();
+
+        hud->render();
     }
     else if (gameState->getCurrentState() == GameStateType::END_GAME) {
         renderEndGameMenu();
@@ -289,12 +297,12 @@ void IrrlichtRenderer::renderEndLevelMenu() {
 }
 
 void IrrlichtRenderer::shutdown() {
-    smgr->drop();
-    guienv->drop();
-    device->drop();
-    // soundEngine->drop();
-
     timer->stop();
+
+    /*smgr->drop();
+    guienv->drop();*/
+    device->closeDevice();
+    // soundEngine->drop();
 }
 
 bool IrrlichtRenderer::isRunning() {
@@ -330,37 +338,6 @@ void IrrlichtRenderer::showResult() {
     guienv->getSkin()->setFont(guienv->getFont("fontcourier.bmp"));
     guienv->clear();
     guienv->addMessageBox(L"Congratulations!", L"Game over!", true, irr::gui::EMBF_OK, 0, 0);*/
-}
-
-void IrrlichtRenderer::updateStatusBar() {
-    int points = gameState->getCurrentScore()->getTargetsEliminated();
-    int targetCnt = gameState->getCurrentLevel()->getTargets().size();
-
-    int ammo = gameState->getPlayerState()->getCurrentAmmo();
-    int maxAmmo = gameState->getPlayerState()->getMaxAmmo();
-
-    int levelIdx = gameState->getCurrentLevelIndex();
-    int levelsCnt = gameState->getLevelsCnt();
-
-    std::wostringstream statusString;
-
-    statusString << "Ammo: " << ammo << "/" << maxAmmo << "; Points: " << points << "/" << targetCnt << "; Time:" << Tm / 100 << "; Level:" << levelIdx + 1 << "/" << levelsCnt;
-
-    if (!timer->isStopped() && levelIdx + 1 < levelsCnt) {
-        Tm--;
-    }
-
-    if (Tm <= 0 || points == targetCnt) {
-        if (levelIdx + 1 < levelsCnt) {
-            actionDispatcher->loadNextLevel();
-            Tm = MAX_TIME;
-        }
-        else {
-            // TODO: show endgame
-        }
-    }
-
-    statusBar->setText(statusString.str().c_str());
 }
 
 void IrrlichtRenderer::updateCrosshair() {

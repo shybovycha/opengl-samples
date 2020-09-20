@@ -1,6 +1,6 @@
 #include "ActionDispatcher.h"
 
-ActionDispatcher::ActionDispatcher(std::shared_ptr<GameState> _gameState) : gameState(std::move(_gameState)) {}
+ActionDispatcher::ActionDispatcher(std::shared_ptr<GameState> _gameState) : gameState(_gameState) {}
 
 void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor) {
     if (gameState->getPlayerState()->getCurrentAmmo() <= 0) {
@@ -21,7 +21,7 @@ void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor) {
             continue;
         }
 
-        gameState->enqueue(new TargetEliminatedAction(std::move(target)));
+        gameState->enqueue(new TargetEliminatedAction(target));
         gameState->enqueue(new PlaySoundAction("Resources/Sounds/bell.wav"));
 
         break;
