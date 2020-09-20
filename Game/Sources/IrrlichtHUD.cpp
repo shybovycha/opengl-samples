@@ -6,7 +6,7 @@ void IrrlichtHUD::init() {
     bulletTexture = driver->getTexture("Resources/Sprites/bullet.png");
     targetTexture = driver->getTexture("Resources/Sprites/chicken_head.png");
 
-    statsFont = guienv->getFont("Resources/Fonts/zoombieland.xml");
+    statsFont = guienv->getFont("Resources/Fonts/candyshop_24px.xml");
 }
 
 void IrrlichtHUD::render() {
@@ -19,7 +19,7 @@ void IrrlichtHUD::renderAmmo() {
     for (int i = 0; i < gameState->getPlayerState()->getCurrentAmmo(); ++i) {
         driver->draw2DImage(
             bulletTexture,
-            irr::core::position2d<irr::s32>(30 + (i * (bulletTexture->getOriginalSize().Width + 10)), driver->getScreenSize().Height - bulletTexture->getOriginalSize().Height * 1.25),
+            irr::core::position2d<irr::s32>(30 + (i * (bulletTexture->getOriginalSize().Width + 5)), driver->getScreenSize().Height - bulletTexture->getOriginalSize().Height * 1.25),
             irr::core::rect<irr::s32>(
                 0, 
                 0, 
