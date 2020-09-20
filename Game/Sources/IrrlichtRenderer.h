@@ -14,8 +14,6 @@
 #include "Renderer.h"
 #include "Settings.h"
 
-#define MAX_TIME 6000
-
 class IrrlichtRenderer : public Renderer {
 public:
     IrrlichtRenderer(std::shared_ptr<GameState> _gameState, std::shared_ptr<ActionDispatcher> _actionDispatcher);
@@ -60,13 +58,12 @@ protected:
     // TODO: this is the endgame screen
     void showResult();
 
+    void updateTimer();
+
 private:
     std::shared_ptr<irr::IEventReceiver> eventReceiver;
     std::shared_ptr<ActionDispatcher> actionDispatcher;
     std::shared_ptr<IrrlichtHUD> hud;
-
-    // TODO: load from level?
-    int Tm = MAX_TIME;
 
     irr::ITimer* timer = 0;
     irr::gui::IGUIWindow* msgbox = 0;

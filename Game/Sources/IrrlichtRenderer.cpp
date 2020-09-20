@@ -136,6 +136,8 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
         targets.push_back(target);
     }
 
+    gameState->getCurrentScore()->resetCurrentTime();
+
     action->getLevel()->setTargets(targets);
     actionDispatcher->firstLevelLoaded();
 }
@@ -187,6 +189,8 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
         targets.push_back(target);
     }
 
+    gameState->getCurrentScore()->resetCurrentTime();
+
     action->getNextLevel()->setTargets(targets);
     actionDispatcher->nextLevelLoaded();
 }
@@ -235,6 +239,8 @@ void IrrlichtRenderer::render() {
     }
     else if (gameState->getCurrentState() == GameStateType::PLAYING) {
         smgr->drawAll();
+
+        updateTimer();
 
         updateCrosshair();
         updatePostProcessingEffects();
@@ -296,6 +302,23 @@ void IrrlichtRenderer::renderEndLevelMenu() {
     // TODO: implement
 }
 
+void IrrlichtRenderer::updateTimer() {
+    if (timer->isStopped()) {
+        return;
+    }
+
+    gameState->getCurrentScore()->tick();
+
+    if (gameState->getCurrentScore()->getCurrentTime() < 1) {
+        if (gameState->getCurrentLevelIndex() < gameState->getLevelsCnt()) {
+            actionDispatcher->loadNextLevel();
+        }
+        else {
+            renderEndGameMenu();
+        }
+    }
+}
+
 void IrrlichtRenderer::shutdown() {
     timer->stop();
 
@@ -319,8 +342,8 @@ void IrrlichtRenderer::showResult() {
     // int shots = gameState->getCurrentScore()->getShots();
     int shots = 0;
 
-    std::wostringstream msg;
-    msg << "Your time: " << (MAX_TIME / 100) - abs(Tm / 100) << "sec;  Shots: " << shots << "/" << targetCnt << " min" << ";  Target hit: " << points << "/" << targetCnt;
+    /*std::wostringstream msg;
+    msg << "Your time: " << (MAX_TIME / 100) - abs(Tm / 100) << "sec;  Shots: " << shots << "/" << targetCnt << " min" << ";  Target hit: " << points << "/" << targetCnt;*/
 
     /*Tms += (MAX_TIME / 100) - abs(Tm / 100);
     Pnts += points;*/
@@ -355,8 +378,9 @@ void IrrlichtRenderer::updateCrosshair() {
 }
 
 void IrrlichtRenderer::updatePostProcessingEffects() {
+    unsigned long time = gameState->getCurrentScore()->getCurrentTime();
     int levelIdx = gameState->getCurrentLevelIndex();
-    float k = (sin(abs(Tm) / 100) / (10 - levelIdx));
+    float k = (sin(time / 100) / (10 - levelIdx));
 
     camera->setRotation(
         irr::core::vector3df(

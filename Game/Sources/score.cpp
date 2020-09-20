@@ -11,11 +11,11 @@ void Score::resetTargetEliminated() {
 }
 
 void Score::timeUsed(unsigned long time) {
-    currentTime += time;
+    totalTimeUsed += time;
 }
 
 void Score::resetTimeUsed() {
-    currentTime = 0;
+    totalTimeUsed = 0;
 }
 
 const unsigned int Score::getTargetsEliminated() const {
@@ -23,5 +23,21 @@ const unsigned int Score::getTargetsEliminated() const {
 }
 
 const unsigned long Score::getCurrentTime() const {
-    return targetsEliminated;
+    return currentTime;
+}
+
+void Score::tick() {
+    if (currentTime < 1) {
+        return;
+    }
+
+    currentTime--;
+}
+
+void Score::resetCurrentTime(const unsigned long maxTime) {
+    currentTime = maxTime;
+}
+
+const unsigned long Score::getTotalTime() const {
+    return totalTimeUsed;
 }

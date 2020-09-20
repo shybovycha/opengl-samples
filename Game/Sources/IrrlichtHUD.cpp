@@ -66,8 +66,10 @@ void IrrlichtHUD::renderTargets() {
 }
 
 void IrrlichtHUD::renderTime() {
-    int minutes = 0;
-    int seconds = 60;
+    unsigned long currentTime = gameState->getCurrentScore()->getCurrentTime();
+
+    unsigned int minutes = currentTime / 100 / 60;
+    unsigned int seconds = (currentTime / 100) % 60;
 
     std::wostringstream timeStr;
     timeStr << minutes << ":" << seconds;
