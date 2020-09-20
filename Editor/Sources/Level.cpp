@@ -6,7 +6,7 @@ const std::vector<irr::core::vector3df> Level::getTargets() const {
     return targets;
 }
 
-size_t Level::addTarget(irr::core::vector3df position) {
+size_t Level::addTargetPosition(irr::core::vector3df position) {
     targets.push_back(position);
     return targets.size() - 1;
 }

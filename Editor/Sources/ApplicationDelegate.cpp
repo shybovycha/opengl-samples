@@ -91,7 +91,7 @@ void ApplicationDelegate::placeTarget() {
         targetPosition = collisionPoint;
     }
 
-    size_t targetId = levels[currentLevelIndex]->addTarget(targetPosition);
+    size_t targetId = levels[currentLevelIndex]->addTargetPosition(targetPosition);
 
     std::wostringstream idString;
     idString << "level-" << currentLevelIndex << "-target-" << targetId;
@@ -114,47 +114,49 @@ void ApplicationDelegate::saveLevels() {
 }
 
 void ApplicationDelegate::saveLevels(const std::wstring& filename) {
-    irr::io::IXMLWriter* writer = device->getFileSystem()->createXMLWriter(filename.c_str());
+    // setup wstring -> string converter
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wstringConverter;
 
-    writer->writeElement(L"levels");
+    std::FILE* fp = std::fopen(wstringConverter.to_bytes(filename).c_str(), "w");
+    tinyxml2::XMLPrinter* writer = new tinyxml2::XMLPrinter(fp);
+
+    writer->OpenElement("levels");
 
     for (std::shared_ptr<Level> level : levels) {
-        writer->writeElement(L"level");
+        writer->OpenElement("level");
         
-        writer->writeElement(L"model");
+        writer->OpenElement("model");
 
         irr::io::path path = device->getFileSystem()->getFileBasename(level->getMeshFilename().c_str());
         std::wostringstream meshFilename;
         meshFilename << path.c_str();
-
-        writer->writeText(meshFilename.str().c_str());
-        writer->writeClosingTag(L"model");
         
-        writer->writeElement(L"targets");
+        writer->PushText(wstringConverter.to_bytes(meshFilename.str()).c_str());
+
+        writer->CloseElement();
+        
+        writer->OpenElement("targets");
 
         for (irr::core::vector3df target : level->getTargets()) {
-            writer->writeElement(L"target");
+            writer->OpenElement("target");
 
-            std::wostringstream positionX;
-            positionX << target.X;
+            writer->OpenElement("position");
+            
+            writer->PushAttribute("x", target.X);
+            writer->PushAttribute("y", target.Y);
+            writer->PushAttribute("z", target.Z);
 
-            std::wostringstream positionY;
-            positionY << target.Y;
+            writer->CloseElement(); // position
 
-            std::wostringstream positionZ;
-            positionZ << target.Z;
-
-            writer->writeElement(L"position", true, L"x", positionX.str().c_str(), L"y", positionY.str().c_str(), L"z", positionZ.str().c_str());
-
-            writer->writeClosingTag(L"target");
+            writer->CloseElement(); // target
         }
 
-        writer->writeClosingTag(L"targets");
+        writer->CloseElement(); // targets
 
-        writer->writeClosingTag(L"level");
+        writer->CloseElement(); // level
     }
 
-    writer->writeClosingTag(L"levels");
+    writer->CloseElement(); // levels
 
     loadLevelsDialogIsShown = false;
     levelsFilename = filename;
@@ -187,7 +189,49 @@ void ApplicationDelegate::closeLoadLevelsDialog() {
 }
 
 void ApplicationDelegate::loadLevels(const std::wstring& filename) {
-    // TODO: implement
+    tinyxml2::XMLDocument* xml = new tinyxml2::XMLDocument();
+
+    // setup wstring -> string converter
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wstringConverter;
+
+    tinyxml2::XMLError xmlError = xml->LoadFile(wstringConverter.to_bytes(filename).c_str());
+
+    if (xmlError != tinyxml2::XML_SUCCESS) {
+        std::cerr << "Can not load levels.xml file" << std::endl;
+        throw "Can not load levels";
+    }
+
+    auto levelsNode = xml->FirstChildElement("levels");
+
+    auto levelNode = levelsNode->FirstChildElement("level");
+    auto lastLevelNode = levelsNode->LastChildElement("level");
+
+    levels.clear();
+
+    while (levelNode != nullptr) {
+        std::string meshName = levelNode->FirstChildElement("model")->GetText();
+
+        auto levelDescriptor = std::make_shared<Level>(meshName);
+
+        auto targetsNode = levelNode->FirstChildElement("targets");
+
+        auto targetNode = targetsNode->FirstChildElement("target");
+        auto lastTargetNode = targetsNode->LastChildElement("target");
+
+        while (targetNode != nullptr) {
+            auto positionNode = targetNode->FirstChildElement("position");
+
+            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+
+            levelDescriptor->addTargetPosition(position);
+
+            targetNode = targetNode->NextSiblingElement("target");
+        }
+
+        levels.push_back(levelDescriptor);
+
+        levelNode = levelNode->NextSiblingElement("level");
+    }
 
     loadLevelsDialogIsShown = false;
 }

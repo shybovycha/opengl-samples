@@ -11,7 +11,7 @@ public:
 
     const std::vector<irr::core::vector3df> getTargets() const;
 
-    size_t addTarget(irr::core::vector3df position);
+    size_t addTargetPosition(irr::core::vector3df position);
 
     void deleteTargetAt(size_t index);
 

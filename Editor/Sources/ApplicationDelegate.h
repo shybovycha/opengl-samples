@@ -1,12 +1,15 @@
 #pragma once
 #pragma comment(lib, "irrlicht.lib")
 
+#include <codecvt> // for converting wstring to string
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
+#include <xlocbuf> // for converting wstring to string
 
 #include "irrlicht.h"
 #include "tinyxml2.h"
