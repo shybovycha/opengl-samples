@@ -57,8 +57,8 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [ ] prevent game manager window from closing
 - [ ] save file dialog does not pick up non-existent files
 - [x] use mesh filename when adding game manager tree node
-- [ ] store level mesh in level object
-- [ ] load level mesh when switching levels in manager
+- [x] store level mesh in level object
+- [x] load level mesh when switching levels in manager
 
 ### Miscellanious
 
