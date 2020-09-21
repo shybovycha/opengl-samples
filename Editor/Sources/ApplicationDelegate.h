@@ -75,6 +75,8 @@ private:
 
     irr::core::vector3df getTargetPositionFromCameraView() const;
 
+    irr::scene::ISceneNode* loadMesh(const std::wstring& meshFilename);
+
     irr::IrrlichtDevice* device;
     irr::video::IVideoDriver* driver;
     irr::scene::ISceneManager* smgr;

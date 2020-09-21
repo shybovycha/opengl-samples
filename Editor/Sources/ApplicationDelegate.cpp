@@ -76,36 +76,13 @@ void ApplicationDelegate::update() {
     driver->endScene();
 }
 
-void ApplicationDelegate::addTarget() {
-    if (gameData->getCurrentLevel() == nullptr) {
-        guienv->addMessageBox(L"Error", L"You have to select a level before placing a target");
-        return;
-    }
-
-    irr::core::vector3df targetPosition = getTargetPositionFromCameraView();
-
-    gameData->getCurrentLevel()->createTarget(targetPosition);
-
-    gameManagerTree->rebuild();
-
-    // TODO: replace with actual target model
-    smgr->addSphereSceneNode(10, 64, 0, 0, targetPosition, irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
+void ApplicationDelegate::quit() {
+    device->closeDevice();
 }
 
-void ApplicationDelegate::saveLevels() {
-    if (levelsFilename != std::nullopt) {
-        saveLevels(*levelsFilename);
-    }
-    else {
-        openSaveLevelsDialog();
-    }
-}
-
-void ApplicationDelegate::saveLevels(const std::wstring& filename) {
-    gameData->saveToFile(filename);
-
-    loadLevelsDialogIsShown = false;
-    levelsFilename = filename;
+void ApplicationDelegate::setFont() {
+    irr::gui::IGUIFont* font = guienv->getFont("Resources/Fonts/calibri.xml");
+    guienv->getSkin()->setFont(font);
 }
 
 void ApplicationDelegate::openSaveLevelsDialog() {
@@ -134,12 +111,6 @@ void ApplicationDelegate::closeLoadLevelsDialog() {
     loadLevelsDialogIsShown = false;
 }
 
-void ApplicationDelegate::loadLevels(const std::wstring& filename) {
-    gameData->loadFromFile(filename);
-
-    loadLevelsDialogIsShown = false;
-}
-
 void ApplicationDelegate::openAboutWindow() {
     guienv->addMessageBox(L"About", ABOUT_TEXT.c_str());
     aboutWindowIsShown = true;
@@ -163,32 +134,91 @@ void ApplicationDelegate::closeLoadLevelMeshDialog() {
     loadLevelMeshDialogIsShown = false;
 }
 
+void ApplicationDelegate::loadLevels(const std::wstring& filename) {
+    gameData->loadFromFile(filename);
+
+    loadLevelsDialogIsShown = false;
+}
+
+void ApplicationDelegate::saveLevels() {
+    if (levelsFilename != std::nullopt) {
+        saveLevels(*levelsFilename);
+    }
+    else {
+        openSaveLevelsDialog();
+    }
+}
+
+void ApplicationDelegate::saveLevels(const std::wstring& filename) {
+    loadLevelsDialogIsShown = false;
+
+    gameData->saveToFile(filename);
+
+    levelsFilename = filename;
+}
+
 void ApplicationDelegate::addLevel(const std::wstring& meshFilename) {
+    loadLevelMeshDialogIsShown = false;
+
+    irr::scene::ISceneNode* sceneNode = loadMesh(meshFilename);
+
+    if (!sceneNode) {
+        return;
+    }
+
     std::shared_ptr<Level> level = gameData->createLevel(meshFilename);
+    
+    level->setSceneNode(sceneNode);
+
+    levelSelected(level->getId());
+
+    gameManagerTree->rebuild();
+}
+
+void ApplicationDelegate::addTarget() {
+    if (gameData->getCurrentLevel() == nullptr) {
+        guienv->addMessageBox(L"Error", L"You have to select a level before placing a target");
+        return;
+    }
+
+    irr::core::vector3df targetPosition = getTargetPositionFromCameraView();
+
+    gameData->getCurrentLevel()->createTarget(targetPosition);
 
     gameManagerTree->rebuild();
 
-    loadLevelMeshDialogIsShown = false;
-}
-
-void ApplicationDelegate::quit() {
-    device->closeDevice();
-}
-
-void ApplicationDelegate::setFont() {
-    irr::gui::IGUIFont* font = guienv->getFont("Resources/Fonts/calibri.xml");
-    guienv->getSkin()->setFont(font);
+    // TODO: replace with actual target model
+    smgr->addSphereSceneNode(10, 64, 0, 0, targetPosition, irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
 }
 
 void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
-    // TODO: unload current level
-    // TODO: load level
+    for (auto level : gameData->getLevels()) {
+        if (level->getSceneNode() != nullptr) {
+            level->getSceneNode()->setVisible(false);
+        }
+    }
+
+    gameData->setCurrentLevel(gameData->getLevelById(levelId));
+
+    if (!gameData->getCurrentLevel()->getSceneNode()) {
+        irr::scene::ISceneNode* sceneNode = loadMesh(gameData->getCurrentLevel()->getMeshFilename());
+
+        if (!sceneNode) {
+            return;
+        }
+
+        gameData->getCurrentLevel()->setSceneNode(sceneNode);
+    }
+
+    gameData->getCurrentLevel()->getSceneNode()->setVisible(true);
 }
 
 void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
     if (gameData->getCurrentLevel() == nullptr) {
         return;
     }
+
+    gameData->setCurrentTarget(gameData->getCurrentLevel()->getTargetById(targetId));
 
     // TODO: additional behavior
 }
@@ -224,4 +254,19 @@ irr::core::vector3df ApplicationDelegate::getTargetPositionFromCameraView() cons
     irr::core::vector3df targetPosition = camera->getAbsolutePosition() + camera->getTarget() * PICK_DISTANCE;
 
     return targetPosition;
+}
+
+irr::scene::ISceneNode* ApplicationDelegate::loadMesh(const std::wstring& meshFilename) {
+    irr::scene::IMesh * levelMesh = smgr->getMesh(meshFilename.c_str());
+
+    if (!levelMesh) {
+        std::wostringstream errorMessage;
+        errorMessage << "Could not load level mesh file: " << meshFilename;
+        guienv->addMessageBox(L"Error", errorMessage.str().c_str());
+        return nullptr;
+    }
+
+    irr::scene::ISceneNode* sceneNode = smgr->addMeshSceneNode(levelMesh);
+    sceneNode->setName(meshFilename.c_str());
+    return sceneNode;
 }

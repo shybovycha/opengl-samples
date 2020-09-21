@@ -57,14 +57,5 @@ GameManagerNodeData* GameManagerTree::getSelectedNodeData() const {
         return nullptr;
     }
 
-    auto selectedNodeData = reinterpret_cast<GameManagerNodeData*>(selectedNode->getData());
-
-    if (selectedNodeData->getType() == GameManagerNodeDataType::LEVEL) {
-        gameData->setCurrentLevel(gameData->getLevelById(selectedNodeData->getId()));
-    }
-    else if (selectedNodeData->getType() == GameManagerNodeDataType::TARGET) {
-        gameData->setCurrentTarget(gameData->getCurrentLevel()->getTargetById(selectedNodeData->getId()));
-    }
-
-    return selectedNodeData;
+    return reinterpret_cast<GameManagerNodeData*>(selectedNode->getData());
 }
