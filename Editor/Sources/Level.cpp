@@ -8,9 +8,12 @@ const std::vector<std::shared_ptr<Target>> Level::getTargets() const {
     return targets;
 }
 
-std::shared_ptr<Target> Level::addTargetPosition(irr::core::vector3df position, std::wstring targetId) {
-    
-    std::shared_ptr<Target> target = std::make_shared<Target>(position, targetId);
+std::shared_ptr<Target> Level::createTarget(irr::core::vector3df position) {
+    size_t targetIndex = targets.size();
+    std::wostringstream idString;
+    idString << id << "-target-" << targetIndex;
+
+    std::shared_ptr<Target> target = std::make_shared<Target>(position, idString.str());
     targets.push_back(target);
     
     return target;
@@ -56,4 +59,12 @@ std::wstring Level::getMeshBasename() const {
 
 std::wstring Level::getId() const {
     return id;
+}
+
+void Level::setSceneNode(irr::scene::ISceneNode* _sceneNode) {
+    sceneNode = _sceneNode;
+}
+
+irr::scene::ISceneNode* Level::getSceneNode() const {
+    return sceneNode;
 }

@@ -74,19 +74,15 @@ void ApplicationDelegate::update() {
     driver->endScene();
 }
 
-void ApplicationDelegate::placeTarget() {
+void ApplicationDelegate::addTarget() {
     if (currentLevel == nullptr) {
-        guienv->addMessageBox(L"Error", L"You have to have at least one level before placing a target");
+        guienv->addMessageBox(L"Error", L"You have to select a level before placing a target");
         return;
     }
 
     irr::core::vector3df targetPosition = getTargetPositionFromCameraView();
 
-    size_t targetIndex = currentLevel->getTargets().size();
-    std::wostringstream idString;
-    idString << currentLevel->getId() << "-target-" << targetIndex;
-
-    currentLevel->addTargetPosition(targetPosition, idString.str());
+    currentLevel->createTarget(targetPosition);
 
     rebuildGameManagerTree();
 
@@ -264,12 +260,22 @@ void ApplicationDelegate::rebuildGameManagerTree() {
     for (auto level : gameData->getLevels()) {
         GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, level->getId());
 
-        addManagerTreeNodeToRootNode(level->getMeshBasename().c_str(), levelNodeData);
+        auto levelTreeNode = addManagerTreeNodeToRootNode(level->getMeshBasename().c_str(), levelNodeData);
+
+        if (currentLevel != nullptr && currentTarget == nullptr && currentLevel->getId() == level->getId()) {
+            levelTreeNode->setSelected(true);
+            levelTreeNode->setExpanded(true);
+        }
 
         for (auto target : level->getTargets()) {
             GameManagerNodeData* targetNodeData = new GameManagerNodeData(GameManagerNodeDataType::TARGET, target->getId());
 
-            addManagerTreeNodeToRootNode(target->getId(), targetNodeData);
+            auto targetTreeNode = addManagerTreeNodeToNode(target->getId(), targetNodeData, levelTreeNode);
+
+            if (currentTarget != nullptr && currentTarget->getId() == target->getId()) {
+                targetTreeNode->setSelected(true);
+                levelTreeNode->setExpanded(true);
+            }
         }
     }
 }

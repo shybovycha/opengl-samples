@@ -43,7 +43,7 @@ public:
 
     void update();
 
-    void placeTarget();
+    void addTarget();
 
     void saveLevels();
 

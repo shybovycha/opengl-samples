@@ -72,7 +72,7 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
             }
 
             if (button->getID() == static_cast<irr::s32>(GuiElementID::ADD_TARGET)) {
-                delegate->placeTarget();
+                delegate->addTarget();
             }
 
             return false;

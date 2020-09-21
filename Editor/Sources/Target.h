@@ -14,7 +14,13 @@ public:
 
     void setPosition(irr::core::vector3df newPosition);
 
+    void setSceneNode(irr::scene::ISceneNode* sceneNode);
+
+    irr::scene::ISceneNode* getSceneNode() const;
+
 private:
     irr::core::vector3df position;
     std::wstring id;
+
+    irr::scene::ISceneNode* sceneNode;
 };

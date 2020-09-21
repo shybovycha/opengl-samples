@@ -30,10 +30,6 @@ void GameData::loadFromFile(const std::wstring& filename) {
 
         auto levelDescriptor = std::make_shared<Level>(wstringConverter.from_bytes(meshName.c_str()), levelIdString.str());
 
-        // GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, levelIdString.str());
-
-        // auto levelTreeNode = addManagerTreeNodeToRootNode(wstringConverter.from_bytes(meshName.c_str()), levelNodeData);
-
         auto targetsNode = levelNode->FirstChildElement("targets");
 
         auto targetNode = targetsNode->FirstChildElement("target");
@@ -44,14 +40,7 @@ void GameData::loadFromFile(const std::wstring& filename) {
 
             irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
 
-            std::wostringstream idString;
-            idString << "level-" << levels.size() << "-target-" << levelDescriptor->getTargets().size();
-
-            // GameManagerNodeData* targetNodeData = new GameManagerNodeData(GameManagerNodeDataType::TARGET, idString.str());
-
-            // addManagerTreeNodeToNode(idString.str(), targetNodeData, levelTreeNode);
-
-            levelDescriptor->addTargetPosition(position, idString.str());
+            levelDescriptor->createTarget(position);
 
             targetNode = targetNode->NextSiblingElement("target");
         }

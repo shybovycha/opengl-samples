@@ -13,3 +13,11 @@ std::wstring Target::getId() const {
 void Target::setPosition(irr::core::vector3df newPosition) {
     position = newPosition;
 }
+
+void Target::setSceneNode(irr::scene::ISceneNode* _sceneNode) {
+    sceneNode = _sceneNode;
+}
+
+irr::scene::ISceneNode* Target::getSceneNode() const {
+    return sceneNode;
+}
