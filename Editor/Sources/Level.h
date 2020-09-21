@@ -12,6 +12,8 @@ class Level {
 public:
     Level(const std::wstring& meshFilename, const std::wstring& id);
 
+    Level(const std::wstring& meshFilename, const std::wstring& id, const std::wstring& meshBasename);
+
     const std::vector<std::shared_ptr<Target>> getTargets() const;
 
     const std::shared_ptr<Target> getTargetById(std::wstring targetId) const;
@@ -23,6 +25,8 @@ public:
     void updateTargetById(std::wstring targetId, irr::core::vector3df newPosition);
 
     std::wstring getMeshFilename() const;
+    
+    std::wstring getMeshBasename() const;
 
     std::wstring getId() const;
 
@@ -31,5 +35,6 @@ private:
 
     std::vector<std::shared_ptr<Target>> targets;
     std::wstring meshFilename;
+    std::wstring meshBasename;
     std::wstring id;
 };

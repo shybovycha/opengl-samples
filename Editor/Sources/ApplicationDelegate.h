@@ -1,7 +1,6 @@
 #pragma once
 #pragma comment(lib, "irrlicht.lib")
 
-#include <codecvt> // for converting wstring to string
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -9,13 +8,13 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <xlocbuf> // for converting wstring to string
 
 #include "irrlicht.h"
 #include "tinyxml2.h"
 
-#include "Level.h"
+#include "GameData.h"
 #include "GameManagerNodeData.h"
+#include "Level.h"
 
 const std::wstring ABOUT_TEXT = L"This is the ShootThem! level editor.\n\n\
 Use the menu to add new levels and targets to the level.\n\n\
@@ -95,6 +94,10 @@ private:
 
     void setFont();
 
+    irr::core::vector3df getTargetPositionFromCameraView() const;
+
+    void rebuildGameManagerTree();
+
     irr::IrrlichtDevice* device;
     irr::video::IVideoDriver* driver;
     irr::scene::ISceneManager* smgr;
@@ -103,7 +106,7 @@ private:
     
     std::optional<std::wstring> levelsFilename;
 
-    std::vector<std::shared_ptr<Level>> levels;
+    std::shared_ptr<GameData> gameData;
 
     std::shared_ptr<Level> currentLevel;
     std::shared_ptr<Target> currentTarget;

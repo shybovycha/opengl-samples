@@ -11,7 +11,8 @@ ApplicationDelegate::ApplicationDelegate(irr::IrrlichtDevice* _device) :
     aboutWindowIsShown(false),
     loadLevelMeshDialogIsShown(false),
     currentLevel(nullptr),
-    currentTarget(nullptr)
+    currentTarget(nullptr),
+    gameData(std::make_shared<GameData>(device))
 {}
 
 void ApplicationDelegate::init() {
@@ -79,19 +80,7 @@ void ApplicationDelegate::placeTarget() {
         return;
     }
 
-    irr::core::triangle3df triangle;
-    irr::core::vector3df collisionPoint;
-    irr::core::line3df ray(camera->getAbsolutePosition(), camera->getAbsolutePosition() + camera->getTarget() * camera->getFarValue());
-
-    const float PICK_DISTANCE = 20.f;
-    
-    irr::scene::ISceneNode* collisionNode = smgr->getSceneCollisionManager()->getSceneNodeAndCollisionPointFromRay(ray, collisionPoint, triangle);
-
-    irr::core::vector3df targetPosition = camera->getAbsolutePosition() + camera->getTarget() * PICK_DISTANCE;
-
-    if (collisionNode) {
-        targetPosition = collisionPoint;
-    }
+    irr::core::vector3df targetPosition = getTargetPositionFromCameraView();
 
     size_t targetIndex = currentLevel->getTargets().size();
     std::wostringstream idString;
@@ -99,9 +88,7 @@ void ApplicationDelegate::placeTarget() {
 
     currentLevel->addTargetPosition(targetPosition, idString.str());
 
-    GameManagerNodeData* targetNodeData = new GameManagerNodeData(GameManagerNodeDataType::TARGET, idString.str());
-
-    addManagerTreeNodeToRootNode(idString.str().c_str(), targetNodeData);
+    rebuildGameManagerTree();
 
     // TODO: replace with actual target model
     smgr->addSphereSceneNode(10, 64, 0, 0, targetPosition, irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
@@ -117,50 +104,7 @@ void ApplicationDelegate::saveLevels() {
 }
 
 void ApplicationDelegate::saveLevels(const std::wstring& filename) {
-    // setup wstring -> string converter
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wstringConverter;
-
-    std::FILE* fp = std::fopen(wstringConverter.to_bytes(filename).c_str(), "w");
-    tinyxml2::XMLPrinter* writer = new tinyxml2::XMLPrinter(fp);
-
-    writer->OpenElement("levels");
-
-    for (std::shared_ptr<Level> level : levels) {
-        writer->OpenElement("level");
-        
-        writer->OpenElement("model");
-
-        irr::io::path path = device->getFileSystem()->getFileBasename(level->getMeshFilename().c_str());
-        std::wstring meshFilename = wstringConverter.from_bytes(path.c_str());
-        
-        writer->PushText(meshFilename.c_str());
-
-        writer->CloseElement();
-        
-        writer->OpenElement("targets");
-
-        for (auto target : level->getTargets()) {
-            irr::core::vector3df position = target->getPosition();
-
-            writer->OpenElement("target");
-
-            writer->OpenElement("position");
-            
-            writer->PushAttribute("x", position.X);
-            writer->PushAttribute("y", position.Y);
-            writer->PushAttribute("z", position.Z);
-
-            writer->CloseElement(); // position
-
-            writer->CloseElement(); // target
-        }
-
-        writer->CloseElement(); // targets
-
-        writer->CloseElement(); // level
-    }
-
-    writer->CloseElement(); // levels
+    gameData->saveToFile(filename);
 
     loadLevelsDialogIsShown = false;
     levelsFilename = filename;
@@ -193,63 +137,7 @@ void ApplicationDelegate::closeLoadLevelsDialog() {
 }
 
 void ApplicationDelegate::loadLevels(const std::wstring& filename) {
-    tinyxml2::XMLDocument* xml = new tinyxml2::XMLDocument();
-
-    // setup wstring -> string converter
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wstringConverter;
-
-    tinyxml2::XMLError xmlError = xml->LoadFile(wstringConverter.to_bytes(filename).c_str());
-
-    if (xmlError != tinyxml2::XML_SUCCESS) {
-        std::cerr << "Can not load levels.xml file" << std::endl;
-        throw "Can not load levels";
-    }
-
-    auto levelsNode = xml->FirstChildElement("levels");
-
-    auto levelNode = levelsNode->FirstChildElement("level");
-    auto lastLevelNode = levelsNode->LastChildElement("level");
-
-    levels.clear();
-
-    while (levelNode != nullptr) {
-        std::string meshName = levelNode->FirstChildElement("model")->GetText();
-
-        std::wostringstream levelIdString;
-        levelIdString << "level-" << levels.size();
-
-        auto levelDescriptor = std::make_shared<Level>(wstringConverter.from_bytes(meshName.c_str()), levelIdString.str());
-
-        GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, levelIdString.str());
-
-        auto levelTreeNode = addManagerTreeNodeToRootNode(wstringConverter.from_bytes(meshName.c_str()), levelNodeData);
-
-        auto targetsNode = levelNode->FirstChildElement("targets");
-
-        auto targetNode = targetsNode->FirstChildElement("target");
-        auto lastTargetNode = targetsNode->LastChildElement("target");
-
-        while (targetNode != nullptr) {
-            auto positionNode = targetNode->FirstChildElement("position");
-
-            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
-
-            std::wostringstream idString;
-            idString << "level-" << levels.size() << "-target-" << levelDescriptor->getTargets().size();
-
-            GameManagerNodeData* targetNodeData = new GameManagerNodeData(GameManagerNodeDataType::TARGET, idString.str());
-
-            addManagerTreeNodeToNode(idString.str(), targetNodeData, levelTreeNode);
-
-            levelDescriptor->addTargetPosition(position, idString.str());
-
-            targetNode = targetNode->NextSiblingElement("target");
-        }
-
-        levels.push_back(levelDescriptor);
-
-        levelNode = levelNode->NextSiblingElement("level");
-    }
+    gameData->loadFromFile(filename);
 
     loadLevelsDialogIsShown = false;
 }
@@ -278,19 +166,10 @@ void ApplicationDelegate::closeLoadLevelMeshDialog() {
 }
 
 void ApplicationDelegate::addLevel(const std::wstring& meshFilename) {
-    std::wostringstream idString;
-    idString << L"level-" << levels.size();
+    std::shared_ptr<Level> level = gameData->createLevel(meshFilename);
 
-    levels.push_back(std::make_shared<Level>(meshFilename, idString.str()));
+    rebuildGameManagerTree();
 
-    // setup wstring -> string converter
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wstringConverter;
-
-    std::wstring meshBasename = wstringConverter.from_bytes(device->getFileSystem()->getFileBasename(meshFilename.c_str()).c_str());
-
-    GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, idString.str());
-
-    addManagerTreeNodeToRootNode(meshBasename.c_str(), levelNodeData);
     loadLevelMeshDialogIsShown = false;
 }
 
@@ -329,13 +208,7 @@ void ApplicationDelegate::setFont() {
 }
 
 void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
-    auto selectedLevelIt = std::find_if(levels.begin(), levels.end(), [&](const std::shared_ptr<Level> level) { return level->getId() == levelId; });
-
-    if (selectedLevelIt == levels.end()) {
-        return;
-    }
-
-    currentLevel = *selectedLevelIt;
+    currentLevel = gameData->getLevelById(levelId);
 
     // TODO: unload current level
     // TODO: load level
@@ -352,8 +225,9 @@ void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
 }
 
 void ApplicationDelegate::gameManagerNodeSelected() {
-    irr::gui::IGUITreeView* gameManager = reinterpret_cast<irr::gui::IGUITreeView*>(guienv->getRootGUIElement()->getElementFromId(static_cast<irr::s32>(GuiElementID::GAME_LEVEL_TREE), true));
+    irr::gui::IGUITreeView* gameManager = getGameTreeView();
     irr::gui::IGUITreeViewNode* selectedNode = gameManager->getSelected();
+
     GameManagerNodeData* nodeData = reinterpret_cast<GameManagerNodeData*>(selectedNode->getData());
 
     if (nodeData->getType() == GameManagerNodeDataType::LEVEL) {
@@ -361,5 +235,41 @@ void ApplicationDelegate::gameManagerNodeSelected() {
     }
     else {
         targetSelected(nodeData->getId());
+    }
+}
+
+irr::core::vector3df ApplicationDelegate::getTargetPositionFromCameraView() const {
+    irr::core::triangle3df triangle;
+    irr::core::vector3df collisionPoint;
+    irr::core::line3df ray(camera->getAbsolutePosition(), camera->getAbsolutePosition() + camera->getTarget() * camera->getFarValue());
+
+    const float PICK_DISTANCE = 20.f;
+
+    irr::scene::ISceneNode* collisionNode = smgr->getSceneCollisionManager()->getSceneNodeAndCollisionPointFromRay(ray, collisionPoint, triangle);
+
+    if (collisionNode) {
+        return collisionPoint;
+    }
+
+    irr::core::vector3df targetPosition = camera->getAbsolutePosition() + camera->getTarget() * PICK_DISTANCE;
+
+    return targetPosition;
+}
+
+void ApplicationDelegate::rebuildGameManagerTree() {
+    auto gameManagerTree = getGameTreeView();
+
+    gameManagerTree->getRoot()->clearChildren();
+
+    for (auto level : gameData->getLevels()) {
+        GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, level->getId());
+
+        addManagerTreeNodeToRootNode(level->getMeshBasename().c_str(), levelNodeData);
+
+        for (auto target : level->getTargets()) {
+            GameManagerNodeData* targetNodeData = new GameManagerNodeData(GameManagerNodeDataType::TARGET, target->getId());
+
+            addManagerTreeNodeToRootNode(target->getId(), targetNodeData);
+        }
     }
 }

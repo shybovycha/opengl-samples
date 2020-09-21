@@ -1,6 +1,8 @@
 #include "Level.h"
 
-Level::Level(const std::wstring& _meshFilename, const std::wstring& _id) : meshFilename(_meshFilename), id(_id) {}
+Level::Level(const std::wstring& _meshFilename, const std::wstring& _id) : meshFilename(_meshFilename), id(_id), meshBasename(_meshFilename) {}
+
+Level::Level(const std::wstring& _meshFilename, const std::wstring& _id, const std::wstring& _meshBasename) : meshFilename(_meshFilename), id(_id), meshBasename(_meshBasename) {}
 
 const std::vector<std::shared_ptr<Target>> Level::getTargets() const {
     return targets;
@@ -46,6 +48,10 @@ const std::shared_ptr<Target> Level::getTargetById(std::wstring targetId) const 
 
 std::wstring Level::getMeshFilename() const {
     return meshFilename;
+}
+
+std::wstring Level::getMeshBasename() const {
+    return meshBasename;
 }
 
 std::wstring Level::getId() const {
