@@ -31,27 +31,27 @@ void ApplicationDelegate::createToolbar() {
     toolbar->setMinSize(irr::core::dimension2du(100, 40));
 
     irr::video::ITexture* openFileIcon = driver->getTexture("Resources/Icons/opened-folder.png");
-    toolbar->addButton(static_cast<irr::s32>(GuiElementID::LOAD_LEVELS), nullptr, L"Load game levels", openFileIcon);
+    toolbar->addButton(static_cast<irr::s32>(GuiElementID::LOAD_LEVELS), nullptr, L"Load game levels", openFileIcon, nullptr, false, true);
 
     irr::video::ITexture* saveFileIcon = driver->getTexture("Resources/Icons/save.png");
-    toolbar->addButton(static_cast<irr::s32>(GuiElementID::SAVE_LEVELS), nullptr, L"Save game levels", saveFileIcon);
+    toolbar->addButton(static_cast<irr::s32>(GuiElementID::SAVE_LEVELS), nullptr, L"Save game levels", saveFileIcon, nullptr, false, true);
 
     irr::video::ITexture* helpIcon = driver->getTexture("Resources/Icons/help.png");
-    toolbar->addButton(static_cast<irr::s32>(GuiElementID::ABOUT), nullptr, L"About", helpIcon);
+    toolbar->addButton(static_cast<irr::s32>(GuiElementID::ABOUT), nullptr, L"About", helpIcon, nullptr, false, true);
 
     irr::video::ITexture* addLevelIcon = driver->getTexture("Resources/Icons/map.png");
-    toolbar->addButton(static_cast<irr::s32>(GuiElementID::ADD_LEVEL), nullptr, L"Add level", addLevelIcon);
+    toolbar->addButton(static_cast<irr::s32>(GuiElementID::ADD_LEVEL), nullptr, L"Add level", addLevelIcon, nullptr, false, true);
 
     irr::video::ITexture* addTargetIcon = driver->getTexture("Resources/Icons/map-pin.png");
-    toolbar->addButton(static_cast<irr::s32>(GuiElementID::ADD_TARGET), nullptr, L"Add target", addTargetIcon);
+    toolbar->addButton(static_cast<irr::s32>(GuiElementID::ADD_TARGET), nullptr, L"Add target", addTargetIcon, nullptr, false, true);
 }
 
 void ApplicationDelegate::createManagerWindow() {
     irr::gui::IGUIWindow* managerWindow = guienv->addWindow(
         irr::core::rect<irr::s32>(600, 70, 800, 470),
         false, 
-        L"Levels manager", 
-        0, 
+        L"Levels manager",
+        nullptr,
         static_cast<irr::s32>(GuiElementID::MANAGER_WINDOW)
     );
 
@@ -128,10 +128,9 @@ void ApplicationDelegate::saveLevels(const std::wstring& filename) {
         writer->OpenElement("model");
 
         irr::io::path path = device->getFileSystem()->getFileBasename(level->getMeshFilename().c_str());
-        std::wostringstream meshFilename;
-        meshFilename << path.c_str();
+        std::wstring meshFilename = wstringConverter.from_bytes(path.c_str());
         
-        writer->PushText(wstringConverter.to_bytes(meshFilename.str()).c_str());
+        writer->PushText(meshFilename.c_str());
 
         writer->CloseElement();
         
@@ -276,9 +275,14 @@ void ApplicationDelegate::addLevel(const std::wstring& meshFilename) {
     std::wostringstream idString;
     idString << L"level-" << (levels.size() - 1);
 
-    GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, idString.str());
+    // setup wstring -> string converter
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wstringConverter;
 
-    addManagerTreeNodeToRootNode(idString.str().c_str(), levelNodeData);
+    std::wstring meshBasename = wstringConverter.from_bytes(device->getFileSystem()->getFileBasename(meshFilename.c_str()).c_str());
+
+    GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, meshBasename);
+
+    addManagerTreeNodeToRootNode(meshBasename.c_str(), levelNodeData);
     loadLevelMeshDialogIsShown = false;
 }
 

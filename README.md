@@ -53,10 +53,10 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [x] replace FPS camera with mouse-controlled one
 - [ ] add helpful help in UI
 - [x] update the default low-res font with something more readable
-- [ ] make button icons use transparency
+- [x] make button icons use transparency
 - [ ] prevent game manager window from closing
 - [ ] save file dialog does not pick up non-existent files
-- [ ] use mesh filename when adding game manager tree node
+- [x] use mesh filename when adding game manager tree node
 - [ ] store level mesh in level object
 - [ ] load level mesh when switching levels in manager
 
