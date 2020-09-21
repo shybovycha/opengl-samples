@@ -67,7 +67,7 @@ void GameData::saveToFile(const std::wstring& filename) {
 
         std::wstring meshFilename = level->getMeshBasename();
 
-        writer->PushText(meshFilename.c_str());
+        writer->PushText(wstringConverter.to_bytes(meshFilename).c_str());
 
         writer->CloseElement();
 

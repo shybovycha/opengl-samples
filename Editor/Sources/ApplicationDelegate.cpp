@@ -137,6 +137,12 @@ void ApplicationDelegate::closeLoadLevelMeshDialog() {
 void ApplicationDelegate::loadLevels(const std::wstring& filename) {
     gameData->loadFromFile(filename);
 
+    if (gameData->getLevels().size() > 0) {
+        levelSelected(gameData->getLevels().at(0)->getId());
+    }
+
+    gameManagerTree->rebuild();
+
     loadLevelsDialogIsShown = false;
 }
 
