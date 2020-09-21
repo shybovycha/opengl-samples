@@ -70,6 +70,12 @@ public:
 
     void addLevel(const std::wstring& meshFilename);
 
+    void levelSelected(const std::wstring& levelId);
+
+    void targetSelected(const std::wstring& targetId);
+
+    void gameManagerNodeSelected();
+
     void quit();
 
 private:
@@ -99,7 +105,8 @@ private:
 
     std::vector<std::shared_ptr<Level>> levels;
 
-    size_t currentLevelIndex;
+    std::shared_ptr<Level> currentLevel;
+    std::shared_ptr<Target> currentTarget;
 
     bool loadLevelsDialogIsShown;
     bool saveLevelsDialogIsShown;

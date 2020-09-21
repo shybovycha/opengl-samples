@@ -1,24 +1,53 @@
 #include "Level.h"
 
-Level::Level(const std::wstring& _meshFilename) : meshFilename(_meshFilename) {}
+Level::Level(const std::wstring& _meshFilename, const std::wstring& _id) : meshFilename(_meshFilename), id(_id) {}
 
-const std::vector<irr::core::vector3df> Level::getTargets() const {
+const std::vector<std::shared_ptr<Target>> Level::getTargets() const {
     return targets;
 }
 
-size_t Level::addTargetPosition(irr::core::vector3df position) {
-    targets.push_back(position);
-    return targets.size() - 1;
+std::shared_ptr<Target> Level::addTargetPosition(irr::core::vector3df position, std::wstring targetId) {
+    
+    std::shared_ptr<Target> target = std::make_shared<Target>(position, targetId);
+    targets.push_back(target);
+    
+    return target;
 }
 
-void Level::deleteTargetAt(size_t index) {
-    targets.erase(targets.begin() + index);
+void Level::deleteTargetById(std::wstring targetId) {
+    auto it = getTargetIteratorById(targetId);
+
+    if (it != targets.end()) {
+        targets.erase(it);
+    }
 }
 
-void Level::updateTargetAt(size_t index, irr::core::vector3df newPosition) {
-    targets[index] = newPosition;
+void Level::updateTargetById(std::wstring targetId, irr::core::vector3df newPosition) {
+    auto it = getTargetIteratorById(targetId);
+
+    if (it != targets.end()) {
+        (*it)->setPosition(newPosition);
+    }
+}
+
+const std::vector<std::shared_ptr<Target>>::const_iterator Level::getTargetIteratorById(std::wstring targetId) const {
+    return std::find_if(targets.begin(), targets.end(), [&](const std::shared_ptr<Target>& target) { return target->getId() == targetId; });
+}
+
+const std::shared_ptr<Target> Level::getTargetById(std::wstring targetId) const {
+    auto targetIt = getTargetIteratorById(targetId);
+
+    if (targetIt != targets.end()) {
+        return *targetIt;
+    }
+
+    return nullptr;
 }
 
 std::wstring Level::getMeshFilename() const {
     return meshFilename;
+}
+
+std::wstring Level::getId() const {
+    return id;
 }

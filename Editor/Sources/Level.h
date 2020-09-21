@@ -1,25 +1,35 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "irrlicht.h"
 
+#include "Target.h"
+
 class Level {
 public:
-    Level(const std::wstring& meshFilename);
+    Level(const std::wstring& meshFilename, const std::wstring& id);
 
-    const std::vector<irr::core::vector3df> getTargets() const;
+    const std::vector<std::shared_ptr<Target>> getTargets() const;
 
-    size_t addTargetPosition(irr::core::vector3df position);
+    const std::shared_ptr<Target> getTargetById(std::wstring targetId) const;
 
-    void deleteTargetAt(size_t index);
+    std::shared_ptr<Target> addTargetPosition(irr::core::vector3df position, std::wstring targetId);
 
-    void updateTargetAt(size_t index, irr::core::vector3df newPosition);
+    void deleteTargetById(std::wstring targetId);
+
+    void updateTargetById(std::wstring targetId, irr::core::vector3df newPosition);
 
     std::wstring getMeshFilename() const;
 
+    std::wstring getId() const;
+
 private:
-    std::vector<irr::core::vector3df> targets;
+    const std::vector<std::shared_ptr<Target>>::const_iterator getTargetIteratorById(std::wstring targetId) const;
+
+    std::vector<std::shared_ptr<Target>> targets;
     std::wstring meshFilename;
+    std::wstring id;
 };

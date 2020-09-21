@@ -15,7 +15,9 @@ set(SOURCES
     "Sources/Level.h"
     "Sources/Level.cpp"
     "Sources/GameManagerNodeData.h"
-    "Sources/GameManagerNodeData.cpp")
+    "Sources/GameManagerNodeData.cpp"
+    "Sources/Target.h"
+    "Sources/Target.cpp")
 
 set(LIBRARIES
         ${X11_LIBRARIES}

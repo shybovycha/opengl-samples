@@ -9,7 +9,9 @@ ApplicationDelegate::ApplicationDelegate(irr::IrrlichtDevice* _device) :
     loadLevelsDialogIsShown(false),
     saveLevelsDialogIsShown(false),
     aboutWindowIsShown(false),
-    loadLevelMeshDialogIsShown(false)
+    loadLevelMeshDialogIsShown(false),
+    currentLevel(nullptr),
+    currentTarget(nullptr)
 {}
 
 void ApplicationDelegate::init() {
@@ -72,7 +74,7 @@ void ApplicationDelegate::update() {
 }
 
 void ApplicationDelegate::placeTarget() {
-    if (!currentLevelIndex) {
+    if (currentLevel == nullptr) {
         guienv->addMessageBox(L"Error", L"You have to have at least one level before placing a target");
         return;
     }
@@ -91,10 +93,11 @@ void ApplicationDelegate::placeTarget() {
         targetPosition = collisionPoint;
     }
 
-    size_t targetId = levels[currentLevelIndex]->addTargetPosition(targetPosition);
-
+    size_t targetIndex = currentLevel->getTargets().size();
     std::wostringstream idString;
-    idString << "level-" << currentLevelIndex << "-target-" << targetId;
+    idString << currentLevel->getId() << "-target-" << targetIndex;
+
+    currentLevel->addTargetPosition(targetPosition, idString.str());
 
     GameManagerNodeData* targetNodeData = new GameManagerNodeData(GameManagerNodeDataType::TARGET, idString.str());
 
@@ -136,14 +139,16 @@ void ApplicationDelegate::saveLevels(const std::wstring& filename) {
         
         writer->OpenElement("targets");
 
-        for (irr::core::vector3df target : level->getTargets()) {
+        for (auto target : level->getTargets()) {
+            irr::core::vector3df position = target->getPosition();
+
             writer->OpenElement("target");
 
             writer->OpenElement("position");
             
-            writer->PushAttribute("x", target.X);
-            writer->PushAttribute("y", target.Y);
-            writer->PushAttribute("z", target.Z);
+            writer->PushAttribute("x", position.X);
+            writer->PushAttribute("y", position.Y);
+            writer->PushAttribute("z", position.Z);
 
             writer->CloseElement(); // position
 
@@ -210,9 +215,12 @@ void ApplicationDelegate::loadLevels(const std::wstring& filename) {
     while (levelNode != nullptr) {
         std::string meshName = levelNode->FirstChildElement("model")->GetText();
 
-        auto levelDescriptor = std::make_shared<Level>(wstringConverter.from_bytes(meshName.c_str()));
+        std::wostringstream levelIdString;
+        levelIdString << "level-" << levels.size();
 
-        GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, wstringConverter.from_bytes(meshName.c_str()));
+        auto levelDescriptor = std::make_shared<Level>(wstringConverter.from_bytes(meshName.c_str()), levelIdString.str());
+
+        GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, levelIdString.str());
 
         auto levelTreeNode = addManagerTreeNodeToRootNode(wstringConverter.from_bytes(meshName.c_str()), levelNodeData);
 
@@ -233,7 +241,7 @@ void ApplicationDelegate::loadLevels(const std::wstring& filename) {
 
             addManagerTreeNodeToNode(idString.str(), targetNodeData, levelTreeNode);
 
-            levelDescriptor->addTargetPosition(position);
+            levelDescriptor->addTargetPosition(position, idString.str());
 
             targetNode = targetNode->NextSiblingElement("target");
         }
@@ -270,17 +278,17 @@ void ApplicationDelegate::closeLoadLevelMeshDialog() {
 }
 
 void ApplicationDelegate::addLevel(const std::wstring& meshFilename) {
-    levels.push_back(std::make_shared<Level>(meshFilename));
-
     std::wostringstream idString;
-    idString << L"level-" << (levels.size() - 1);
+    idString << L"level-" << levels.size();
+
+    levels.push_back(std::make_shared<Level>(meshFilename, idString.str()));
 
     // setup wstring -> string converter
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wstringConverter;
 
     std::wstring meshBasename = wstringConverter.from_bytes(device->getFileSystem()->getFileBasename(meshFilename.c_str()).c_str());
 
-    GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, meshBasename);
+    GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, idString.str());
 
     addManagerTreeNodeToRootNode(meshBasename.c_str(), levelNodeData);
     loadLevelMeshDialogIsShown = false;
@@ -312,10 +320,46 @@ irr::gui::IGUITreeViewNode* ApplicationDelegate::addManagerTreeNodeToSelectedNod
 }
 
 irr::gui::IGUITreeViewNode* ApplicationDelegate::addManagerTreeNodeToNode(std::wstring label, GameManagerNodeData* nodeData, irr::gui::IGUITreeViewNode* parent) {
-    return parent->addChildBack(label.c_str(), nullptr, -1, -1, nodeData);
+    return parent->addChildBack(label.c_str(), nullptr, -1, -1, reinterpret_cast<void*>(nodeData));
 }
 
 void ApplicationDelegate::setFont() {
     irr::gui::IGUIFont* font = guienv->getFont("Resources/Fonts/calibri.xml");
     guienv->getSkin()->setFont(font);
+}
+
+void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
+    auto selectedLevelIt = std::find_if(levels.begin(), levels.end(), [&](const std::shared_ptr<Level> level) { return level->getId() == levelId; });
+
+    if (selectedLevelIt == levels.end()) {
+        return;
+    }
+
+    currentLevel = *selectedLevelIt;
+
+    // TODO: unload current level
+    // TODO: load level
+}
+
+void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
+    if (currentLevel == nullptr) {
+        return;
+    }
+
+    currentTarget = currentLevel->getTargetById(targetId);
+
+    // TODO: additional behavior
+}
+
+void ApplicationDelegate::gameManagerNodeSelected() {
+    irr::gui::IGUITreeView* gameManager = reinterpret_cast<irr::gui::IGUITreeView*>(guienv->getRootGUIElement()->getElementFromId(static_cast<irr::s32>(GuiElementID::GAME_LEVEL_TREE), true));
+    irr::gui::IGUITreeViewNode* selectedNode = gameManager->getSelected();
+    GameManagerNodeData* nodeData = reinterpret_cast<GameManagerNodeData*>(selectedNode->getData());
+
+    if (nodeData->getType() == GameManagerNodeDataType::LEVEL) {
+        levelSelected(nodeData->getId());
+    }
+    else {
+        targetSelected(nodeData->getId());
+    }
 }

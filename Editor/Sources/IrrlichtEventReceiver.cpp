@@ -74,6 +74,14 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
             if (button->getID() == static_cast<irr::s32>(GuiElementID::ADD_TARGET)) {
                 delegate->placeTarget();
             }
+
+            return false;
+        }
+
+        if (event.GUIEvent.EventType == irr::gui::EGET_TREEVIEW_NODE_SELECT) {
+            delegate->gameManagerNodeSelected();
+
+            return false;
         }
     }
 
