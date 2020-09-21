@@ -9,11 +9,11 @@ ApplicationDelegate::ApplicationDelegate(irr::IrrlichtDevice* _device) :
     loadLevelsDialogIsShown(false),
     saveLevelsDialogIsShown(false),
     aboutWindowIsShown(false),
-    loadLevelMeshDialogIsShown(false),
-    currentLevel(nullptr),
-    currentTarget(nullptr),
-    gameData(std::make_shared<GameData>(device))
-{}
+    loadLevelMeshDialogIsShown(false)
+{
+    gameData = std::make_shared<GameData>(device);
+    gameManagerTree = std::make_shared<GameManagerTree>(guienv, gameData);
+}
 
 void ApplicationDelegate::init() {
     camera = smgr->addCameraSceneNodeMaya();
@@ -27,6 +27,8 @@ void ApplicationDelegate::initUI() {
     createToolbar();
 
     createManagerWindow();
+
+    gameManagerTree->init();
 }
 
 void ApplicationDelegate::createToolbar() {
@@ -34,19 +36,19 @@ void ApplicationDelegate::createToolbar() {
     toolbar->setMinSize(irr::core::dimension2du(100, 40));
 
     irr::video::ITexture* openFileIcon = driver->getTexture("Resources/Icons/opened-folder.png");
-    toolbar->addButton(static_cast<irr::s32>(GuiElementID::LOAD_LEVELS), nullptr, L"Load game levels", openFileIcon, nullptr, false, true);
+    toolbar->addButton(static_cast<irr::s32>(GUIElementId::LOAD_LEVELS), nullptr, L"Load game levels", openFileIcon, nullptr, false, true);
 
     irr::video::ITexture* saveFileIcon = driver->getTexture("Resources/Icons/save.png");
-    toolbar->addButton(static_cast<irr::s32>(GuiElementID::SAVE_LEVELS), nullptr, L"Save game levels", saveFileIcon, nullptr, false, true);
+    toolbar->addButton(static_cast<irr::s32>(GUIElementId::SAVE_LEVELS), nullptr, L"Save game levels", saveFileIcon, nullptr, false, true);
 
     irr::video::ITexture* helpIcon = driver->getTexture("Resources/Icons/help.png");
-    toolbar->addButton(static_cast<irr::s32>(GuiElementID::ABOUT), nullptr, L"About", helpIcon, nullptr, false, true);
+    toolbar->addButton(static_cast<irr::s32>(GUIElementId::ABOUT), nullptr, L"About", helpIcon, nullptr, false, true);
 
     irr::video::ITexture* addLevelIcon = driver->getTexture("Resources/Icons/map.png");
-    toolbar->addButton(static_cast<irr::s32>(GuiElementID::ADD_LEVEL), nullptr, L"Add level", addLevelIcon, nullptr, false, true);
+    toolbar->addButton(static_cast<irr::s32>(GUIElementId::ADD_LEVEL), nullptr, L"Add level", addLevelIcon, nullptr, false, true);
 
     irr::video::ITexture* addTargetIcon = driver->getTexture("Resources/Icons/map-pin.png");
-    toolbar->addButton(static_cast<irr::s32>(GuiElementID::ADD_TARGET), nullptr, L"Add target", addTargetIcon, nullptr, false, true);
+    toolbar->addButton(static_cast<irr::s32>(GUIElementId::ADD_TARGET), nullptr, L"Add target", addTargetIcon, nullptr, false, true);
 }
 
 void ApplicationDelegate::createManagerWindow() {
@@ -55,13 +57,13 @@ void ApplicationDelegate::createManagerWindow() {
         false, 
         L"Levels manager",
         nullptr,
-        static_cast<irr::s32>(GuiElementID::MANAGER_WINDOW)
+        static_cast<irr::s32>(GUIElementId::MANAGER_WINDOW)
     );
 
     irr::gui::IGUITreeView* gameTree = guienv->addTreeView(
         irr::core::rect<irr::s32>(10, 30, 190, 390), 
         managerWindow, 
-        static_cast<irr::s32>(GuiElementID::GAME_LEVEL_TREE)
+        static_cast<irr::s32>(GUIElementId::GAME_LEVEL_TREE)
     );
 }
 
@@ -75,16 +77,16 @@ void ApplicationDelegate::update() {
 }
 
 void ApplicationDelegate::addTarget() {
-    if (currentLevel == nullptr) {
+    if (gameData->getCurrentLevel() == nullptr) {
         guienv->addMessageBox(L"Error", L"You have to select a level before placing a target");
         return;
     }
 
     irr::core::vector3df targetPosition = getTargetPositionFromCameraView();
 
-    currentLevel->createTarget(targetPosition);
+    gameData->getCurrentLevel()->createTarget(targetPosition);
 
-    rebuildGameManagerTree();
+    gameManagerTree->rebuild();
 
     // TODO: replace with actual target model
     smgr->addSphereSceneNode(10, 64, 0, 0, targetPosition, irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
@@ -111,7 +113,7 @@ void ApplicationDelegate::openSaveLevelsDialog() {
         return;
     }
 
-    guienv->addFileOpenDialog(L"Save levels file", true, 0, static_cast<irr::s32>(GuiElementID::SAVE_LEVELS_DIALOG));
+    guienv->addFileOpenDialog(L"Save levels file", true, 0, static_cast<irr::s32>(GUIElementId::SAVE_LEVELS_DIALOG));
     saveLevelsDialogIsShown = true;
 }
 
@@ -124,7 +126,7 @@ void ApplicationDelegate::openLoadLevelsDialog() {
         return;
     }
 
-    guienv->addFileOpenDialog(L"Load levels file", true, 0, static_cast<irr::s32>(GuiElementID::LOAD_LEVELS_DIALOG));
+    guienv->addFileOpenDialog(L"Load levels file", true, 0, static_cast<irr::s32>(GUIElementId::LOAD_LEVELS_DIALOG));
     loadLevelsDialogIsShown = true;
 }
 
@@ -152,7 +154,7 @@ void ApplicationDelegate::openLoadLevelMeshDialog() {
         return;
     }
 
-    guienv->addFileOpenDialog(L"Load level mesh", true, 0, static_cast<irr::s32>(GuiElementID::LOAD_LEVEL_MESH_DIALOG));
+    guienv->addFileOpenDialog(L"Load level mesh", true, 0, static_cast<irr::s32>(GUIElementId::LOAD_LEVEL_MESH_DIALOG));
 
     loadLevelMeshDialogIsShown = true;
 }
@@ -164,7 +166,7 @@ void ApplicationDelegate::closeLoadLevelMeshDialog() {
 void ApplicationDelegate::addLevel(const std::wstring& meshFilename) {
     std::shared_ptr<Level> level = gameData->createLevel(meshFilename);
 
-    rebuildGameManagerTree();
+    gameManagerTree->rebuild();
 
     loadLevelMeshDialogIsShown = false;
 }
@@ -173,58 +175,30 @@ void ApplicationDelegate::quit() {
     device->closeDevice();
 }
 
-irr::gui::IGUITreeView* ApplicationDelegate::getGameTreeView() {
-    return reinterpret_cast<irr::gui::IGUITreeView*>(guienv->getRootGUIElement()->getElementFromId(static_cast<irr::s32>(GuiElementID::GAME_LEVEL_TREE), true));
-}
-
-irr::gui::IGUITreeViewNode* ApplicationDelegate::addManagerTreeNodeToRootNode(std::wstring label, GameManagerNodeData* nodeData) {
-    irr::gui::IGUITreeView* tree = getGameTreeView();
-
-    return addManagerTreeNodeToNode(label, nodeData, tree->getRoot());
-}
-
-irr::gui::IGUITreeViewNode* ApplicationDelegate::addManagerTreeNodeToSelectedNode(std::wstring label, GameManagerNodeData* nodeData) {
-    irr::gui::IGUITreeView* tree = getGameTreeView();
-    irr::gui::IGUITreeViewNode* selectedNode = tree->getSelected();
-
-    if (!selectedNode) {
-        selectedNode = tree->getRoot();
-    }
-
-    return addManagerTreeNodeToNode(label, nodeData, selectedNode);
-}
-
-irr::gui::IGUITreeViewNode* ApplicationDelegate::addManagerTreeNodeToNode(std::wstring label, GameManagerNodeData* nodeData, irr::gui::IGUITreeViewNode* parent) {
-    return parent->addChildBack(label.c_str(), nullptr, -1, -1, reinterpret_cast<void*>(nodeData));
-}
-
 void ApplicationDelegate::setFont() {
     irr::gui::IGUIFont* font = guienv->getFont("Resources/Fonts/calibri.xml");
     guienv->getSkin()->setFont(font);
 }
 
 void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
-    currentLevel = gameData->getLevelById(levelId);
-
     // TODO: unload current level
     // TODO: load level
 }
 
 void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
-    if (currentLevel == nullptr) {
+    if (gameData->getCurrentLevel() == nullptr) {
         return;
     }
-
-    currentTarget = currentLevel->getTargetById(targetId);
 
     // TODO: additional behavior
 }
 
 void ApplicationDelegate::gameManagerNodeSelected() {
-    irr::gui::IGUITreeView* gameManager = getGameTreeView();
-    irr::gui::IGUITreeViewNode* selectedNode = gameManager->getSelected();
+    GameManagerNodeData* nodeData = gameManagerTree->getSelectedNodeData();
 
-    GameManagerNodeData* nodeData = reinterpret_cast<GameManagerNodeData*>(selectedNode->getData());
+    if (!nodeData) {
+        return;
+    }
 
     if (nodeData->getType() == GameManagerNodeDataType::LEVEL) {
         levelSelected(nodeData->getId());
@@ -250,32 +224,4 @@ irr::core::vector3df ApplicationDelegate::getTargetPositionFromCameraView() cons
     irr::core::vector3df targetPosition = camera->getAbsolutePosition() + camera->getTarget() * PICK_DISTANCE;
 
     return targetPosition;
-}
-
-void ApplicationDelegate::rebuildGameManagerTree() {
-    auto gameManagerTree = getGameTreeView();
-
-    gameManagerTree->getRoot()->clearChildren();
-
-    for (auto level : gameData->getLevels()) {
-        GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, level->getId());
-
-        auto levelTreeNode = addManagerTreeNodeToRootNode(level->getMeshBasename().c_str(), levelNodeData);
-
-        if (currentLevel != nullptr && currentTarget == nullptr && currentLevel->getId() == level->getId()) {
-            levelTreeNode->setSelected(true);
-            levelTreeNode->setExpanded(true);
-        }
-
-        for (auto target : level->getTargets()) {
-            GameManagerNodeData* targetNodeData = new GameManagerNodeData(GameManagerNodeDataType::TARGET, target->getId());
-
-            auto targetTreeNode = addManagerTreeNodeToNode(target->getId(), targetNodeData, levelTreeNode);
-
-            if (currentTarget != nullptr && currentTarget->getId() == target->getId()) {
-                targetTreeNode->setSelected(true);
-                levelTreeNode->setExpanded(true);
-            }
-        }
-    }
 }

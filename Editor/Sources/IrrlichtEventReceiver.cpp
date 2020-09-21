@@ -17,13 +17,13 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
         if (event.GUIEvent.EventType == irr::gui::EGET_FILE_SELECTED) {
             irr::gui::IGUIFileOpenDialog* dialog = reinterpret_cast<irr::gui::IGUIFileOpenDialog*>(event.GUIEvent.Caller);
 
-            if (dialog->getID() == static_cast<irr::s32>(GuiElementID::SAVE_LEVELS_DIALOG)) {
+            if (dialog->getID() == static_cast<irr::s32>(GUIElementId::SAVE_LEVELS_DIALOG)) {
                 delegate->saveLevels(dialog->getFileName());
             }
-            else if (dialog->getID() == static_cast<irr::s32>(GuiElementID::LOAD_LEVELS_DIALOG)) {
+            else if (dialog->getID() == static_cast<irr::s32>(GUIElementId::LOAD_LEVELS_DIALOG)) {
                 delegate->loadLevels(dialog->getFileName());
             }
-            else if (dialog->getID() == static_cast<irr::s32>(GuiElementID::LOAD_LEVEL_MESH_DIALOG)) {
+            else if (dialog->getID() == static_cast<irr::s32>(GUIElementId::LOAD_LEVEL_MESH_DIALOG)) {
                 delegate->addLevel(dialog->getFileName());
             }
 
@@ -33,16 +33,16 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
         if (event.GUIEvent.EventType == irr::gui::EGET_FILE_CHOOSE_DIALOG_CANCELLED) {
             irr::gui::IGUIFileOpenDialog* dialog = reinterpret_cast<irr::gui::IGUIFileOpenDialog*>(event.GUIEvent.Caller);
 
-            if (dialog->getID() == static_cast<irr::s32>(GuiElementID::ABOUT_DIALOG)) {
+            if (dialog->getID() == static_cast<irr::s32>(GUIElementId::ABOUT_DIALOG)) {
                 delegate->closeAboutWindow();
             }
-            else if (dialog->getID() == static_cast<irr::s32>(GuiElementID::LOAD_LEVELS_DIALOG)) {
+            else if (dialog->getID() == static_cast<irr::s32>(GUIElementId::LOAD_LEVELS_DIALOG)) {
                 delegate->closeLoadLevelsDialog();
             }
-            else if (dialog->getID() == static_cast<irr::s32>(GuiElementID::SAVE_LEVELS_DIALOG)) {
+            else if (dialog->getID() == static_cast<irr::s32>(GUIElementId::SAVE_LEVELS_DIALOG)) {
                 delegate->closeSaveLevelsDialog();
             }
-            else if (dialog->getID() == static_cast<irr::s32>(GuiElementID::LOAD_LEVEL_MESH_DIALOG)) {
+            else if (dialog->getID() == static_cast<irr::s32>(GUIElementId::LOAD_LEVEL_MESH_DIALOG)) {
                 delegate->closeLoadLevelMeshDialog();
             }
 
@@ -51,27 +51,27 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
 
         if (event.GUIEvent.EventType == irr::gui::EGET_BUTTON_CLICKED) {
             irr::gui::IGUIButton* button = reinterpret_cast<irr::gui::IGUIButton*>(event.GUIEvent.Caller);
-            if (button->getID() == static_cast<irr::s32>(GuiElementID::QUIT)) {
+            if (button->getID() == static_cast<irr::s32>(GUIElementId::QUIT)) {
                 delegate->quit();
             }
 
-            if (button->getID() == static_cast<irr::s32>(GuiElementID::SAVE_LEVELS)) {
+            if (button->getID() == static_cast<irr::s32>(GUIElementId::SAVE_LEVELS)) {
                 delegate->openSaveLevelsDialog();
             }
 
-            if (button->getID() == static_cast<irr::s32>(GuiElementID::LOAD_LEVELS)) {
+            if (button->getID() == static_cast<irr::s32>(GUIElementId::LOAD_LEVELS)) {
                 delegate->openLoadLevelsDialog();
             }
 
-            if (button->getID() == static_cast<irr::s32>(GuiElementID::ABOUT)) {
+            if (button->getID() == static_cast<irr::s32>(GUIElementId::ABOUT)) {
                 delegate->openAboutWindow();
             }
 
-            if (button->getID() == static_cast<irr::s32>(GuiElementID::ADD_LEVEL)) {
+            if (button->getID() == static_cast<irr::s32>(GUIElementId::ADD_LEVEL)) {
                 delegate->openLoadLevelMeshDialog();
             }
 
-            if (button->getID() == static_cast<irr::s32>(GuiElementID::ADD_TARGET)) {
+            if (button->getID() == static_cast<irr::s32>(GUIElementId::ADD_TARGET)) {
                 delegate->addTarget();
             }
 

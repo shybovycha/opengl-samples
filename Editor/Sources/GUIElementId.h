@@ -1,0 +1,16 @@
+#pragma once
+
+enum class GUIElementId {
+    LOAD_LEVELS,
+    SAVE_LEVELS,
+    ABOUT,
+    QUIT,
+    ADD_LEVEL,
+    ADD_TARGET,
+    SAVE_LEVELS_DIALOG,
+    LOAD_LEVELS_DIALOG,
+    ABOUT_DIALOG,
+    MANAGER_WINDOW,
+    GAME_LEVEL_TREE,
+    LOAD_LEVEL_MESH_DIALOG
+};

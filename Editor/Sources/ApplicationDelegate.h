@@ -14,26 +14,13 @@
 
 #include "GameData.h"
 #include "GameManagerNodeData.h"
+#include "GameManagerTree.h"
+#include "GUIElementId.h"
 #include "Level.h"
 
 const std::wstring ABOUT_TEXT = L"This is the ShootThem! level editor.\n\n\
 Use the menu to add new levels and targets to the level.\n\n\
 Save and load levels from the levels.xml file that will be picked up by the game later on.";
-
-enum class GuiElementID {
-    LOAD_LEVELS,
-    SAVE_LEVELS,
-    ABOUT,
-    QUIT,
-    ADD_LEVEL,
-    ADD_TARGET,
-    SAVE_LEVELS_DIALOG,
-    LOAD_LEVELS_DIALOG,
-    ABOUT_DIALOG,
-    MANAGER_WINDOW,
-    GAME_LEVEL_TREE,
-    LOAD_LEVEL_MESH_DIALOG
-};
 
 class ApplicationDelegate {
 public:
@@ -84,19 +71,9 @@ private:
 
     void createManagerWindow();
 
-    irr::gui::IGUITreeView* getGameTreeView();
-
-    irr::gui::IGUITreeViewNode* addManagerTreeNodeToRootNode(std::wstring label, GameManagerNodeData* nodeData);
-
-    irr::gui::IGUITreeViewNode* addManagerTreeNodeToSelectedNode(std::wstring label, GameManagerNodeData* nodeData);
-
-    irr::gui::IGUITreeViewNode* addManagerTreeNodeToNode(std::wstring label, GameManagerNodeData* nodeData, irr::gui::IGUITreeViewNode* parentNode);
-
     void setFont();
 
     irr::core::vector3df getTargetPositionFromCameraView() const;
-
-    void rebuildGameManagerTree();
 
     irr::IrrlichtDevice* device;
     irr::video::IVideoDriver* driver;
@@ -107,9 +84,7 @@ private:
     std::optional<std::wstring> levelsFilename;
 
     std::shared_ptr<GameData> gameData;
-
-    std::shared_ptr<Level> currentLevel;
-    std::shared_ptr<Target> currentTarget;
+    std::shared_ptr<GameManagerTree> gameManagerTree;
 
     bool loadLevelsDialogIsShown;
     bool saveLevelsDialogIsShown;

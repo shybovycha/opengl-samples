@@ -126,3 +126,19 @@ std::shared_ptr<Level> GameData::createLevel(const std::wstring& meshFilename) {
 std::vector<std::shared_ptr<Level>> GameData::getLevels() const {
     return levels;
 }
+
+std::shared_ptr<Level> GameData::getCurrentLevel() const {
+    return currentLevel;
+}
+
+std::shared_ptr<Target> GameData::getCurrentTarget() const {
+    return currentTarget;
+}
+
+void GameData::setCurrentLevel(std::shared_ptr<Level> level) {
+    currentLevel = level;
+}
+
+void GameData::setCurrentTarget(std::shared_ptr<Target> target) {
+    currentTarget = target;
+}

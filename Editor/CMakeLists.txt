@@ -19,7 +19,10 @@ set(SOURCES
     "Sources/Target.h"
     "Sources/Target.cpp"
     "Sources/GameData.h"
-    "Sources/GameData.cpp")
+    "Sources/GameData.cpp"
+    "Sources/GameManagerTree.h"
+    "Sources/GameManagerTree.cpp"
+    "Sources/GUIElementId.h")
 
 set(LIBRARIES
         ${X11_LIBRARIES}

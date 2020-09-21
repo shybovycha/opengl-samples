@@ -30,8 +30,19 @@ public:
 
     std::vector<std::shared_ptr<Level>> getLevels() const;
 
+    std::shared_ptr<Level> getCurrentLevel() const;
+
+    std::shared_ptr<Target> getCurrentTarget() const;
+
+    void setCurrentLevel(std::shared_ptr<Level> level);
+
+    void setCurrentTarget(std::shared_ptr<Target> target);
+
 private:
     irr::IrrlichtDevice* device;
 
     std::vector<std::shared_ptr<Level>> levels;
+
+    std::shared_ptr<Level> currentLevel;
+    std::shared_ptr<Target> currentTarget;
 };

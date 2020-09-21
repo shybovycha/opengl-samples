@@ -5,6 +5,7 @@
 #include "irrlicht.h"
 
 #include "ApplicationDelegate.h"
+#include "GUIElementId.h"
 
 class IrrlichtEventReceiver : public irr::IEventReceiver {
 public:
