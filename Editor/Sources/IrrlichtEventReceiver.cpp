@@ -10,6 +10,25 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
             delegate->openSaveLevelsDialog();
         }
 
+        /*irr::core::vector3df cameraMovement;
+
+        if (event.KeyInput.Key == irr::KEY_UP) {
+            cameraMovement += irr::core::vector3df(0, 0, 1);
+        }
+        else if (event.KeyInput.Key == irr::KEY_DOWN) {
+            cameraMovement += irr::core::vector3df(0, 0, -1);
+        }
+        else if (event.KeyInput.Key == irr::KEY_LEFT) {
+            cameraMovement += irr::core::vector3df(-1, 0, 0);
+        }
+        else if (event.KeyInput.Key == irr::KEY_RIGHT) {
+            cameraMovement += irr::core::vector3df(1, 0, 0);
+        }
+
+        if (cameraMovement.getLength() > 0) {
+            delegate->moveCamera(cameraMovement);
+        }*/
+
         return false;
     }
 

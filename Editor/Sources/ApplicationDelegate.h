@@ -62,6 +62,11 @@ public:
 
     void gameManagerNodeSelected();
 
+    // void moveCamera(irr::core::vector3df direction);
+    void setCameraToOrbit(irr::scene::ISceneNode* sceneNode);
+
+    void setCameraToOrbit(irr::scene::ISceneNode* sceneNode, float distance);
+
     void quit();
 
 private:

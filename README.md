@@ -55,12 +55,14 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [x] update the default low-res font with something more readable
 - [x] make button icons use transparency
 - [ ] prevent game manager window from closing
-- [ ] save file dialog does not pick up non-existent files
+- [x] ~~save file dialog does not pick up non-existent files~~
 - [x] use mesh filename when adding game manager tree node
 - [x] store level mesh in level object
 - [x] load level mesh when switching levels in manager
-- [ ] camera can not be controlled with keyboard
+- [x] ~~camera can not be controlled with keyboard~~
 - [ ] when loading levels file, load models from the same directory
+- [ ] create custom camera animator to control camera with both keyboard and mouse in a reasonable way
+- [ ] create custom file dialog to allow saving files
 
 ### Miscellanious
 

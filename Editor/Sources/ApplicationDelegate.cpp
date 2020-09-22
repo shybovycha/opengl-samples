@@ -189,12 +189,16 @@ void ApplicationDelegate::addTarget() {
 
     irr::core::vector3df targetPosition = getTargetPositionFromCameraView();
 
-    gameData->getCurrentLevel()->createTarget(targetPosition);
-
-    gameManagerTree->rebuild();
+    std::shared_ptr<Target> target = gameData->getCurrentLevel()->createTarget(targetPosition);
 
     // TODO: replace with actual target model
-    smgr->addSphereSceneNode(10, 64, 0, 0, targetPosition, irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
+    irr::scene::ISceneNode* targetSceneNode = smgr->addSphereSceneNode(5.0f, 16, 0, -1, targetPosition);
+
+    target->setSceneNode(targetSceneNode);
+
+    targetSelected(target->getId());
+
+    gameManagerTree->rebuild();
 }
 
 void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
@@ -217,6 +221,8 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
     }
 
     gameData->getCurrentLevel()->getSceneNode()->setVisible(true);
+
+    setCameraToOrbit(gameData->getCurrentLevel()->getSceneNode());
 }
 
 void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
@@ -226,7 +232,18 @@ void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
 
     gameData->setCurrentTarget(gameData->getCurrentLevel()->getTargetById(targetId));
 
+    setCameraToOrbit(gameData->getCurrentTarget()->getSceneNode());
     // TODO: additional behavior
+}
+
+void ApplicationDelegate::setCameraToOrbit(irr::scene::ISceneNode* sceneNode) {
+    setCameraToOrbit(sceneNode, (camera->getPosition() - sceneNode->getBoundingBox().getCenter()).getLength());
+}
+
+void ApplicationDelegate::setCameraToOrbit(irr::scene::ISceneNode* sceneNode, float distance) {
+    camera->setTarget(sceneNode->getTransformedBoundingBox().getCenter());
+    /*irr::scene::ISceneNodeAnimatorCameraMaya* animator = reinterpret_cast<irr::scene::ISceneNodeAnimatorCameraMaya*>(*(camera->getAnimators().begin()));
+    animator->setDistance(distance);*/
 }
 
 void ApplicationDelegate::gameManagerNodeSelected() {
@@ -276,3 +293,14 @@ irr::scene::ISceneNode* ApplicationDelegate::loadMesh(const std::wstring& meshFi
     sceneNode->setName(meshFilename.c_str());
     return sceneNode;
 }
+
+//void ApplicationDelegate::moveCamera(irr::core::vector3df direction) {
+//    irr::core::matrix4 m;
+//    m.buildCameraLookAtMatrixRH(camera->getPosition(), camera->getTarget(), camera->getUpVector());
+//    m.setTranslation(direction);
+//    irr::core::vector3df newPosition = camera->getPosition();
+//    m.transformVect(newPosition);
+//    static const float CAMERA_MOVEMENT_SPEED = 100.f;
+//    camera->setPosition(newPosition * CAMERA_MOVEMENT_SPEED);
+//    camera->updateAbsolutePosition(); // for whatever reason this does not work :(
+//}
