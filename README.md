@@ -43,13 +43,13 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 ### Editor
 
 - [x] add UI
-- [ ] manage targets with UI elements, not keyboard and mouse click
+- [x] manage targets with UI elements, not keyboard and mouse click
 - [x] display the structure of a level in UI
 - [x] add multiple levels in one run
 - [ ] allow for level removal
 - [ ] remove targets
 - [ ] change target position
-- [ ] place target in front of camera instead of in place of camera
+- [x] place target in front of camera instead of in place of camera
 - [x] replace FPS camera with mouse-controlled one
 - [ ] add helpful help in UI
 - [x] update the default low-res font with something more readable
@@ -63,6 +63,11 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [ ] when loading levels file, load models from the same directory
 - [x] create custom camera animator to control camera with both keyboard and mouse in a reasonable way
 - [ ] create custom file dialog to allow saving files
+- [x] manage lights
+- [ ] refactor Light and Target on level to Entity
+- [ ] add & manage properties for level entities (?)
+- [ ] render AABB around selected entity
+- [ ] draw axes to allow for translation of entities
 
 ### Miscellanious
 

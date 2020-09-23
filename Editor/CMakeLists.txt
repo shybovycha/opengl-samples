@@ -24,7 +24,9 @@ set(SOURCES
     "Sources/GameManagerTree.cpp"
     "Sources/GUIElementId.h"
     "Sources/CameraSceneNodeAnimator.h"
-    "Sources/CameraSceneNodeAnimator.cpp")
+    "Sources/CameraSceneNodeAnimator.cpp"
+    "Sources/Light.h"
+    "Sources/Light.cpp")
 
 set(LIBRARIES
         ${X11_LIBRARIES}

@@ -7,6 +7,7 @@
 
 #include "irrlicht.h"
 
+#include "Light.h"
 #include "Target.h"
 
 class Level {
@@ -29,6 +30,16 @@ public:
 
     void updateTargetById(std::wstring targetId, irr::core::vector3df newPosition);
 
+    const std::vector<std::shared_ptr<Light>> getLights() const;
+
+    const std::shared_ptr<Light> getLightById(std::wstring lightId) const;
+
+    std::shared_ptr<Light> createLight(irr::core::vector3df position);
+
+    void deleteLightById(std::wstring lighttId);
+
+    void updateLightById(std::wstring lightId, irr::core::vector3df newPosition);
+
     std::wstring getMeshFilename() const;
     
     std::wstring getMeshBasename() const;
@@ -37,7 +48,10 @@ public:
 
 private:
     const std::vector<std::shared_ptr<Target>>::const_iterator getTargetIteratorById(std::wstring targetId) const;
+    
+    const std::vector<std::shared_ptr<Light>>::const_iterator getLightIteratorById(std::wstring lightId) const;
 
+    std::vector<std::shared_ptr<Light>> lights;
     std::vector<std::shared_ptr<Target>> targets;
     std::wstring meshFilename;
     std::wstring meshBasename;

@@ -7,6 +7,8 @@ enum class GUIElementId {
     QUIT,
     ADD_LEVEL,
     ADD_TARGET,
+    ADD_LIGHT,
+    DELETE_SELECTED,
     SAVE_LEVELS_DIALOG,
     LOAD_LEVELS_DIALOG,
     ABOUT_DIALOG,

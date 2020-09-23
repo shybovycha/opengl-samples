@@ -1,6 +1,6 @@
 #include "GameManagerTree.h"
 
-GameManagerTree::GameManagerTree(irr::gui::IGUIEnvironment* _guienv, std::shared_ptr<GameData> _gameData) : guienv(_guienv), gameData(_gameData) {}
+GameManagerTree::GameManagerTree(irr::gui::IGUIEnvironment* _guienv, std::shared_ptr<GameData> _gameData) : guienv(_guienv), gameData(_gameData), gameManagerTree(nullptr) {}
 
 void GameManagerTree::init() {
     gameManagerTree = reinterpret_cast<irr::gui::IGUITreeView*>(guienv->getRootGUIElement()->getElementFromId(static_cast<irr::s32>(GUIElementId::GAME_LEVEL_TREE), true));
@@ -26,6 +26,17 @@ void GameManagerTree::rebuild() {
 
             if (gameData->getCurrentTarget() != nullptr && gameData->getCurrentTarget()->getId() == target->getId()) {
                 targetTreeNode->setSelected(true);
+                levelTreeNode->setExpanded(true);
+            }
+        }
+
+        for (auto light : level->getLights()) {
+            GameManagerNodeData* lightNodeData = new GameManagerNodeData(GameManagerNodeDataType::LIGHT, light ->getId());
+
+            auto lightTreeNode = addManagerTreeNodeToNode(light->getId(), lightNodeData, levelTreeNode);
+
+            if (gameData->getCurrentTarget() != nullptr && gameData->getCurrentLight()->getId() == light->getId()) {
+                lightTreeNode->setSelected(true);
                 levelTreeNode->setExpanded(true);
             }
         }

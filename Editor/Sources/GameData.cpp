@@ -32,17 +32,32 @@ void GameData::loadFromFile(const std::wstring& filename) {
 
         auto targetsNode = levelNode->FirstChildElement("targets");
 
-        auto targetNode = targetsNode->FirstChildElement("target");
+        auto currentTargetNode = targetsNode->FirstChildElement("target");
         auto lastTargetNode = targetsNode->LastChildElement("target");
 
-        while (targetNode != nullptr) {
-            auto positionNode = targetNode->FirstChildElement("position");
+        while (currentTargetNode != nullptr) {
+            auto positionNode = currentTargetNode->FirstChildElement("position");
 
             irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
 
             levelDescriptor->createTarget(position);
 
-            targetNode = targetNode->NextSiblingElement("target");
+            currentTargetNode = currentTargetNode->NextSiblingElement("target");
+        }
+
+        auto lightsNode = levelNode->FirstChildElement("lights");
+
+        auto currentLightNode = lightsNode->FirstChildElement("light");
+        auto lastLightNode = lightsNode->LastChildElement("light");
+
+        while (currentLightNode != nullptr) {
+            auto positionNode = currentLightNode->FirstChildElement("position");
+
+            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+
+            levelDescriptor->createLight(position);
+
+            currentLightNode = currentLightNode->NextSiblingElement("light");
         }
 
         levels.push_back(levelDescriptor);
@@ -90,6 +105,26 @@ void GameData::saveToFile(const std::wstring& filename) {
         }
 
         writer->CloseElement(); // targets
+
+        writer->OpenElement("lights");
+
+        for (auto light : level->getLights()) {
+            irr::core::vector3df position = light->getPosition();
+
+            writer->OpenElement("light");
+
+            writer->OpenElement("position");
+
+            writer->PushAttribute("x", position.X);
+            writer->PushAttribute("y", position.Y);
+            writer->PushAttribute("z", position.Z);
+
+            writer->CloseElement(); // position
+
+            writer->CloseElement(); // light
+        }
+
+        writer->CloseElement(); // lights
 
         writer->CloseElement(); // level
     }
@@ -141,4 +176,12 @@ void GameData::setCurrentLevel(std::shared_ptr<Level> level) {
 
 void GameData::setCurrentTarget(std::shared_ptr<Target> target) {
     currentTarget = target;
+}
+
+std::shared_ptr<Light> GameData::getCurrentLight() const {
+    return currentLight;
+}
+
+void GameData::setCurrentLight(std::shared_ptr<Light> light) {
+    currentLight = light;
 }

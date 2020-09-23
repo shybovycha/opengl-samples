@@ -33,6 +33,8 @@ public:
 
     void addTarget();
 
+    void addLight();
+
     void saveLevels();
 
     void saveLevels(const std::wstring& filename);
@@ -60,13 +62,10 @@ public:
     void levelSelected(const std::wstring& levelId);
 
     void targetSelected(const std::wstring& targetId);
+    
+    void lightSelected(const std::wstring& lightId);
 
     void gameManagerNodeSelected();
-
-    // void moveCamera(irr::core::vector3df direction);
-    void setCameraToOrbit(irr::scene::ISceneNode* sceneNode);
-
-    void setCameraToOrbit(irr::scene::ISceneNode* sceneNode, float distance);
 
     void quit();
 

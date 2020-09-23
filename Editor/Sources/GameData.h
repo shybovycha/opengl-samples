@@ -34,9 +34,13 @@ public:
 
     std::shared_ptr<Target> getCurrentTarget() const;
 
+    std::shared_ptr<Light> getCurrentLight() const;
+
     void setCurrentLevel(std::shared_ptr<Level> level);
 
     void setCurrentTarget(std::shared_ptr<Target> target);
+    
+    void setCurrentLight(std::shared_ptr<Light> light);
 
 private:
     irr::IrrlichtDevice* device;
@@ -45,4 +49,5 @@ private:
 
     std::shared_ptr<Level> currentLevel;
     std::shared_ptr<Target> currentTarget;
+    std::shared_ptr<Light> currentLight;
 };

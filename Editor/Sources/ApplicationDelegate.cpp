@@ -50,8 +50,14 @@ void ApplicationDelegate::createToolbar() {
     irr::video::ITexture* addLevelIcon = driver->getTexture("Resources/Icons/map.png");
     toolbar->addButton(static_cast<irr::s32>(GUIElementId::ADD_LEVEL), nullptr, L"Add level", addLevelIcon, nullptr, false, true);
 
-    irr::video::ITexture* addTargetIcon = driver->getTexture("Resources/Icons/map-pin.png");
+    irr::video::ITexture* addTargetIcon = driver->getTexture("Resources/Icons/accuracy.png");
     toolbar->addButton(static_cast<irr::s32>(GUIElementId::ADD_TARGET), nullptr, L"Add target", addTargetIcon, nullptr, false, true);
+
+    irr::video::ITexture* addLightIcon = driver->getTexture("Resources/Icons/light-on.png");
+    toolbar->addButton(static_cast<irr::s32>(GUIElementId::ADD_LIGHT), nullptr, L"Add light", addLightIcon, nullptr, false, true);
+
+    irr::video::ITexture* deleteSelectedIcon = driver->getTexture("Resources/Icons/delete-forever.png");
+    toolbar->addButton(static_cast<irr::s32>(GUIElementId::DELETE_SELECTED), nullptr, L"Delete selected object", deleteSelectedIcon, nullptr, false, true);
 }
 
 void ApplicationDelegate::createManagerWindow() {
@@ -204,10 +210,40 @@ void ApplicationDelegate::addTarget() {
     gameManagerTree->rebuild();
 }
 
+void ApplicationDelegate::addLight() {
+    if (gameData->getCurrentLevel() == nullptr) {
+        guienv->addMessageBox(L"Error", L"You have to select a level before placing a light");
+        return;
+    }
+
+    irr::core::vector3df targetPosition = getTargetPositionFromCameraView();
+
+    std::shared_ptr<Light> light = gameData->getCurrentLevel()->createLight(targetPosition);
+
+    // TODO: replace with any model?
+    irr::scene::ILightSceneNode* lightSceneNode = smgr->addLightSceneNode(0, targetPosition, irr::video::SColor(255, 255, 255, 255), 200.f);
+    
+    lightSceneNode->setLightType(irr::video::ELT_POINT);
+
+    light->setSceneNode(lightSceneNode);
+
+    lightSelected(light->getId());
+
+    gameManagerTree->rebuild();
+}
+
 void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
     for (auto level : gameData->getLevels()) {
         if (level->getSceneNode() != nullptr) {
             level->getSceneNode()->setVisible(false);
+        }
+
+        for (auto target : level->getTargets()) {
+            target->getSceneNode()->setVisible(false);
+        }
+
+        for (auto light : level->getLights()) {
+            light->getSceneNode()->setVisible(false);
         }
     }
 
@@ -225,7 +261,13 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
 
     gameData->getCurrentLevel()->getSceneNode()->setVisible(true);
 
-    // setCameraToOrbit(gameData->getCurrentLevel()->getSceneNode());
+    for (auto target : gameData->getCurrentLevel()->getTargets()) {
+        target->getSceneNode()->setVisible(true);
+    }
+
+    for (auto light : gameData->getCurrentLevel()->getLights()) {
+        light->getSceneNode()->setVisible(true);
+    }
 }
 
 void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
@@ -235,18 +277,17 @@ void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
 
     gameData->setCurrentTarget(gameData->getCurrentLevel()->getTargetById(targetId));
 
-    // setCameraToOrbit(gameData->getCurrentTarget()->getSceneNode());
     // TODO: additional behavior
 }
 
-void ApplicationDelegate::setCameraToOrbit(irr::scene::ISceneNode* sceneNode) {
-    // setCameraToOrbit(sceneNode, (camera->getPosition() - sceneNode->getBoundingBox().getCenter()).getLength());
-}
+void ApplicationDelegate::lightSelected(const std::wstring& lightId) {
+    if (gameData->getCurrentLevel() == nullptr) {
+        return;
+    }
 
-void ApplicationDelegate::setCameraToOrbit(irr::scene::ISceneNode* sceneNode, float distance) {
-    // camera->setTarget(sceneNode->getTransformedBoundingBox().getCenter());
-    /*irr::scene::ISceneNodeAnimatorCameraMaya* animator = reinterpret_cast<irr::scene::ISceneNodeAnimatorCameraMaya*>(*(camera->getAnimators().begin()));
-    animator->setDistance(distance);*/
+    gameData->setCurrentLight(gameData->getCurrentLevel()->getLightById(lightId));
+
+    // TODO: additional behavior
 }
 
 void ApplicationDelegate::gameManagerNodeSelected() {
@@ -265,19 +306,23 @@ void ApplicationDelegate::gameManagerNodeSelected() {
 }
 
 irr::core::vector3df ApplicationDelegate::getTargetPositionFromCameraView() const {
-    irr::core::triangle3df triangle;
+    // ray picking does not really work =(
+    /*irr::core::triangle3df triangle;
     irr::core::vector3df collisionPoint;
-    irr::core::line3df ray(camera->getAbsolutePosition(), camera->getAbsolutePosition() + camera->getTarget() * camera->getFarValue());
-
-    const float PICK_DISTANCE = 20.f;
+    irr::core::line3df ray(camera->getPosition(), camera->getPosition() + camera->getTarget() * camera->getFarValue());
 
     irr::scene::ISceneNode* collisionNode = smgr->getSceneCollisionManager()->getSceneNodeAndCollisionPointFromRay(ray, collisionPoint, triangle);
 
     if (collisionNode) {
         return collisionPoint;
-    }
+    }*/
 
-    irr::core::vector3df targetPosition = camera->getAbsolutePosition() + camera->getTarget() * PICK_DISTANCE;
+
+    const float PICK_DISTANCE = 200.f;
+
+    irr::core::vector3df target = (camera->getTarget() - camera->getPosition()).normalize();
+
+    irr::core::vector3df targetPosition = camera->getPosition() + target * PICK_DISTANCE;
 
     return targetPosition;
 }
@@ -296,14 +341,3 @@ irr::scene::ISceneNode* ApplicationDelegate::loadMesh(const std::wstring& meshFi
     sceneNode->setName(meshFilename.c_str());
     return sceneNode;
 }
-
-//void ApplicationDelegate::moveCamera(irr::core::vector3df direction) {
-//    irr::core::matrix4 m;
-//    m.buildCameraLookAtMatrixRH(camera->getPosition(), camera->getTarget(), camera->getUpVector());
-//    m.setTranslation(direction);
-//    irr::core::vector3df newPosition = camera->getPosition();
-//    m.transformVect(newPosition);
-//    static const float CAMERA_MOVEMENT_SPEED = 100.f;
-//    camera->setPosition(newPosition * CAMERA_MOVEMENT_SPEED);
-//    camera->updateAbsolutePosition(); // for whatever reason this does not work :(
-//}

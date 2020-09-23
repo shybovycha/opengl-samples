@@ -49,6 +49,51 @@ const std::shared_ptr<Target> Level::getTargetById(std::wstring targetId) const 
     return nullptr;
 }
 
+const std::vector<std::shared_ptr<Light>> Level::getLights() const {
+    return lights;
+}
+
+const std::vector<std::shared_ptr<Light>>::const_iterator Level::getLightIteratorById(std::wstring lightId) const {
+    return std::find_if(lights.begin(), lights.end(), [&](const std::shared_ptr<Light>& light) { return light->getId() == lightId; });
+}
+
+const std::shared_ptr<Light> Level::getLightById(std::wstring lightId) const {
+    auto lightIt = getLightIteratorById(lightId);
+
+    if (lightIt != lights.end()) {
+        return *lightIt;
+    }
+
+    return nullptr;
+}
+
+std::shared_ptr<Light> Level::createLight(irr::core::vector3df position) {
+    size_t lightIndex = lights.size();
+    std::wostringstream idString;
+    idString << id << "-light-" << lightIndex;
+
+    std::shared_ptr<Light> light = std::make_shared<Light>(position, idString.str());
+    lights.push_back(light);
+
+    return light;
+}
+
+void Level::deleteLightById(std::wstring lightId) {
+    auto it = getLightIteratorById(lightId);
+
+    if (it != lights.end()) {
+        lights.erase(it);
+    }
+}
+
+void Level::updateLightById(std::wstring lightId, irr::core::vector3df newPosition) {
+    auto it = getLightIteratorById(lightId);
+
+    if (it != lights.end()) {
+        (*it)->setPosition(newPosition);
+    }
+}
+
 std::wstring Level::getMeshFilename() const {
     return meshFilename;
 }
