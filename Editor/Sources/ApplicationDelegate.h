@@ -12,6 +12,7 @@
 #include "irrlicht.h"
 #include "tinyxml2.h"
 
+#include "CameraSceneNodeAnimator.h"
 #include "GameData.h"
 #include "GameManagerNodeData.h"
 #include "GameManagerTree.h"

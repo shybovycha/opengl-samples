@@ -61,7 +61,7 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [x] load level mesh when switching levels in manager
 - [x] ~~camera can not be controlled with keyboard~~
 - [ ] when loading levels file, load models from the same directory
-- [ ] create custom camera animator to control camera with both keyboard and mouse in a reasonable way
+- [x] create custom camera animator to control camera with both keyboard and mouse in a reasonable way
 - [ ] create custom file dialog to allow saving files
 
 ### Miscellanious

@@ -16,7 +16,10 @@ ApplicationDelegate::ApplicationDelegate(irr::IrrlichtDevice* _device) :
 }
 
 void ApplicationDelegate::init() {
-    camera = smgr->addCameraSceneNodeMaya();
+    camera = smgr->addCameraSceneNode();
+
+    auto animator = new CameraSceneNodeAnimator(device->getCursorControl());
+    camera->addAnimator(animator);
 
     initUI();
 }
@@ -222,7 +225,7 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
 
     gameData->getCurrentLevel()->getSceneNode()->setVisible(true);
 
-    setCameraToOrbit(gameData->getCurrentLevel()->getSceneNode());
+    // setCameraToOrbit(gameData->getCurrentLevel()->getSceneNode());
 }
 
 void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
@@ -232,16 +235,16 @@ void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
 
     gameData->setCurrentTarget(gameData->getCurrentLevel()->getTargetById(targetId));
 
-    setCameraToOrbit(gameData->getCurrentTarget()->getSceneNode());
+    // setCameraToOrbit(gameData->getCurrentTarget()->getSceneNode());
     // TODO: additional behavior
 }
 
 void ApplicationDelegate::setCameraToOrbit(irr::scene::ISceneNode* sceneNode) {
-    setCameraToOrbit(sceneNode, (camera->getPosition() - sceneNode->getBoundingBox().getCenter()).getLength());
+    // setCameraToOrbit(sceneNode, (camera->getPosition() - sceneNode->getBoundingBox().getCenter()).getLength());
 }
 
 void ApplicationDelegate::setCameraToOrbit(irr::scene::ISceneNode* sceneNode, float distance) {
-    camera->setTarget(sceneNode->getTransformedBoundingBox().getCenter());
+    // camera->setTarget(sceneNode->getTransformedBoundingBox().getCenter());
     /*irr::scene::ISceneNodeAnimatorCameraMaya* animator = reinterpret_cast<irr::scene::ISceneNodeAnimatorCameraMaya*>(*(camera->getAnimators().begin()));
     animator->setDistance(distance);*/
 }
