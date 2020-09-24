@@ -33,9 +33,9 @@ set(SOURCES
 set(EXECUTABLE_NAME Game)
 
 set(LIBRARIES
-        ${X11_LIBRARIES}
-        ${OPENGL_LIBRARIES}
-        ${ZLIB_LIBRARIES})
+    ${X11_LIBRARIES}
+    ${OPENGL_LIBRARIES}
+    ${ZLIB_LIBRARIES})
 
 if(NOT APPLE)
     set(LIBRARIES ${LIBRARIES} ${X11_Xxf86vm_LIB})
@@ -67,26 +67,10 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
     CXX_EXTENSIONS ON
 )
 
-add_dependencies(${EXECUTABLE_NAME} tinyxml2 irrlicht irrklang)
+find_package(irrlicht CONFIG REQUIRED)
+find_package(tinyxml2 CONFIG REQUIRED)
 
-target_link_libraries(${EXECUTABLE_NAME} PUBLIC ${LIBRARIES} tinyxml2 irrlicht irrklang)
-
-# Copy libraries' DLLs
-add_custom_command(
-    TARGET ${EXECUTABLE_NAME} POST_BUILD 
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tinyxml2> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
-)
-
-# TODO: copy DLLs, not LIBs
-# add_custom_command(
-#     TARGET ${EXECUTABLE_NAME} POST_BUILD 
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:irrlicht> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
-# )
-
-# add_custom_command(
-#     TARGET ${EXECUTABLE_NAME} POST_BUILD 
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:irrklang> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
-# )
+target_link_libraries(${EXECUTABLE_NAME} PUBLIC ${LIBRARIES} tinyxml2::tinyxml2 Irrlicht)
 
 # Copy resources
 add_custom_command(

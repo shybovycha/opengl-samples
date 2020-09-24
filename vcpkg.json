@@ -1,0 +1,8 @@
+{
+    "name": "shoot-them",
+    "version-string": "0.1.0",
+    "dependencies": [
+        "irrlicht",
+        "tinyxml2"
+    ]
+}

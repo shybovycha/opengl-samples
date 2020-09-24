@@ -5,7 +5,6 @@
 #include <vector>
 
 #include <irrlicht.h>
-#include <irrKlang.h>
 
 #include "GameState.h"
 #include "ActionDispatcher.h"
@@ -83,5 +82,5 @@ private:
     irr::scene::IBillboardSceneNode* bill = 0;
     irr::scene::ITriangleSelector* selector = 0;
 
-    irrklang::ISoundEngine* soundEngine = 0;
+    // irrklang::ISoundEngine* soundEngine = 0;
 };

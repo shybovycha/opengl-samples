@@ -6,6 +6,8 @@ This is a very simple shooting game I made many years ago. It is written in C++ 
 
 ## Build
 
+You will need [vcpkg](https://github.com/microsoft/vcpkg), [CMake](https://cmake.org) and a C++ toolchain (like VC, GCC or Clang) installed.
+
 Run CMake: `cmake -Bbuild -H. && cmake --build build`
 
 ## TODO
@@ -77,6 +79,7 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [ ] add github releases
 - [ ] document progress
 - [ ] add screenshots to github page
+- [x] fix dependency management
 
 ## Other notes
 
@@ -149,7 +152,11 @@ Also, as [noted by Brad King](https://gitlab.kitware.com/cmake/cmake/-/issues/19
 
 > > If I understand ExternalProject correctly...it is up to the user to manually specify build artifacts, include directories, etc.
 >
-> That is true if you want to use ExternalProject_Add for a dependency and add_executable for your own project in a single CMake project.  However, typically ExternalProject is used in a pure "superbuild" project that does not compile anything itself and instead builds a bunch of external projects using their independent native build systems while respecting inter-project dependencies expressed in the ExternalProject_Add calls.  Each package is built after its dependencies and is simply told by the superbuild where to look for them as complete packages.  No low-level header or artifact locations need to be spelled out manually.  No deep integration of distinct build systems is needed.
+> That is true if you want to use ExternalProject_Add for a dependency and add_executable for your own project in a single CMake project.
+> However, typically ExternalProject is used in a pure "superbuild" project that does not compile anything itself and instead builds a bunch of
+> external projects using their independent native build systems while respecting inter-project dependencies expressed in the ExternalProject_Add calls.
+> Each package is built after its dependencies and is simply told by the superbuild where to look for them as complete packages.
+> No low-level header or artifact locations need to be spelled out manually.  No deep integration of distinct build systems is needed.
 
 Few other resources on CMake "best practices":
 
