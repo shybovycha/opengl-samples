@@ -247,6 +247,7 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
     }
 
     gameData->setCurrentLevel(gameData->getLevelById(levelId));
+    gameData->setCurrentEntity(nullptr);
 
     if (!gameData->getCurrentLevel()->getSceneNode()) {
         irr::scene::ISceneNode* sceneNode = loadMesh(gameData->getCurrentLevel()->getMeshFilename());
@@ -302,6 +303,12 @@ void ApplicationDelegate::gameManagerNodeSelected() {
 
 void ApplicationDelegate::deleteSelectedEntity() {
     if (gameData->getCurrentLevel() != nullptr && gameData->getCurrentEntity() == nullptr) {
+        std::vector<std::shared_ptr<LevelEntity>> entities = gameData->getCurrentLevel()->getEntities();
+
+        for (auto const& it : entities) {
+            gameData->getCurrentLevel()->deleteEntityById(it->getId());
+        }
+
         if (gameData->getCurrentLevel()->getSceneNode() != nullptr) {
             gameData->getCurrentLevel()->getSceneNode()->remove();
         }
@@ -310,7 +317,7 @@ void ApplicationDelegate::deleteSelectedEntity() {
         gameData->setCurrentLevel(nullptr);
         gameManagerTree->rebuild();
     }
-    else if (gameData->getCurrentLevel() == nullptr && gameData->getCurrentEntity() != nullptr) {
+    else if (gameData->getCurrentEntity() != nullptr) {
         if (gameData->getCurrentEntity()->getSceneNode() != nullptr) {
             gameData->getCurrentEntity()->getSceneNode()->remove();
         }
