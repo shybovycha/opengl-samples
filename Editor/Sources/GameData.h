@@ -9,11 +9,12 @@
 #include <sstream>
 #include <vector>
 
-#include "irrlicht.h"
-#include "tinyxml2.h"
+#include <irrlicht.h>
+#include <tinyxml2.h>
 
 #include "GameManagerNodeData.h"
 #include "Level.h"
+#include "LevelEntity.h"
 #include "Target.h"
 
 class GameData {
@@ -32,15 +33,11 @@ public:
 
     std::shared_ptr<Level> getCurrentLevel() const;
 
-    std::shared_ptr<Target> getCurrentTarget() const;
+    std::shared_ptr<LevelEntity> getCurrentEntity() const;
 
-    std::shared_ptr<Light> getCurrentLight() const;
+    void setCurrentEntity(std::shared_ptr<LevelEntity> entity);
 
     void setCurrentLevel(std::shared_ptr<Level> level);
-
-    void setCurrentTarget(std::shared_ptr<Target> target);
-    
-    void setCurrentLight(std::shared_ptr<Light> light);
 
 private:
     irr::IrrlichtDevice* device;
@@ -48,6 +45,5 @@ private:
     std::vector<std::shared_ptr<Level>> levels;
 
     std::shared_ptr<Level> currentLevel;
-    std::shared_ptr<Target> currentTarget;
-    std::shared_ptr<Light> currentLight;
+    std::shared_ptr<LevelEntity> currentEntity;
 };

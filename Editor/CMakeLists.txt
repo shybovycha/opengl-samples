@@ -26,7 +26,9 @@ set(SOURCES
     "Sources/CameraSceneNodeAnimator.h"
     "Sources/CameraSceneNodeAnimator.cpp"
     "Sources/Light.h"
-    "Sources/Light.cpp")
+    "Sources/Light.cpp"
+    "Sources/LevelEntity.h"
+    "Sources/LevelEntity.cpp")
 
 set(LIBRARIES
     ${X11_LIBRARIES}

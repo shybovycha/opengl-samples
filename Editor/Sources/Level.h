@@ -1,12 +1,14 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <sstream>
 #include <vector>
 
-#include "irrlicht.h"
+#include <irrlicht.h>
 
+#include "LevelEntity.h"
 #include "Light.h"
 #include "Target.h"
 
@@ -20,25 +22,17 @@ public:
 
     irr::scene::ISceneNode* getSceneNode() const;
 
-    const std::vector<std::shared_ptr<Target>> getTargets() const;
+    const std::vector<std::shared_ptr<LevelEntity>> getEntities() const;
 
-    const std::shared_ptr<Target> getTargetById(std::wstring targetId) const;
+    const std::shared_ptr<LevelEntity> getEntityById(std::wstring entityId) const;
 
     std::shared_ptr<Target> createTarget(irr::core::vector3df position);
-
-    void deleteTargetById(std::wstring targetId);
-
-    void updateTargetById(std::wstring targetId, irr::core::vector3df newPosition);
-
-    const std::vector<std::shared_ptr<Light>> getLights() const;
-
-    const std::shared_ptr<Light> getLightById(std::wstring lightId) const;
-
+    
     std::shared_ptr<Light> createLight(irr::core::vector3df position);
 
-    void deleteLightById(std::wstring lighttId);
+    void deleteEntityById(std::wstring entityId);
 
-    void updateLightById(std::wstring lightId, irr::core::vector3df newPosition);
+    void updateEntityById(std::wstring entityId, irr::core::vector3df newPosition);
 
     std::wstring getMeshFilename() const;
     
@@ -47,12 +41,10 @@ public:
     std::wstring getId() const;
 
 private:
-    const std::vector<std::shared_ptr<Target>>::const_iterator getTargetIteratorById(std::wstring targetId) const;
-    
-    const std::vector<std::shared_ptr<Light>>::const_iterator getLightIteratorById(std::wstring lightId) const;
+    std::wstring generateNewEntityId(LevelEntityType entityType) const;
 
-    std::vector<std::shared_ptr<Light>> lights;
-    std::vector<std::shared_ptr<Target>> targets;
+    std::map<std::wstring, std::shared_ptr<LevelEntity>> entities;
+
     std::wstring meshFilename;
     std::wstring meshBasename;
     std::wstring id;

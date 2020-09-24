@@ -9,8 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "irrlicht.h"
-#include "tinyxml2.h"
+#include <irrlicht.h>
+#include <tinyxml2.h>
 
 #include "CameraSceneNodeAnimator.h"
 #include "GameData.h"

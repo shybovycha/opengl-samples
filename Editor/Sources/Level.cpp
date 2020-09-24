@@ -4,94 +4,66 @@ Level::Level(const std::wstring& _meshFilename, const std::wstring& _id) : meshF
 
 Level::Level(const std::wstring& _meshFilename, const std::wstring& _id, const std::wstring& _meshBasename) : meshFilename(_meshFilename), id(_id), meshBasename(_meshBasename), sceneNode(nullptr) {}
 
-const std::vector<std::shared_ptr<Target>> Level::getTargets() const {
-    return targets;
+const std::vector<std::shared_ptr<LevelEntity>> Level::getEntities() const {
+    std::vector<std::shared_ptr<LevelEntity>> result;
+
+    for (auto const& it : entities) {
+        result.push_back(it.second);
+    }
+
+    return result;
+}
+
+const std::shared_ptr<LevelEntity> Level::getEntityById(std::wstring entityId) const {
+    return entities.at(entityId);
 }
 
 std::shared_ptr<Target> Level::createTarget(irr::core::vector3df position) {
-    size_t targetIndex = targets.size();
-    std::wostringstream idString;
-    idString << id << "-target-" << targetIndex;
-
-    std::shared_ptr<Target> target = std::make_shared<Target>(position, idString.str());
-    targets.push_back(target);
+    std::wstring id = generateNewEntityId(LevelEntityType::TARGET);
+    std::shared_ptr<Target> target = std::make_shared<Target>(position, id);
+    
+    entities[id] = target;
     
     return target;
 }
 
-void Level::deleteTargetById(std::wstring targetId) {
-    auto it = getTargetIteratorById(targetId);
-
-    if (it != targets.end()) {
-        targets.erase(it);
-    }
-}
-
-void Level::updateTargetById(std::wstring targetId, irr::core::vector3df newPosition) {
-    auto it = getTargetIteratorById(targetId);
-
-    if (it != targets.end()) {
-        (*it)->setPosition(newPosition);
-    }
-}
-
-const std::vector<std::shared_ptr<Target>>::const_iterator Level::getTargetIteratorById(std::wstring targetId) const {
-    return std::find_if(targets.begin(), targets.end(), [&](const std::shared_ptr<Target>& target) { return target->getId() == targetId; });
-}
-
-const std::shared_ptr<Target> Level::getTargetById(std::wstring targetId) const {
-    auto targetIt = getTargetIteratorById(targetId);
-
-    if (targetIt != targets.end()) {
-        return *targetIt;
-    }
-
-    return nullptr;
-}
-
-const std::vector<std::shared_ptr<Light>> Level::getLights() const {
-    return lights;
-}
-
-const std::vector<std::shared_ptr<Light>>::const_iterator Level::getLightIteratorById(std::wstring lightId) const {
-    return std::find_if(lights.begin(), lights.end(), [&](const std::shared_ptr<Light>& light) { return light->getId() == lightId; });
-}
-
-const std::shared_ptr<Light> Level::getLightById(std::wstring lightId) const {
-    auto lightIt = getLightIteratorById(lightId);
-
-    if (lightIt != lights.end()) {
-        return *lightIt;
-    }
-
-    return nullptr;
-}
-
 std::shared_ptr<Light> Level::createLight(irr::core::vector3df position) {
-    size_t lightIndex = lights.size();
-    std::wostringstream idString;
-    idString << id << "-light-" << lightIndex;
+    std::wstring id = generateNewEntityId(LevelEntityType::LIGHT);
+    std::shared_ptr<Light> light = std::make_shared<Light>(position, id);
 
-    std::shared_ptr<Light> light = std::make_shared<Light>(position, idString.str());
-    lights.push_back(light);
+    entities[id] = light;
 
     return light;
 }
 
-void Level::deleteLightById(std::wstring lightId) {
-    auto it = getLightIteratorById(lightId);
+std::wstring Level::generateNewEntityId(LevelEntityType entityType) const {
+    size_t entityIndex = entities.size();
+    
+    std::wostringstream idString;
 
-    if (it != lights.end()) {
-        lights.erase(it);
+    idString << id << "-";
+    
+    if (entityType == LevelEntityType::LIGHT) {
+        idString << "light";
     }
+    else if (entityType == LevelEntityType::TARGET) {
+        idString << "target";
+    }
+    else {
+        idString << "unknown";
+    }
+
+    idString << "-" << entityIndex;
+
+    return idString.str();
 }
 
-void Level::updateLightById(std::wstring lightId, irr::core::vector3df newPosition) {
-    auto it = getLightIteratorById(lightId);
+void Level::deleteEntityById(std::wstring entityId) {
+    entities.erase(entityId);
+}
 
-    if (it != lights.end()) {
-        (*it)->setPosition(newPosition);
-    }
+void Level::updateEntityById(std::wstring entityId, irr::core::vector3df newPosition) {
+    entities[entityId]->setPosition(newPosition);
 }
 
 std::wstring Level::getMeshFilename() const {

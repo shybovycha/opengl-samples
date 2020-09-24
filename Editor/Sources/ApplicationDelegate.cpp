@@ -238,12 +238,8 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
             level->getSceneNode()->setVisible(false);
         }
 
-        for (auto target : level->getTargets()) {
-            target->getSceneNode()->setVisible(false);
-        }
-
-        for (auto light : level->getLights()) {
-            light->getSceneNode()->setVisible(false);
+        for (auto entity : level->getEntities()) {
+            entity->getSceneNode()->setVisible(false);
         }
     }
 
@@ -261,12 +257,8 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
 
     gameData->getCurrentLevel()->getSceneNode()->setVisible(true);
 
-    for (auto target : gameData->getCurrentLevel()->getTargets()) {
-        target->getSceneNode()->setVisible(true);
-    }
-
-    for (auto light : gameData->getCurrentLevel()->getLights()) {
-        light->getSceneNode()->setVisible(true);
+    for (auto entity : gameData->getCurrentLevel()->getEntities()) {
+        entity->getSceneNode()->setVisible(true);
     }
 }
 
@@ -275,7 +267,7 @@ void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
         return;
     }
 
-    gameData->setCurrentTarget(gameData->getCurrentLevel()->getTargetById(targetId));
+    gameData->setCurrentEntity(gameData->getCurrentLevel()->getEntityById(targetId));
 
     // TODO: additional behavior
 }
@@ -285,7 +277,7 @@ void ApplicationDelegate::lightSelected(const std::wstring& lightId) {
         return;
     }
 
-    gameData->setCurrentLight(gameData->getCurrentLevel()->getLightById(lightId));
+    gameData->setCurrentEntity(gameData->getCurrentLevel()->getEntityById(lightId));
 
     // TODO: additional behavior
 }

@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "irrlicht.h"
+#include <irrlicht.h>
 
 #include "ApplicationDelegate.h"
 #include "IrrlichtEventReceiver.h"

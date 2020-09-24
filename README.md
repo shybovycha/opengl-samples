@@ -41,6 +41,7 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [ ] add settings menu
 - [ ] write settings to file
 - [x] read settings from file
+- [ ] bring the sound back
 
 ### Editor
 

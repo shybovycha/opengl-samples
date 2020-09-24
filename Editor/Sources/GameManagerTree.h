@@ -4,7 +4,7 @@
 #include <string>
 #include <sstream>
 
-#include "irrlicht.h"
+#include <irrlicht.h>
 
 #include "GameData.h"
 #include "GameManagerNodeData.h"

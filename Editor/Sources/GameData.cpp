@@ -30,10 +30,10 @@ void GameData::loadFromFile(const std::wstring& filename) {
 
         auto levelDescriptor = std::make_shared<Level>(wstringConverter.from_bytes(meshName.c_str()), levelIdString.str());
 
-        auto targetsNode = levelNode->FirstChildElement("targets");
+        auto entitiesNode = levelNode->FirstChildElement("entities");
 
-        auto currentTargetNode = targetsNode->FirstChildElement("target");
-        auto lastTargetNode = targetsNode->LastChildElement("target");
+        auto currentTargetNode = entitiesNode->FirstChildElement("target");
+        auto lastTargetNode = entitiesNode->LastChildElement("target");
 
         while (currentTargetNode != nullptr) {
             auto positionNode = currentTargetNode->FirstChildElement("position");
@@ -45,10 +45,8 @@ void GameData::loadFromFile(const std::wstring& filename) {
             currentTargetNode = currentTargetNode->NextSiblingElement("target");
         }
 
-        auto lightsNode = levelNode->FirstChildElement("lights");
-
-        auto currentLightNode = lightsNode->FirstChildElement("light");
-        auto lastLightNode = lightsNode->LastChildElement("light");
+        auto currentLightNode = entitiesNode->FirstChildElement("light");
+        auto lastLightNode = entitiesNode->LastChildElement("light");
 
         while (currentLightNode != nullptr) {
             auto positionNode = currentLightNode->FirstChildElement("position");
@@ -86,32 +84,17 @@ void GameData::saveToFile(const std::wstring& filename) {
 
         writer->CloseElement();
 
-        writer->OpenElement("targets");
+        writer->OpenElement("entities");
 
-        for (auto target : level->getTargets()) {
-            irr::core::vector3df position = target->getPosition();
+        for (auto entity : level->getEntities()) {
+            irr::core::vector3df position = entity->getPosition();
 
-            writer->OpenElement("target");
-
-            writer->OpenElement("position");
-
-            writer->PushAttribute("x", position.X);
-            writer->PushAttribute("y", position.Y);
-            writer->PushAttribute("z", position.Z);
-
-            writer->CloseElement(); // position
-
-            writer->CloseElement(); // target
-        }
-
-        writer->CloseElement(); // targets
-
-        writer->OpenElement("lights");
-
-        for (auto light : level->getLights()) {
-            irr::core::vector3df position = light->getPosition();
-
-            writer->OpenElement("light");
+            if (entity->getType() == LevelEntityType::TARGET) {
+                writer->OpenElement("target");
+            }
+            else {
+                writer->OpenElement("light");
+            }
 
             writer->OpenElement("position");
 
@@ -121,10 +104,15 @@ void GameData::saveToFile(const std::wstring& filename) {
 
             writer->CloseElement(); // position
 
-            writer->CloseElement(); // light
+            if (entity->getType() == LevelEntityType::TARGET) {
+                writer->CloseElement("target");
+            }
+            else {
+                writer->CloseElement("light");
+            }
         }
 
-        writer->CloseElement(); // lights
+        writer->CloseElement(); // entities
 
         writer->CloseElement(); // level
     }
@@ -166,22 +154,14 @@ std::shared_ptr<Level> GameData::getCurrentLevel() const {
     return currentLevel;
 }
 
-std::shared_ptr<Target> GameData::getCurrentTarget() const {
-    return currentTarget;
+std::shared_ptr<LevelEntity> GameData::getCurrentEntity() const {
+    return currentEntity;
 }
 
 void GameData::setCurrentLevel(std::shared_ptr<Level> level) {
     currentLevel = level;
 }
 
-void GameData::setCurrentTarget(std::shared_ptr<Target> target) {
-    currentTarget = target;
-}
-
-std::shared_ptr<Light> GameData::getCurrentLight() const {
-    return currentLight;
-}
-
-void GameData::setCurrentLight(std::shared_ptr<Light> light) {
-    currentLight = light;
+void GameData::setCurrentEntity(std::shared_ptr<LevelEntity> entity) {
+    currentEntity = entity;
 }

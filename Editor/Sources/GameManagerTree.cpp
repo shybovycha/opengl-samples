@@ -14,29 +14,26 @@ void GameManagerTree::rebuild() {
 
         auto levelTreeNode = addManagerTreeNodeToRootNode(level->getMeshBasename().c_str(), levelNodeData);
 
-        if (gameData->getCurrentLevel() != nullptr && gameData->getCurrentTarget() == nullptr && gameData->getCurrentLevel()->getId() == level->getId()) {
+        if (gameData->getCurrentLevel() != nullptr && gameData->getCurrentEntity() == nullptr && gameData->getCurrentLevel()->getId() == level->getId()) {
             levelTreeNode->setSelected(true);
             levelTreeNode->setExpanded(true);
         }
 
-        for (auto target : level->getTargets()) {
-            GameManagerNodeData* targetNodeData = new GameManagerNodeData(GameManagerNodeDataType::TARGET, target->getId());
+        for (auto entity : level->getEntities()) {
+            GameManagerNodeData* entityNodeData = nullptr;
+            std::wstring id = entity->getId();
 
-            auto targetTreeNode = addManagerTreeNodeToNode(target->getId(), targetNodeData, levelTreeNode);
-
-            if (gameData->getCurrentTarget() != nullptr && gameData->getCurrentTarget()->getId() == target->getId()) {
-                targetTreeNode->setSelected(true);
-                levelTreeNode->setExpanded(true);
+            if (entity->getType() == LevelEntityType::LIGHT) {
+                entityNodeData = new GameManagerNodeData(GameManagerNodeDataType::LIGHT, id);
             }
-        }
+            else if (entity->getType() == LevelEntityType::TARGET) {
+                entityNodeData = new GameManagerNodeData(GameManagerNodeDataType::TARGET, id);
+            }
 
-        for (auto light : level->getLights()) {
-            GameManagerNodeData* lightNodeData = new GameManagerNodeData(GameManagerNodeDataType::LIGHT, light ->getId());
+            auto entityTreeNode = addManagerTreeNodeToNode(id, entityNodeData, levelTreeNode);
 
-            auto lightTreeNode = addManagerTreeNodeToNode(light->getId(), lightNodeData, levelTreeNode);
-
-            if (gameData->getCurrentTarget() != nullptr && gameData->getCurrentLight()->getId() == light->getId()) {
-                lightTreeNode->setSelected(true);
+            if (gameData->getCurrentEntity() != nullptr && gameData->getCurrentEntity()->getId() == id) {
+                entityTreeNode->setSelected(true);
                 levelTreeNode->setExpanded(true);
             }
         }
