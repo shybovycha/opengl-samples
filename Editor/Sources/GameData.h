@@ -4,6 +4,7 @@
 #include <xlocbuf> // for converting wstring to string
 
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
 #include <sstream>
@@ -42,7 +43,7 @@ public:
 private:
     irr::IrrlichtDevice* device;
 
-    std::vector<std::shared_ptr<Level>> levels;
+    std::map<std::wstring, std::shared_ptr<Level>> levels;
 
     std::shared_ptr<Level> currentLevel;
     std::shared_ptr<LevelEntity> currentEntity;

@@ -58,7 +58,7 @@ void GameData::loadFromFile(const std::wstring& filename) {
             currentLightNode = currentLightNode->NextSiblingElement("light");
         }
 
-        levels.push_back(levelDescriptor);
+        levels[levelIdString.str()] = levelDescriptor;
 
         levelNode = levelNode->NextSiblingElement("level");
     }
@@ -73,7 +73,9 @@ void GameData::saveToFile(const std::wstring& filename) {
 
     writer->OpenElement("levels");
 
-    for (std::shared_ptr<Level> level : levels) {
+    for (auto const &it : levels) {
+        std::shared_ptr<Level> level = it.second;
+
         writer->OpenElement("level");
 
         writer->OpenElement("model");
@@ -121,13 +123,7 @@ void GameData::saveToFile(const std::wstring& filename) {
 }
 
 std::shared_ptr<Level> GameData::getLevelById(const std::wstring& levelId) const {
-    auto it = std::find_if(levels.begin(), levels.end(), [&](const std::shared_ptr<Level> level) { return level->getId() == levelId; });
-
-    if (it == levels.end()) {
-        return nullptr;
-    }
-
-    return *it;
+    return levels.at(levelId);
 }
 
 std::shared_ptr<Level> GameData::createLevel(const std::wstring& meshFilename) {
@@ -141,13 +137,19 @@ std::shared_ptr<Level> GameData::createLevel(const std::wstring& meshFilename) {
 
     auto level = std::make_shared<Level>(meshFilename, idString.str(), meshBasename);
 
-    levels.push_back(level);
+    levels[idString.str()] = level;
 
     return level;
 }
 
 std::vector<std::shared_ptr<Level>> GameData::getLevels() const {
-    return levels;
+    std::vector<std::shared_ptr<Level>> result;
+
+    for (auto const& it : levels) {
+        result.push_back(it.second);
+    }
+
+    return result;
 }
 
 std::shared_ptr<Level> GameData::getCurrentLevel() const {
