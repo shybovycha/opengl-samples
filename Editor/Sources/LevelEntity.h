@@ -12,6 +12,8 @@ enum class LevelEntityType {
 
 class LevelEntity {
 public:
+    ~LevelEntity();
+
     irr::core::vector3df getPosition() const;
 
     std::wstring getId() const;

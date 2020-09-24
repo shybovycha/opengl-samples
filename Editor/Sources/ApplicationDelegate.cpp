@@ -297,6 +297,17 @@ void ApplicationDelegate::gameManagerNodeSelected() {
     }
 }
 
+void ApplicationDelegate::deleteSelectedEntity() {
+    // TODO: check if level was selected
+    if (gameData->getCurrentEntity() == nullptr) {
+        return;
+    }
+
+    gameData->getCurrentLevel()->deleteEntityById(gameData->getCurrentEntity()->getId());
+    gameData->setCurrentEntity(nullptr);
+    gameManagerTree->rebuild();
+}
+
 irr::core::vector3df ApplicationDelegate::getTargetPositionFromCameraView() const {
     // ray picking does not really work =(
     /*irr::core::triangle3df triangle;

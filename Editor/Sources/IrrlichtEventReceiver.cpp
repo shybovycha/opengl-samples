@@ -51,34 +51,43 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
 
         if (event.GUIEvent.EventType == irr::gui::EGET_BUTTON_CLICKED) {
             irr::gui::IGUIButton* button = reinterpret_cast<irr::gui::IGUIButton*>(event.GUIEvent.Caller);
-            if (button->getID() == static_cast<irr::s32>(GUIElementId::QUIT)) {
+
+            GUIElementId buttonId = static_cast<GUIElementId>(button->getID());
+
+            switch (buttonId) {
+            case GUIElementId::QUIT:
                 delegate->quit();
-            }
+                break;
 
-            if (button->getID() == static_cast<irr::s32>(GUIElementId::SAVE_LEVELS)) {
+            case GUIElementId::SAVE_LEVELS:
                 delegate->openSaveLevelsDialog();
-            }
+                break;
 
-            if (button->getID() == static_cast<irr::s32>(GUIElementId::LOAD_LEVELS)) {
+            case GUIElementId::LOAD_LEVELS:
                 delegate->openLoadLevelsDialog();
-            }
+                break;
 
-            if (button->getID() == static_cast<irr::s32>(GUIElementId::ABOUT)) {
+            case GUIElementId::ABOUT:
                 delegate->openAboutWindow();
-            }
+                break;
 
-            if (button->getID() == static_cast<irr::s32>(GUIElementId::ADD_LEVEL)) {
+            case GUIElementId::ADD_LEVEL:
                 delegate->openLoadLevelMeshDialog();
-            }
+                break;
 
-            if (button->getID() == static_cast<irr::s32>(GUIElementId::ADD_TARGET)) {
+            case GUIElementId::ADD_TARGET:
                 delegate->addTarget();
-            }
+                break;
 
-            if (button->getID() == static_cast<irr::s32>(GUIElementId::ADD_LIGHT)) {
+            case GUIElementId::ADD_LIGHT:
                 delegate->addLight();
-            }
+                break;
 
+            case GUIElementId::DELETE_SELECTED:
+                delegate->deleteSelectedEntity();
+                break;
+            };
+            
             return false;
         }
 

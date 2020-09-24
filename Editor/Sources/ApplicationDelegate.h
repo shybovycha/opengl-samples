@@ -66,6 +66,8 @@ public:
     void lightSelected(const std::wstring& lightId);
 
     void gameManagerNodeSelected();
+    
+    void deleteSelectedEntity();
 
     void quit();
 

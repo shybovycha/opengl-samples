@@ -2,6 +2,12 @@
 
 LevelEntity::LevelEntity(irr::core::vector3df _position, std::wstring _id, LevelEntityType _type) : id(_id), position(_position), type(_type), sceneNode(nullptr) {}
 
+LevelEntity::~LevelEntity() {
+    if (sceneNode != nullptr) {
+        sceneNode->setVisible(false);
+    }
+}
+
 irr::core::vector3df LevelEntity::getPosition() const {
     return position;
 }
