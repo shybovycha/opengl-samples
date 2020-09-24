@@ -49,8 +49,8 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [x] manage targets with UI elements, not keyboard and mouse click
 - [x] display the structure of a level in UI
 - [x] add multiple levels in one run
-- [ ] allow for level removal
-- [ ] remove targets
+- [x] allow for level removal
+- [x] remove targets
 - [ ] change target position
 - [x] place target in front of camera instead of in place of camera
 - [x] replace FPS camera with mouse-controlled one
@@ -67,7 +67,7 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [x] create custom camera animator to control camera with both keyboard and mouse in a reasonable way
 - [ ] create custom file dialog to allow saving files
 - [x] manage lights
-- [ ] refactor Light and Target on level to Entity
+- [x] refactor Light and Target on level to Entity
 - [ ] add & manage properties for level entities (?)
 - [ ] render AABB around selected entity
 - [ ] draw axes to allow for translation of entities

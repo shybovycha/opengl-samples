@@ -298,14 +298,16 @@ void ApplicationDelegate::gameManagerNodeSelected() {
 }
 
 void ApplicationDelegate::deleteSelectedEntity() {
-    // TODO: check if level was selected
-    if (gameData->getCurrentEntity() == nullptr) {
-        return;
+    if (gameData->getCurrentLevel() != nullptr && gameData->getCurrentEntity() == nullptr) {
+        gameData->deleteLevelById(gameData->getCurrentLevel()->getId());
+        gameData->setCurrentLevel(nullptr);
+        gameManagerTree->rebuild();
     }
-
-    gameData->getCurrentLevel()->deleteEntityById(gameData->getCurrentEntity()->getId());
-    gameData->setCurrentEntity(nullptr);
-    gameManagerTree->rebuild();
+    else if (gameData->getCurrentLevel() == nullptr && gameData->getCurrentEntity() != nullptr) {
+        gameData->getCurrentLevel()->deleteEntityById(gameData->getCurrentEntity()->getId());
+        gameData->setCurrentEntity(nullptr);
+        gameManagerTree->rebuild();
+    }
 }
 
 irr::core::vector3df ApplicationDelegate::getTargetPositionFromCameraView() const {

@@ -30,6 +30,8 @@ public:
 
     std::shared_ptr<Level> createLevel(const std::wstring& meshFilename);
 
+    void deleteLevelById(const std::wstring& levelId);
+
     std::vector<std::shared_ptr<Level>> getLevels() const;
 
     std::shared_ptr<Level> getCurrentLevel() const;

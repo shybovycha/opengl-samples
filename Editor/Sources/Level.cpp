@@ -4,6 +4,12 @@ Level::Level(const std::wstring& _meshFilename, const std::wstring& _id) : meshF
 
 Level::Level(const std::wstring& _meshFilename, const std::wstring& _id, const std::wstring& _meshBasename) : meshFilename(_meshFilename), id(_id), meshBasename(_meshBasename), sceneNode(nullptr) {}
 
+Level::~Level() {
+    if (sceneNode != nullptr) {
+        sceneNode->setVisible(false);
+    }
+}
+
 const std::vector<std::shared_ptr<LevelEntity>> Level::getEntities() const {
     std::vector<std::shared_ptr<LevelEntity>> result;
 
