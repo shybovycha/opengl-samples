@@ -1,6 +1,6 @@
 <levels>
     <level>
-        <model>room1.x</model>
+        <model>Room1.dae</model>
         <targets>
             <target>
                 <position x="-16.346" y="393.417" z="962.377" />
@@ -15,7 +15,7 @@
     </level>
 
     <level>
-        <model>egypt1.x</model>
+        <model>Egypt1.dae</model>
         <targets>
             <target>
                 <position x="-3.06793" y="86.2608" z="881.03" />
@@ -42,7 +42,7 @@
     </level>
 
     <level>
-        <model>forest1.x</model>
+        <model>Forest1.dae</model>
         <targets>
             <target>
                 <position x="-760.75" y="333.496" z="472.156" />
@@ -63,7 +63,7 @@
     </level>
 
     <level>
-        <model>square1.x</model>
+        <model>Square1.dae</model>
         <targets>
             <target>
                 <position x="-0.693868" y="53.0339" z="446.627" />

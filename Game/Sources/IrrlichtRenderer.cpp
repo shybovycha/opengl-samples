@@ -24,7 +24,7 @@ void IrrlichtRenderer::init(Settings settings) {
 
     // soundEngine = irrklang::createIrrKlangDevice();
 
-    device->getFileSystem()->addZipFileArchive("Resources/Packs/data.pk3");
+    device->getFileSystem()->addZipFileArchive("Resources/Packs/data.zip");
 
     bill = smgr->addBillboardSceneNode();
     bill->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
@@ -32,6 +32,9 @@ void IrrlichtRenderer::init(Settings settings) {
     bill->setMaterialFlag(irr::video::EMF_LIGHTING, false);
     bill->setMaterialFlag(irr::video::EMF_ZBUFFER, false);
     bill->setSize(irr::core::dimension2d<irr::f32>(20.0f, 20.0f));
+
+    irr::gui::IGUIFont* font = guienv->getFont("calibri.xml");
+    guienv->getSkin()->setFont(font);
 
     // TODO: move this to scene config too
     smgr->addLightSceneNode(nullptr, irr::core::vector3df(0, 20, 0), irr::video::SColorf(0.5f, 0.5f, 0.5f, 0.5f), 3000, 0);
@@ -144,12 +147,13 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
 
 void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
     // unload existing level data
-    // TODO: ISceneNode::drop() does not work here for some reason. Neither ISceneNode::remove() does
-    action->getPreviousLevel()->getModel()->remove();
-
     for (auto target : action->getPreviousLevel()->getTargets()) {
-        target->remove();
+        if (target) {
+            target->remove();
+        }
     }
+
+    action->getPreviousLevel()->getModel()->remove();
 
     // load next level
     irr::scene::IAnimatedMesh* levelMesh = smgr->getMesh(action->getNextLevel()->getModelFilename().c_str());
@@ -196,7 +200,8 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 }
 
 void IrrlichtRenderer::processAction(TargetEliminatedAction* action) {
-    action->getTarget()->remove();
+    // hide in here, remove when the next level is loaded
+    action->getTarget()->setVisible(false);
     actionDispatcher->targetEliminated();
 
     if (gameState->getCurrentScore()->getTargetsEliminated() >= gameState->getCurrentLevel()->getTargets().size()) {
@@ -271,14 +276,14 @@ void IrrlichtRenderer::renderMainMenu() {
     );
 
     guienv->addButton(
-        irr::core::rect<irr::s32>(35, 35, 100, 60),
+        irr::core::rect<irr::s32>(35, 35, 120, 60),
         mainMenuWindow,
         NEW_GAME_BUTTON_ID,
         L"New game"
     );
 
     irr::gui::IGUIButton* continueButton = guienv->addButton(
-        irr::core::rect<irr::s32>(35, 70, 100, 95),
+        irr::core::rect<irr::s32>(35, 70, 120, 95),
         mainMenuWindow,
         CONTINUE_BUTTON_ID,
         L"Back to the game"
@@ -287,7 +292,7 @@ void IrrlichtRenderer::renderMainMenu() {
     continueButton->setEnabled(false);
 
     guienv->addButton(
-        irr::core::rect<irr::s32>(35, 105, 100, 130),
+        irr::core::rect<irr::s32>(35, 105, 120, 130),
         mainMenuWindow,
         QUIT_BUTTON_ID,
         L"Quit"
