@@ -145,10 +145,10 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
 void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
     // unload existing level data
     // TODO: ISceneNode::drop() does not work here for some reason. Neither ISceneNode::remove() does
-    action->getPreviousLevel()->getModel()->setVisible(false);
+    action->getPreviousLevel()->getModel()->remove();
 
     for (auto target : action->getPreviousLevel()->getTargets()) {
-        target->setVisible(false);
+        target->remove();
     }
 
     // load next level
@@ -196,7 +196,7 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 }
 
 void IrrlichtRenderer::processAction(TargetEliminatedAction* action) {
-    action->getTarget()->setVisible(false);
+    action->getTarget()->remove();
     actionDispatcher->targetEliminated();
 
     if (gameState->getCurrentScore()->getTargetsEliminated() >= gameState->getCurrentLevel()->getTargets().size()) {

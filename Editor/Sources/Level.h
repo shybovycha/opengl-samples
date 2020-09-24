@@ -18,8 +18,6 @@ public:
 
     Level(const std::wstring& meshFilename, const std::wstring& id, const std::wstring& meshBasename);
 
-    ~Level();
-
     void setSceneNode(irr::scene::ISceneNode* sceneNode);
 
     irr::scene::ISceneNode* getSceneNode() const;

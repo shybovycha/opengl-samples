@@ -21,6 +21,9 @@ void ApplicationDelegate::init() {
     auto animator = new CameraSceneNodeAnimator(device->getCursorControl());
     camera->addAnimator(animator);
 
+    // this does not look very good
+    // smgr->setAmbientLight(irr::video::SColor(255, 255, 255, 255));
+
     initUI();
 }
 
@@ -299,11 +302,19 @@ void ApplicationDelegate::gameManagerNodeSelected() {
 
 void ApplicationDelegate::deleteSelectedEntity() {
     if (gameData->getCurrentLevel() != nullptr && gameData->getCurrentEntity() == nullptr) {
+        if (gameData->getCurrentLevel()->getSceneNode() != nullptr) {
+            gameData->getCurrentLevel()->getSceneNode()->remove();
+        }
+
         gameData->deleteLevelById(gameData->getCurrentLevel()->getId());
         gameData->setCurrentLevel(nullptr);
         gameManagerTree->rebuild();
     }
     else if (gameData->getCurrentLevel() == nullptr && gameData->getCurrentEntity() != nullptr) {
+        if (gameData->getCurrentEntity()->getSceneNode() != nullptr) {
+            gameData->getCurrentEntity()->getSceneNode()->remove();
+        }
+
         gameData->getCurrentLevel()->deleteEntityById(gameData->getCurrentEntity()->getId());
         gameData->setCurrentEntity(nullptr);
         gameManagerTree->rebuild();

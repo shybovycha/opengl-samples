@@ -71,6 +71,8 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [ ] add & manage properties for level entities (?)
 - [ ] render AABB around selected entity
 - [ ] draw axes to allow for translation of entities
+- [x] ~~set ambient light so that levels are not pitch black~~
+- [ ] do not hide scene nodes - drop them; but first figure out why that causes runtime exception
 
 ### Miscellanious
 
