@@ -43,7 +43,6 @@ void ApplicationDelegate::initUI() {
 
 void ApplicationDelegate::createAxis() {
     arrowsParentNode = smgr->addEmptySceneNode();
-    arrowsParentNode->setName("ArrowRoot");
     arrowsParentNode->grab();
 
     auto xArrowMesh = smgr->getGeometryCreator()->createArrowMesh(4, 8, 25.f, 20.0f, 0.3f, 1.f, irr::video::SColor(255, 255, 0, 0));
