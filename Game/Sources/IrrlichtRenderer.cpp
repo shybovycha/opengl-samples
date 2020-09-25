@@ -1,8 +1,8 @@
 #include "IrrlichtRenderer.h"
 
-IrrlichtRenderer::IrrlichtRenderer(std::shared_ptr<GameState> _gameState, std::shared_ptr<ActionDispatcher> _actionDispatcher) : 
-    Renderer(_gameState), 
-    actionDispatcher(_actionDispatcher) 
+IrrlichtRenderer::IrrlichtRenderer(std::shared_ptr<GameState> _gameState, std::shared_ptr<ActionDispatcher> _actionDispatcher) :
+    Renderer(_gameState),
+    actionDispatcher(_actionDispatcher)
 {}
 
 void IrrlichtRenderer::init(Settings settings) {
@@ -24,7 +24,7 @@ void IrrlichtRenderer::init(Settings settings) {
 
     // soundEngine = irrklang::createIrrKlangDevice();
 
-    device->getFileSystem()->addZipFileArchive("Resources/Packs/data.zip");
+    device->getFileSystem()->addFileArchive("Resources/Packs/data.zip");
 
     bill = smgr->addBillboardSceneNode();
     bill->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
@@ -113,21 +113,25 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
 
     action->getLevel()->setModel(level);
 
-    selector = smgr->createOctTreeTriangleSelector(levelMesh->getMesh(0), level, 128);
+    auto metaTriangleSelector = smgr->createMetaTriangleSelector();
+
+    metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(level));
 
     irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
     std::vector<irr::scene::ISceneNode*> targets;
 
     int targetIdx = 0;
 
-    for (auto position : action->getLevel()->getTargetPositions()) {
-        irr::scene::ISceneNode* target = smgr->addAnimatedMeshSceneNode(targetMesh);
+    for (const auto& position : action->getLevel()->getTargetPositions()) {
+        auto target = smgr->addAnimatedMeshSceneNode(targetMesh);
 
         target->setVisible(true);
 
         target->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
         target->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
         target->setPosition(position);
+
+        metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(target));
 
         std::wostringstream targetName;
         targetName << "target-";
@@ -138,6 +142,8 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
 
         targets.push_back(target);
     }
+
+    selector = metaTriangleSelector;
 
     gameState->getCurrentScore()->resetCurrentTime();
 
@@ -166,7 +172,9 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 
     action->getNextLevel()->setModel(level);
 
-    selector = smgr->createOctTreeTriangleSelector(levelMesh->getMesh(0), level, 128);
+    auto metaTriangleSelector = smgr->createMetaTriangleSelector();
+
+    metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(level));
 
     irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
 
@@ -174,14 +182,16 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 
     int targetIdx = 0;
 
-    for (auto position : action->getNextLevel()->getTargetPositions()) {
-        irr::scene::ISceneNode* target = smgr->addAnimatedMeshSceneNode(targetMesh);
+    for (const auto& position : action->getNextLevel()->getTargetPositions()) {
+        auto target = smgr->addAnimatedMeshSceneNode(targetMesh);
 
         target->setVisible(true);
 
         target->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
         target->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
         target->setPosition(position);
+
+        metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(target));
 
         std::wostringstream targetName;
         targetName << "target-";
@@ -192,6 +202,8 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 
         targets.push_back(target);
     }
+
+    selector = metaTriangleSelector;
 
     gameState->getCurrentScore()->resetCurrentTime();
 
@@ -375,7 +387,7 @@ void IrrlichtRenderer::updateCrosshair() {
 
     irr::core::triangle3df collisionTriangle;
     irr::core::vector3df collisionPoint;
-    irr::scene::ISceneNode* node = 0;
+    irr::scene::ISceneNode* node = nullptr;
 
     if (smgr->getSceneCollisionManager()->getCollisionPoint(line, selector, collisionPoint, collisionTriangle, node)) {
         bill->setPosition(collisionPoint);
@@ -385,7 +397,7 @@ void IrrlichtRenderer::updateCrosshair() {
 void IrrlichtRenderer::updatePostProcessingEffects() {
     unsigned long time = gameState->getCurrentScore()->getCurrentTime();
     int levelIdx = gameState->getCurrentLevelIndex();
-    float k = (sin(time / 100) / (10 - levelIdx));
+    double k = sin(time / 100) / (10 - levelIdx);
 
     camera->setRotation(
         irr::core::vector3df(

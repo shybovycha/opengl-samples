@@ -8,7 +8,7 @@
 
 #include "GameData.h"
 #include "GameManagerNodeData.h"
-#include "GuiElementID.h"
+#include "GUIElementId.h"
 
 class GameManagerTree {
 public:

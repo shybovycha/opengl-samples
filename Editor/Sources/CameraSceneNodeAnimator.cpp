@@ -32,13 +32,13 @@ void CameraSceneNodeAnimator::animateNode(irr::scene::ISceneNode* sceneNode, irr
         return;
     }
 
-    irr::scene::ICameraSceneNode* camera = reinterpret_cast<irr::scene::ICameraSceneNode*>(sceneNode);
+    auto* camera = reinterpret_cast<irr::scene::ICameraSceneNode*>(sceneNode);
 
     const irr::core::vector3df up = camera->getUpVector() / camera->getUpVector().getLength();
     const irr::core::vector3df forward = (camera->getTarget() - camera->getPosition()).normalize();
     const irr::core::vector3df right = up.crossProduct(forward).normalize();
 
-    irr::f32 deltaTime = (timestamp - previousTimestamp) / 1000.f;
+    irr::f32 deltaTime = static_cast<float>(timestamp - previousTimestamp) / 1000.f;
 
     // frames are rendering too fast
     if (deltaTime == 0.f) {
@@ -53,7 +53,7 @@ void CameraSceneNodeAnimator::animateNode(irr::scene::ISceneNode* sceneNode, irr
     cameraRelativeRotation.Y += deltaMousePosition.X * rotateSpeed * deltaTime;
 
     // rotating camera FPS-style
-    if (isRightMouseButtonPressed && fabs(deltaMousePosition.getLength()) > 0) {
+    if (isRightMouseButtonPressed && abs(deltaMousePosition.getLength()) > 0) {
         irr::core::vector3df target(0, 0, irr::core::max_(1.f, camera->getPosition().getLength()));
 
         irr::core::matrix4 mat;
@@ -65,7 +65,7 @@ void CameraSceneNodeAnimator::animateNode(irr::scene::ISceneNode* sceneNode, irr
         previousMousePosition = currentMousePosition;
     }
     // horizontal and vertical camera translation
-    else if (isMiddleMouseButtonPressed && fabs(deltaMousePosition.getLength()) > 0) {
+    else if (isMiddleMouseButtonPressed && abs(deltaMousePosition.getLength()) > 0) {
         irr::core::vector3df normalizedDeltaMousePosition = irr::core::vector3df(deltaMousePosition.X, deltaMousePosition.Y, 0).normalize();
 
         irr::core::vector3df offset = ((right * normalizedDeltaMousePosition) + (up * normalizedDeltaMousePosition)) * moveSpeed * deltaTime;
@@ -89,8 +89,6 @@ void CameraSceneNodeAnimator::animateNode(irr::scene::ISceneNode* sceneNode, irr
 }
 
 bool CameraSceneNodeAnimator::OnEvent(const irr::SEvent& event) {
-    bool result = false;
-
     if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
         switch (event.MouseInput.Event) {
         case irr::EMIE_LMOUSE_PRESSED_DOWN:
