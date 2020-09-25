@@ -299,10 +299,8 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
         entity->getSceneNode()->setVisible(true);
     }
 
-    if (arrowsParentNode->getParent() != nullptr) {
-        arrowsParentNode->setParent(nullptr);
-        arrowsParentNode->setVisible(false);
-    }
+    arrowsParentNode->setParent(nullptr);
+    arrowsParentNode->setVisible(false);
 }
 
 void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
