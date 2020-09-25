@@ -1,9 +1,11 @@
 #include "GameData.h"
 
+#include <utility>
+
 GameData::GameData(irr::IrrlichtDevice* _device) : device(_device) {}
 
 void GameData::loadFromFile(const std::wstring& filename) {
-    tinyxml2::XMLDocument* xml = new tinyxml2::XMLDocument();
+    auto xml = new tinyxml2::XMLDocument();
 
     // setup wstring -> string converter
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wstringConverter;
@@ -12,7 +14,7 @@ void GameData::loadFromFile(const std::wstring& filename) {
 
     if (xmlError != tinyxml2::XML_SUCCESS) {
         std::cerr << "Can not load levels.xml file" << std::endl;
-        throw "Can not load levels";
+        throw std::exception("Can not load levels");
     }
 
     auto levelsNode = xml->FirstChildElement("levels");
@@ -69,7 +71,7 @@ void GameData::saveToFile(const std::wstring& filename) {
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wstringConverter;
 
     std::FILE* fp = std::fopen(wstringConverter.to_bytes(filename).c_str(), "w");
-    tinyxml2::XMLPrinter* writer = new tinyxml2::XMLPrinter(fp);
+    auto writer = new tinyxml2::XMLPrinter(fp);
 
     writer->OpenElement("levels");
 
@@ -88,7 +90,7 @@ void GameData::saveToFile(const std::wstring& filename) {
 
         writer->OpenElement("entities");
 
-        for (auto entity : level->getEntities()) {
+        for (const auto& entity : level->getEntities()) {
             irr::core::vector3df position = entity->getPosition();
 
             if (entity->getType() == LevelEntityType::TARGET) {
@@ -165,9 +167,9 @@ std::shared_ptr<LevelEntity> GameData::getCurrentEntity() const {
 }
 
 void GameData::setCurrentLevel(std::shared_ptr<Level> level) {
-    currentLevel = level;
+    currentLevel = std::move(level);
 }
 
 void GameData::setCurrentEntity(std::shared_ptr<LevelEntity> entity) {
-    currentEntity = entity;
+    currentEntity = std::move(entity);
 }

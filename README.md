@@ -8,7 +8,8 @@ This is a very simple shooting game I made many years ago. It is written in C++ 
 
 You will need [vcpkg](https://github.com/microsoft/vcpkg), [CMake](https://cmake.org) and a C++ toolchain (like VC, GCC or Clang) installed.
 
-Run CMake: `cmake -Bbuild -H. && cmake --build build`
+Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buildsystems/vcpkg.cmake
+ && cmake --build build`
 
 ## TODO
 
@@ -32,7 +33,7 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [x] when the time runs out the next level is not loaded
 - [ ] add end level menu
 - [ ] change 3D models to the artwork
-- [ ] change the default GUI theme
+- [x] ~~change the default GUI theme~~
 - [ ] do not use exceptions (https://google.github.io/styleguide/cppguide.html#Exceptions)
 - [ ] new game in the middle of the game should reset everything
 - [x] properly copy resources to the directory with the binary
@@ -42,6 +43,10 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [ ] write settings to file
 - [x] read settings from file
 - [ ] bring the sound back
+- [x] replace level meshes with OBJ
+- [x] replace level meshes with Collada
+- [x] update font in menu
+- [ ] load UI from file
 
 ### Editor
 
@@ -72,7 +77,8 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [ ] render AABB around selected entity
 - [ ] draw axes to allow for translation of entities
 - [x] ~~set ambient light so that levels are not pitch black~~
-- [ ] do not hide scene nodes - drop them; but first figure out why that causes runtime exception
+- [x] do not hide scene nodes - drop them; but first figure out why that causes runtime exception
+- [ ] replace mouse wheel for moving camera back/forth with Shift + Mouse Right Button + Mouse Move
 
 ### Miscellanious
 

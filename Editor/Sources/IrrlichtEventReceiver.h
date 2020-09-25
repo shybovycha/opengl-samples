@@ -9,9 +9,9 @@
 
 class IrrlichtEventReceiver : public irr::IEventReceiver {
 public:
-    IrrlichtEventReceiver(std::shared_ptr<ApplicationDelegate> _delegate);
+    explicit IrrlichtEventReceiver(std::shared_ptr<ApplicationDelegate> _delegate);
 
-    virtual bool OnEvent(const irr::SEvent& event);
+    bool OnEvent(const irr::SEvent& event) override;
 
 private:
     std::shared_ptr<ApplicationDelegate> delegate;

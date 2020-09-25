@@ -4,10 +4,10 @@ CameraSceneNodeAnimator::CameraSceneNodeAnimator(
     irr::gui::ICursorControl* _cursorControl,
     irr::f32 _rotateSpeed,
     irr::f32 _moveSpeed
-) : 
-    irr::scene::ISceneNodeAnimator(), 
-    cursorControl(_cursorControl), 
-    rotateSpeed(_rotateSpeed), 
+) :
+    irr::scene::ISceneNodeAnimator(),
+    cursorControl(_cursorControl),
+    rotateSpeed(_rotateSpeed),
     moveSpeed(_moveSpeed),
     mouseWheelMotion(0.f),
     currentMousePosition(irr::core::vector2di(0, 0)),
@@ -17,8 +17,6 @@ CameraSceneNodeAnimator::CameraSceneNodeAnimator(
     isMiddleMouseButtonPressed(false),
     isRightMouseButtonPressed(false)
 {}
-
-CameraSceneNodeAnimator::~CameraSceneNodeAnimator() {}
 
 irr::scene::ISceneNodeAnimator* CameraSceneNodeAnimator::createClone(irr::scene::ISceneNode* node, irr::scene::ISceneManager* newManager) {
     return new CameraSceneNodeAnimator(cursorControl, rotateSpeed, moveSpeed);
@@ -80,10 +78,10 @@ void CameraSceneNodeAnimator::animateNode(irr::scene::ISceneNode* sceneNode, irr
     // forward / backward camera translation
     else if (fabs(mouseWheelMotion) > 0) {
         irr::core::vector3df offset = forward * moveSpeed * deltaTime * mouseWheelMotion;
-        
+
         camera->setPosition(camera->getPosition() + offset);
         camera->setTarget(camera->getTarget() + offset);
-     
+
         mouseWheelMotion = 0;
     }
 

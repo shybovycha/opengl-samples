@@ -19,13 +19,13 @@
 #include "GUIElementId.h"
 #include "Level.h"
 
-const std::wstring ABOUT_TEXT = L"This is the ShootThem! level editor.\n\n\
+const wchar_t* ABOUT_TEXT = L"This is the ShootThem! level editor.\n\n\
 Use the menu to add new levels and targets to the level.\n\n\
 Save and load levels from the levels.xml file that will be picked up by the game later on.";
 
 class ApplicationDelegate {
 public:
-    ApplicationDelegate(irr::IrrlichtDevice* _device);
+    explicit ApplicationDelegate(irr::IrrlichtDevice* _device);
 
     void init();
 
@@ -62,11 +62,11 @@ public:
     void levelSelected(const std::wstring& levelId);
 
     void targetSelected(const std::wstring& targetId);
-    
+
     void lightSelected(const std::wstring& lightId);
 
     void gameManagerNodeSelected();
-    
+
     void deleteSelectedEntity();
 
     void quit();
@@ -89,7 +89,7 @@ private:
     irr::scene::ISceneManager* smgr;
     irr::gui::IGUIEnvironment* guienv;
     irr::scene::ICameraSceneNode* camera;
-    
+
     std::optional<std::wstring> levelsFilename;
 
     std::shared_ptr<GameData> gameData;

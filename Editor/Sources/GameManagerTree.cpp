@@ -1,6 +1,8 @@
 #include "GameManagerTree.h"
 
-GameManagerTree::GameManagerTree(irr::gui::IGUIEnvironment* _guienv, std::shared_ptr<GameData> _gameData) : guienv(_guienv), gameData(_gameData), gameManagerTree(nullptr) {}
+#include <utility>
+
+GameManagerTree::GameManagerTree(irr::gui::IGUIEnvironment* _guienv, std::shared_ptr<GameData> _gameData) : guienv(_guienv), gameData(std::move(_gameData)), gameManagerTree(nullptr) {}
 
 void GameManagerTree::init() {
     gameManagerTree = reinterpret_cast<irr::gui::IGUITreeView*>(guienv->getRootGUIElement()->getElementFromId(static_cast<irr::s32>(GUIElementId::GAME_LEVEL_TREE), true));
@@ -9,17 +11,17 @@ void GameManagerTree::init() {
 void GameManagerTree::rebuild() {
     gameManagerTree->getRoot()->clearChildren();
 
-    for (auto level : gameData->getLevels()) {
-        GameManagerNodeData* levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, level->getId());
+    for (const auto& level : gameData->getLevels()) {
+        auto levelNodeData = new GameManagerNodeData(GameManagerNodeDataType::LEVEL, level->getId());
 
-        auto levelTreeNode = addManagerTreeNodeToRootNode(level->getMeshBasename().c_str(), levelNodeData);
+        auto levelTreeNode = addManagerTreeNodeToRootNode(level->getMeshBasename(), levelNodeData);
 
         if (gameData->getCurrentLevel() != nullptr && gameData->getCurrentEntity() == nullptr && gameData->getCurrentLevel()->getId() == level->getId()) {
             levelTreeNode->setSelected(true);
             levelTreeNode->setExpanded(true);
         }
 
-        for (auto entity : level->getEntities()) {
+        for (const auto& entity : level->getEntities()) {
             GameManagerNodeData* entityNodeData = nullptr;
             std::wstring id = entity->getId();
 
@@ -40,11 +42,11 @@ void GameManagerTree::rebuild() {
     }
 }
 
-irr::gui::IGUITreeViewNode* GameManagerTree::addManagerTreeNodeToRootNode(std::wstring label, GameManagerNodeData* nodeData) {
+irr::gui::IGUITreeViewNode* GameManagerTree::addManagerTreeNodeToRootNode(const std::wstring& label, GameManagerNodeData* nodeData) {
     return addManagerTreeNodeToNode(label, nodeData, gameManagerTree->getRoot());
 }
 
-irr::gui::IGUITreeViewNode* GameManagerTree::addManagerTreeNodeToSelectedNode(std::wstring label, GameManagerNodeData* nodeData) {
+irr::gui::IGUITreeViewNode* GameManagerTree::addManagerTreeNodeToSelectedNode(const std::wstring& label, GameManagerNodeData* nodeData) {
     irr::gui::IGUITreeViewNode* selectedNode = gameManagerTree->getSelected();
 
     if (!selectedNode) {
@@ -54,7 +56,7 @@ irr::gui::IGUITreeViewNode* GameManagerTree::addManagerTreeNodeToSelectedNode(st
     return addManagerTreeNodeToNode(label, nodeData, selectedNode);
 }
 
-irr::gui::IGUITreeViewNode* GameManagerTree::addManagerTreeNodeToNode(std::wstring label, GameManagerNodeData* nodeData, irr::gui::IGUITreeViewNode* parent) {
+irr::gui::IGUITreeViewNode* GameManagerTree::addManagerTreeNodeToNode(const std::wstring& label, GameManagerNodeData* nodeData, irr::gui::IGUITreeViewNode* parent) {
     return parent->addChildBack(label.c_str(), nullptr, -1, -1, reinterpret_cast<void*>(nodeData));
 }
 

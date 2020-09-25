@@ -1,11 +1,13 @@
 #include "GameManagerNodeData.h"
 
-GameManagerNodeData::GameManagerNodeData(GameManagerNodeDataType _type, const std::wstring& _id) : type(_type), id(_id) {}
+#include <utility>
+
+GameManagerNodeData::GameManagerNodeData(GameManagerNodeDataType _type, std::wstring  _id) : type(_type), id(std::move(_id)) {}
 
 GameManagerNodeDataType GameManagerNodeData::getType() const {
     return type;
 }
 
-const std::wstring GameManagerNodeData::getId() const {
+std::wstring GameManagerNodeData::getId() const {
     return id;
 }

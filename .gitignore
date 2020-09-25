@@ -14,3 +14,5 @@ build
 .vs
 CMakeSettings.json
 .project
+cmake-build-*/
+.idea

@@ -8,5 +8,5 @@
 
 class Target : public LevelEntity {
 public:
-    Target(irr::core::vector3df _position, const std::wstring& _id);
+    Target(const irr::core::vector3df& _position, const std::wstring& _id);
 };

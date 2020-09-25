@@ -8,5 +8,5 @@
 
 class Light : public LevelEntity {
 public:
-    Light(irr::core::vector3df _position, const std::wstring& _id);
+    Light(const irr::core::vector3df& _position, const std::wstring& _id);
 };

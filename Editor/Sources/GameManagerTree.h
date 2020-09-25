@@ -21,9 +21,9 @@ public:
     GameManagerNodeData* getSelectedNodeData() const;
 
 private:
-    irr::gui::IGUITreeViewNode* addManagerTreeNodeToRootNode(std::wstring label, GameManagerNodeData* nodeData);
-    irr::gui::IGUITreeViewNode* addManagerTreeNodeToSelectedNode(std::wstring label, GameManagerNodeData* nodeData);
-    irr::gui::IGUITreeViewNode* addManagerTreeNodeToNode(std::wstring label, GameManagerNodeData* nodeData, irr::gui::IGUITreeViewNode* parent);
+    irr::gui::IGUITreeViewNode* addManagerTreeNodeToRootNode(const std::wstring& label, GameManagerNodeData* nodeData);
+    irr::gui::IGUITreeViewNode* addManagerTreeNodeToSelectedNode(const std::wstring& label, GameManagerNodeData* nodeData);
+    irr::gui::IGUITreeViewNode* addManagerTreeNodeToNode(const std::wstring& label, GameManagerNodeData* nodeData, irr::gui::IGUITreeViewNode* parent);
 
     irr::gui::IGUIEnvironment* guienv;
     std::shared_ptr<GameData> gameData;

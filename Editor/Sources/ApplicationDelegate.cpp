@@ -5,6 +5,7 @@ ApplicationDelegate::ApplicationDelegate(irr::IrrlichtDevice* _device) :
     smgr(device->getSceneManager()),
     guienv(device->getGUIEnvironment()),
     driver(device->getVideoDriver()),
+    camera(nullptr),
     levelsFilename(std::nullopt),
     loadLevelsDialogIsShown(false),
     saveLevelsDialogIsShown(false),
@@ -66,15 +67,15 @@ void ApplicationDelegate::createToolbar() {
 void ApplicationDelegate::createManagerWindow() {
     irr::gui::IGUIWindow* managerWindow = guienv->addWindow(
         irr::core::rect<irr::s32>(600, 70, 800, 470),
-        false, 
+        false,
         L"Levels manager",
         nullptr,
         static_cast<irr::s32>(GUIElementId::MANAGER_WINDOW)
     );
 
-    irr::gui::IGUITreeView* gameTree = guienv->addTreeView(
-        irr::core::rect<irr::s32>(10, 30, 190, 390), 
-        managerWindow, 
+    guienv->addTreeView(
+        irr::core::rect<irr::s32>(10, 30, 190, 390),
+        managerWindow,
         static_cast<irr::s32>(GUIElementId::GAME_LEVEL_TREE)
     );
 }
@@ -102,7 +103,7 @@ void ApplicationDelegate::openSaveLevelsDialog() {
         return;
     }
 
-    guienv->addFileOpenDialog(L"Save levels file", true, 0, static_cast<irr::s32>(GUIElementId::SAVE_LEVELS_DIALOG));
+    guienv->addFileOpenDialog(L"Save levels file", true, nullptr, static_cast<irr::s32>(GUIElementId::SAVE_LEVELS_DIALOG));
     saveLevelsDialogIsShown = true;
 }
 
@@ -115,7 +116,7 @@ void ApplicationDelegate::openLoadLevelsDialog() {
         return;
     }
 
-    guienv->addFileOpenDialog(L"Load levels file", true, 0, static_cast<irr::s32>(GUIElementId::LOAD_LEVELS_DIALOG));
+    guienv->addFileOpenDialog(L"Load levels file", true, nullptr, static_cast<irr::s32>(GUIElementId::LOAD_LEVELS_DIALOG));
     loadLevelsDialogIsShown = true;
 }
 
@@ -124,7 +125,12 @@ void ApplicationDelegate::closeLoadLevelsDialog() {
 }
 
 void ApplicationDelegate::openAboutWindow() {
-    guienv->addMessageBox(L"About", ABOUT_TEXT.c_str());
+    if (aboutWindowIsShown) {
+        return;
+    }
+
+    guienv->addMessageBox(L"About", ABOUT_TEXT);
+
     aboutWindowIsShown = true;
 }
 
@@ -137,7 +143,7 @@ void ApplicationDelegate::openLoadLevelMeshDialog() {
         return;
     }
 
-    guienv->addFileOpenDialog(L"Load level mesh", true, 0, static_cast<irr::s32>(GUIElementId::LOAD_LEVEL_MESH_DIALOG));
+    guienv->addFileOpenDialog(L"Load level mesh", true, nullptr, static_cast<irr::s32>(GUIElementId::LOAD_LEVEL_MESH_DIALOG));
 
     loadLevelMeshDialogIsShown = true;
 }
@@ -149,7 +155,7 @@ void ApplicationDelegate::closeLoadLevelMeshDialog() {
 void ApplicationDelegate::loadLevels(const std::wstring& filename) {
     gameData->loadFromFile(filename);
 
-    if (gameData->getLevels().size() > 0) {
+    if (!gameData->getLevels().empty()) {
         levelSelected(gameData->getLevels().at(0)->getId());
     }
 
@@ -185,7 +191,7 @@ void ApplicationDelegate::addLevel(const std::wstring& meshFilename) {
     }
 
     std::shared_ptr<Level> level = gameData->createLevel(meshFilename);
-    
+
     level->setSceneNode(sceneNode);
 
     levelSelected(level->getId());
@@ -204,7 +210,7 @@ void ApplicationDelegate::addTarget() {
     std::shared_ptr<Target> target = gameData->getCurrentLevel()->createTarget(targetPosition);
 
     // TODO: replace with actual target model
-    irr::scene::ISceneNode* targetSceneNode = smgr->addSphereSceneNode(5.0f, 16, 0, -1, targetPosition);
+    irr::scene::ISceneNode* targetSceneNode = smgr->addSphereSceneNode(5.0f, 16, nullptr, -1, targetPosition);
 
     target->setSceneNode(targetSceneNode);
 
@@ -224,8 +230,8 @@ void ApplicationDelegate::addLight() {
     std::shared_ptr<Light> light = gameData->getCurrentLevel()->createLight(targetPosition);
 
     // TODO: replace with any model?
-    irr::scene::ILightSceneNode* lightSceneNode = smgr->addLightSceneNode(0, targetPosition, irr::video::SColor(255, 255, 255, 255), 200.f);
-    
+    irr::scene::ILightSceneNode* lightSceneNode = smgr->addLightSceneNode(nullptr, targetPosition, irr::video::SColor(255, 255, 255, 255), 200.f);
+
     lightSceneNode->setLightType(irr::video::ELT_POINT);
 
     light->setSceneNode(lightSceneNode);
@@ -236,12 +242,12 @@ void ApplicationDelegate::addLight() {
 }
 
 void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
-    for (auto level : gameData->getLevels()) {
+    for (const auto& level : gameData->getLevels()) {
         if (level->getSceneNode() != nullptr) {
             level->getSceneNode()->setVisible(false);
         }
 
-        for (auto entity : level->getEntities()) {
+        for (const auto& entity : level->getEntities()) {
             entity->getSceneNode()->setVisible(false);
         }
     }
@@ -261,7 +267,7 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
 
     gameData->getCurrentLevel()->getSceneNode()->setVisible(true);
 
-    for (auto entity : gameData->getCurrentLevel()->getEntities()) {
+    for (const auto& entity : gameData->getCurrentLevel()->getEntities()) {
         entity->getSceneNode()->setVisible(true);
     }
 }

@@ -1,6 +1,6 @@
 #include "Application.h"
 
-Application::Application() {}
+Application::Application() : device(nullptr) {}
 
 void Application::run() {
     device = irr::createDevice(
@@ -10,7 +10,7 @@ void Application::run() {
         false,
         false,
         false,
-        0
+        nullptr
     );
 
     device->setWindowCaption(L"Shoot Them! Editor");

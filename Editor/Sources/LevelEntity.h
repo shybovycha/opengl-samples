@@ -16,7 +16,7 @@ public:
 
     std::wstring getId() const;
 
-    void setPosition(irr::core::vector3df newPosition);
+    void setPosition(const irr::core::vector3df& newPosition);
 
     void setSceneNode(irr::scene::ISceneNode* sceneNode);
 
@@ -25,7 +25,7 @@ public:
     LevelEntityType getType() const;
 
 protected:
-    LevelEntity(irr::core::vector3df position, std::wstring id, LevelEntityType type);
+    LevelEntity(const irr::core::vector3df& position, std::wstring id, LevelEntityType type);
 
     irr::core::vector3df position;
     std::wstring id;

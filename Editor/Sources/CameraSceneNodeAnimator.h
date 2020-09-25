@@ -8,30 +8,28 @@
 * Custom camera animator, allowing for both spinning camera like FPS animator and moving camera around both
 * as Maya animator (translation in the camera view plane) and forward-backward (as opposed to Maya animator, which
 * limits this to zooming up to a certain limit).
-* 
+*
 * Controls:
-* 
+*
 * - Middle mouse + mouse move - translate in camera view plane
 * - Right mouse + mouse move - rotate camera FPS-style
 * - Mouse wheel - move camera forward / backward
 */
 class CameraSceneNodeAnimator : public irr::scene::ISceneNodeAnimator {
 public:
-    CameraSceneNodeAnimator(
+    explicit CameraSceneNodeAnimator(
         irr::gui::ICursorControl* cursorControl,
         irr::f32 rotateSpeed = 1000.f,
         irr::f32 moveSpeed = 1500.f
     );
 
-    virtual ~CameraSceneNodeAnimator();
+    irr::scene::ISceneNodeAnimator* createClone(irr::scene::ISceneNode* node, irr::scene::ISceneManager* newManager) override;
 
-    virtual irr::scene::ISceneNodeAnimator* createClone(irr::scene::ISceneNode* node, irr::scene::ISceneManager* newManager = 0);
+    bool isEventReceiverEnabled() const override;
 
-    virtual bool isEventReceiverEnabled() const;
+    void animateNode(irr::scene::ISceneNode* node, irr::u32 timestamp) override;
 
-    virtual void animateNode(irr::scene::ISceneNode* node, irr::u32 timestamp);
-
-    virtual bool OnEvent(const irr::SEvent& event);
+    bool OnEvent(const irr::SEvent& event) override;
 
     virtual irr::f32 getMoveSpeed() const;
 
