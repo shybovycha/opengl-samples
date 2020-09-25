@@ -65,6 +65,8 @@ public:
 
     void deleteSelectedEntity();
 
+    void updateSelectedNodeMovement(bool isLeftMouseButtonDown);
+
     void quit();
 
 private:
@@ -88,6 +90,12 @@ private:
     irr::gui::IGUIEnvironment* guienv;
     irr::scene::ICameraSceneNode* camera;
     irr::scene::ISceneNode* arrowsParentNode;
+    irr::scene::ISceneNode* xArrowNode;
+    irr::scene::ISceneNode* yArrowNode;
+    irr::scene::ISceneNode* zArrowNode;
+    irr::core::vector2di previousMousePosition;
+    irr::scene::ITriangleSelector* triangleSelector;
+    std::optional<irr::core::vector3df> selectedEntityMoveDirection;
 
     std::optional<std::wstring> levelsFilename;
 

@@ -12,6 +12,10 @@ std::wstring LevelEntity::getId() const {
 
 void LevelEntity::setPosition(const irr::core::vector3df& newPosition) {
     position = newPosition;
+
+    if (sceneNode != nullptr) {
+        sceneNode->setPosition(newPosition);
+    }
 }
 
 void LevelEntity::setSceneNode(irr::scene::ISceneNode* _sceneNode) {

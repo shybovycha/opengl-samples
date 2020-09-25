@@ -11,7 +11,8 @@ ApplicationDelegate::ApplicationDelegate(irr::IrrlichtDevice* _device) :
     saveLevelsDialogIsShown(false),
     aboutWindowIsShown(false),
     loadLevelMeshDialogIsShown(false),
-    arrowsParentNode(nullptr)
+    arrowsParentNode(nullptr),
+    triangleSelector(nullptr)
 {
     gameData = std::make_shared<GameData>(device);
     gameManagerTree = std::make_shared<GameManagerTree>(guienv, gameData);
@@ -46,18 +47,26 @@ void ApplicationDelegate::createAxis() {
     arrowsParentNode->grab();
 
     auto xArrowMesh = smgr->getGeometryCreator()->createArrowMesh(4, 8, 25.f, 20.0f, 0.3f, 1.f, irr::video::SColor(255, 255, 0, 0));
-    irr::scene::ISceneNode* xArrowNode = smgr->addMeshSceneNode(xArrowMesh, arrowsParentNode, -1, irr::core::vector3df(0, 0, 0), irr::core::vector3df(0, 0, -90));
+    xArrowNode = smgr->addMeshSceneNode(xArrowMesh, arrowsParentNode, -1, irr::core::vector3df(0, 0, 0), irr::core::vector3df(0, 0, -90));
     xArrowNode->setMaterialFlag(irr::video::EMF_LIGHTING, false);
 
     auto yArrowMesh = smgr->getGeometryCreator()->createArrowMesh(4, 8, 25.f, 20.f, 0.3f, 1.f, irr::video::SColor(255, 0, 255, 0));
-    irr::scene::ISceneNode* yArrowNode = smgr->addMeshSceneNode(yArrowMesh, arrowsParentNode, -1, irr::core::vector3df(0, 0, 0), irr::core::vector3df(0, 0, 0));
+    yArrowNode = smgr->addMeshSceneNode(yArrowMesh, arrowsParentNode, -1, irr::core::vector3df(0, 0, 0), irr::core::vector3df(0, 0, 0));
     yArrowNode->setMaterialFlag(irr::video::EMF_LIGHTING, false);
 
     auto zArrowMesh = smgr->getGeometryCreator()->createArrowMesh(4, 8, 25.f, 20.f, 0.3f, 1.f, irr::video::SColor(255, 0, 0, 255));
-    irr::scene::ISceneNode* zArrowNode = smgr->addMeshSceneNode(zArrowMesh, arrowsParentNode, -1, irr::core::vector3df(0, 0, 0), irr::core::vector3df(90, 0, 0));
+    zArrowNode = smgr->addMeshSceneNode(zArrowMesh, arrowsParentNode, -1, irr::core::vector3df(0, 0, 0), irr::core::vector3df(90, 0, 0));
     zArrowNode->setMaterialFlag(irr::video::EMF_LIGHTING, false);
 
     arrowsParentNode->setVisible(false);
+
+    auto metaTriangleSelector = smgr->createMetaTriangleSelector();
+
+    metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(xArrowMesh, xArrowNode));
+    metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(yArrowMesh, yArrowNode));
+    metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(zArrowMesh, zArrowNode));
+
+    triangleSelector = metaTriangleSelector;
 }
 
 void ApplicationDelegate::createToolbar() {
@@ -410,4 +419,77 @@ irr::scene::ISceneNode* ApplicationDelegate::loadMesh(const std::wstring& meshFi
     irr::scene::ISceneNode* sceneNode = smgr->addMeshSceneNode(levelMesh);
     sceneNode->setName(meshFilename.c_str());
     return sceneNode;
+}
+
+void ApplicationDelegate::updateSelectedNodeMovement(bool isLeftMouseButtonDown) {
+    auto mousePosition = device->getCursorControl()->getPosition();
+    auto mousePositionDelta = mousePosition - previousMousePosition;
+
+    previousMousePosition = mousePosition;
+
+    auto currentEntity = gameData->getCurrentEntity();
+
+    if (currentEntity == nullptr) {
+        return;
+    }
+
+    auto ray = smgr->getSceneCollisionManager()->getRayFromScreenCoordinates(mousePosition, camera);
+
+    auto selectedSceneNode = smgr->getSceneCollisionManager()->getSceneNodeFromRayBB(ray);
+
+    if (selectedSceneNode == nullptr) {
+        return;
+    }
+
+    if (!isLeftMouseButtonDown) {
+        xArrowNode->setVisible(true);
+        yArrowNode->setVisible(true);
+        zArrowNode->setVisible(true);
+
+        selectedEntityMoveDirection = std::nullopt;
+
+        return;
+    }
+
+    irr::core::vector3df direction(0, 0, 0);
+
+    if (selectedEntityMoveDirection.has_value()) {
+        direction = selectedEntityMoveDirection.value();
+    } else {
+        if (selectedSceneNode == xArrowNode) {
+            yArrowNode->setVisible(false);
+            zArrowNode->setVisible(false);
+
+            direction = irr::core::vector3df(1, 0, 0);
+        } else if (selectedSceneNode == yArrowNode) {
+            xArrowNode->setVisible(false);
+            zArrowNode->setVisible(false);
+
+            direction = irr::core::vector3df(0, 1, 0);
+        } else if (selectedSceneNode == zArrowNode) {
+            xArrowNode->setVisible(false);
+            yArrowNode->setVisible(false);
+
+            direction = irr::core::vector3df(0, 0, 1);
+        } else {
+            xArrowNode->setVisible(true);
+            yArrowNode->setVisible(true);
+            zArrowNode->setVisible(true);
+
+            selectedEntityMoveDirection = std::nullopt;
+
+            return;
+        }
+
+        selectedEntityMoveDirection = direction;
+    }
+
+    auto distanceToCamera = (currentEntity->getSceneNode()->getPosition() - camera->getPosition()).getLength();
+    auto offset = mousePositionDelta.getLength();
+
+    auto sign = ((mousePositionDelta.X < 0) || (mousePositionDelta.Y < 0)) ? -1 : 1;
+
+    auto newPosition = currentEntity->getPosition() + direction * distanceToCamera * offset / 100.f * sign;
+
+    currentEntity->setPosition(newPosition);
 }

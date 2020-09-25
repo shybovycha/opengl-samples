@@ -12,6 +12,12 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
         return false;
     }
 
+    if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
+        if (event.MouseInput.Event == irr::EMIE_MOUSE_MOVED) {
+            delegate->updateSelectedNodeMovement(event.MouseInput.isLeftPressed());
+        }
+    }
+
     if (event.EventType == irr::EET_GUI_EVENT) {
         if (event.GUIEvent.EventType == irr::gui::EGET_FILE_SELECTED) {
             auto dialog = reinterpret_cast<irr::gui::IGUIFileOpenDialog*>(event.GUIEvent.Caller);
