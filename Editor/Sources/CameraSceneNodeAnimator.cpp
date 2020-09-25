@@ -9,7 +9,6 @@ CameraSceneNodeAnimator::CameraSceneNodeAnimator(
     cursorControl(_cursorControl),
     rotateSpeed(_rotateSpeed),
     moveSpeed(_moveSpeed),
-    mouseWheelMotion(0.f),
     currentMousePosition(irr::core::vector2di(0, 0)),
     previousMousePosition(irr::core::vector2di(0, 0)),
     previousTimestamp(0),
@@ -64,25 +63,28 @@ void CameraSceneNodeAnimator::animateNode(irr::scene::ISceneNode* sceneNode, irr
 
         previousMousePosition = currentMousePosition;
     }
-    // horizontal and vertical camera translation
     else if (isMiddleMouseButtonPressed && abs(deltaMousePosition.getLength()) > 0) {
-        irr::core::vector3df normalizedDeltaMousePosition = irr::core::vector3df(deltaMousePosition.X, deltaMousePosition.Y, 0).normalize();
+        if (isShiftPressed) {
+            // forward / backward camera translation
+            irr::core::vector3df offset = forward * moveSpeed * deltaTime * deltaMousePosition.Y;
 
-        irr::core::vector3df offset = ((right * normalizedDeltaMousePosition) + (up * normalizedDeltaMousePosition)) * moveSpeed * deltaTime;
+            camera->setPosition(camera->getPosition() + offset);
+            camera->setTarget(camera->getTarget() + offset);
+        } else {
+            // horizontal and vertical camera translation
+            irr::core::vector3df normalizedDeltaMousePosition = irr::core::vector3df(deltaMousePosition.X,
+                                                                                     deltaMousePosition.Y,
+                                                                                     0).normalize();
 
-        camera->setPosition(camera->getPosition() + offset);
-        camera->setTarget(camera->getTarget() + offset);
+            irr::core::vector3df offset =
+                    ((right * normalizedDeltaMousePosition) + (up * normalizedDeltaMousePosition)) * moveSpeed *
+                    deltaTime;
+
+            camera->setPosition(camera->getPosition() + offset);
+            camera->setTarget(camera->getTarget() + offset);
+        }
 
         previousMousePosition = currentMousePosition;
-    }
-    // forward / backward camera translation
-    else if (fabs(mouseWheelMotion) > 0) {
-        irr::core::vector3df offset = forward * moveSpeed * deltaTime * mouseWheelMotion;
-
-        camera->setPosition(camera->getPosition() + offset);
-        camera->setTarget(camera->getTarget() + offset);
-
-        mouseWheelMotion = 0;
     }
 
     previousTimestamp = timestamp;
@@ -90,6 +92,8 @@ void CameraSceneNodeAnimator::animateNode(irr::scene::ISceneNode* sceneNode, irr
 
 bool CameraSceneNodeAnimator::OnEvent(const irr::SEvent& event) {
     if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
+        isShiftPressed = event.MouseInput.Shift;
+
         switch (event.MouseInput.Event) {
         case irr::EMIE_LMOUSE_PRESSED_DOWN:
             isLeftMouseButtonPressed = true;
@@ -119,10 +123,6 @@ bool CameraSceneNodeAnimator::OnEvent(const irr::SEvent& event) {
             previousMousePosition = currentMousePosition;
             currentMousePosition = irr::core::vector2di(event.MouseInput.X, event.MouseInput.Y);
             break;
-
-        case irr::EMIE_MOUSE_WHEEL:
-            mouseWheelMotion = event.MouseInput.Wheel;
-            break;
         }
     }
 
@@ -130,7 +130,7 @@ bool CameraSceneNodeAnimator::OnEvent(const irr::SEvent& event) {
 }
 
 bool CameraSceneNodeAnimator::isCapturingMouseInput() const {
-    return (fabs(mouseWheelMotion) > 1e-5) || (isRightMouseButtonPressed) || (isMiddleMouseButtonPressed);
+    return (isRightMouseButtonPressed) || (isMiddleMouseButtonPressed);
 }
 
 bool CameraSceneNodeAnimator::shouldAnimate(irr::scene::ISceneNode* sceneNode) const {

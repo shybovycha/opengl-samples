@@ -13,7 +13,7 @@
 *
 * - Middle mouse + mouse move - translate in camera view plane
 * - Right mouse + mouse move - rotate camera FPS-style
-* - Mouse wheel - move camera forward / backward
+* - Shift + Middle mouse + mouse move - move camera forward / backward
 */
 class CameraSceneNodeAnimator : public irr::scene::ISceneNodeAnimator {
 public:
@@ -54,9 +54,9 @@ protected:
     irr::core::vector2di currentMousePosition;
     irr::core::vector2di previousMousePosition;
 
-    irr::f32 mouseWheelMotion;
-
     bool isLeftMouseButtonPressed;
     bool isMiddleMouseButtonPressed;
     bool isRightMouseButtonPressed;
+
+    bool isShiftPressed;
 };
