@@ -1,8 +1,6 @@
 #include "IrrlichtEventReceiver.h"
 
-#include <utility>
-
-IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<ApplicationDelegate> _delegate) : delegate(std::move(_delegate)) {}
+IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<ApplicationDelegate> _delegate) : delegate(_delegate) {}
 
 bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
     if (event.EventType == irr::EET_KEY_INPUT_EVENT) {

@@ -1,7 +1,5 @@
 #include "GameData.h"
 
-#include <utility>
-
 GameData::GameData(irr::IrrlichtDevice* _device) : device(_device) {}
 
 void GameData::loadFromFile(const std::wstring& filename) {
@@ -167,9 +165,9 @@ std::shared_ptr<LevelEntity> GameData::getCurrentEntity() const {
 }
 
 void GameData::setCurrentLevel(std::shared_ptr<Level> level) {
-    currentLevel = std::move(level);
+    currentLevel = level;
 }
 
 void GameData::setCurrentEntity(std::shared_ptr<LevelEntity> entity) {
-    currentEntity = std::move(entity);
+    currentEntity = entity;
 }

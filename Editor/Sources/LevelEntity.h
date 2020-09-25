@@ -25,7 +25,7 @@ public:
     LevelEntityType getType() const;
 
 protected:
-    LevelEntity(const irr::core::vector3df& position, std::wstring id, LevelEntityType type);
+    LevelEntity(const irr::core::vector3df& position, const std::wstring& id, LevelEntityType type);
 
     irr::core::vector3df position;
     std::wstring id;

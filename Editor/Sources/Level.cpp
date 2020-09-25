@@ -1,17 +1,8 @@
 #include "Level.h"
 
-#include <utility>
+Level::Level(const std::wstring& _meshFilename, const std::wstring& _id) : meshFilename(_meshFilename), id(_id), meshBasename(_meshFilename), sceneNode(nullptr) {}
 
-Level::Level(std::wstring _meshFilename, std::wstring _id) : meshFilename(std::move(_meshFilename)),
-                                                             id(std::move(_id)),
-                                                             meshBasename(_meshFilename),
-                                                             sceneNode(nullptr) {}
-
-Level::Level(std::wstring _meshFilename, std::wstring _id, std::wstring _meshBasename) :
-        meshFilename(std::move(_meshFilename)),
-        id(std::move(_id)),
-        meshBasename(std::move(_meshBasename)),
-        sceneNode(nullptr) {}
+Level::Level(const std::wstring& _meshFilename, const std::wstring& _id, const std::wstring& _meshBasename) : meshFilename(_meshFilename), id(_id), meshBasename(_meshBasename), sceneNode(nullptr) {}
 
 std::vector<std::shared_ptr<LevelEntity>> Level::getEntities() const {
     std::vector<std::shared_ptr<LevelEntity>> result;

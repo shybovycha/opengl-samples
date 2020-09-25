@@ -19,10 +19,6 @@
 #include "GUIElementId.h"
 #include "Level.h"
 
-const wchar_t* ABOUT_TEXT = L"This is the ShootThem! level editor.\n\n\
-Use the menu to add new levels and targets to the level.\n\n\
-Save and load levels from the levels.xml file that will be picked up by the game later on.";
-
 class ApplicationDelegate {
 public:
     explicit ApplicationDelegate(irr::IrrlichtDevice* _device);
@@ -74,6 +70,8 @@ public:
 private:
     void initUI();
 
+    void createAxis();
+
     void createToolbar();
 
     void createManagerWindow();
@@ -89,6 +87,7 @@ private:
     irr::scene::ISceneManager* smgr;
     irr::gui::IGUIEnvironment* guienv;
     irr::scene::ICameraSceneNode* camera;
+    irr::scene::ISceneNode* arrowsParentNode;
 
     std::optional<std::wstring> levelsFilename;
 

@@ -1,8 +1,6 @@
 #include "GameManagerTree.h"
 
-#include <utility>
-
-GameManagerTree::GameManagerTree(irr::gui::IGUIEnvironment* _guienv, std::shared_ptr<GameData> _gameData) : guienv(_guienv), gameData(std::move(_gameData)), gameManagerTree(nullptr) {}
+GameManagerTree::GameManagerTree(irr::gui::IGUIEnvironment* _guienv, std::shared_ptr<GameData> _gameData) : guienv(_guienv), gameData(_gameData), gameManagerTree(nullptr) {}
 
 void GameManagerTree::init() {
     gameManagerTree = reinterpret_cast<irr::gui::IGUITreeView*>(guienv->getRootGUIElement()->getElementFromId(static_cast<irr::s32>(GUIElementId::GAME_LEVEL_TREE), true));

@@ -1,8 +1,6 @@
 #include "LevelEntity.h"
 
-#include <utility>
-
-LevelEntity::LevelEntity(const irr::core::vector3df& _position, std::wstring _id, LevelEntityType _type) : id(std::move(_id)), position(_position), type(_type), sceneNode(nullptr) {}
+LevelEntity::LevelEntity(const irr::core::vector3df& _position, const std::wstring& _id, LevelEntityType _type) : id(_id), position(_position), type(_type), sceneNode(nullptr) {}
 
 irr::core::vector3df LevelEntity::getPosition() const {
     return position;

@@ -10,7 +10,8 @@ ApplicationDelegate::ApplicationDelegate(irr::IrrlichtDevice* _device) :
     loadLevelsDialogIsShown(false),
     saveLevelsDialogIsShown(false),
     aboutWindowIsShown(false),
-    loadLevelMeshDialogIsShown(false)
+    loadLevelMeshDialogIsShown(false),
+    arrowsParentNode(nullptr)
 {
     gameData = std::make_shared<GameData>(device);
     gameManagerTree = std::make_shared<GameManagerTree>(guienv, gameData);
@@ -21,6 +22,8 @@ void ApplicationDelegate::init() {
 
     auto animator = new CameraSceneNodeAnimator(device->getCursorControl());
     camera->addAnimator(animator);
+
+    createAxis();
 
     // this does not look very good
     // smgr->setAmbientLight(irr::video::SColor(255, 255, 255, 255));
@@ -36,6 +39,38 @@ void ApplicationDelegate::initUI() {
     createManagerWindow();
 
     gameManagerTree->init();
+}
+
+void ApplicationDelegate::createAxis() {
+    arrowsParentNode = smgr->addEmptySceneNode();
+    arrowsParentNode->setName("ArrowRoot");
+    arrowsParentNode->grab();
+
+    auto axisTextureX = driver->getTexture("Resources/Sprites/arrow_r.png");
+    irr::scene::ISceneNode* xArrowNode = smgr->addBillboardSceneNode(nullptr, irr::core::dimension2d<irr::f32>(319, 48));
+    xArrowNode->setMaterialTexture(0, axisTextureX);
+    xArrowNode->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+    xArrowNode->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
+    // xArrowNode->setRotation(irr::core::vector3df());
+    xArrowNode->setParent(arrowsParentNode);
+
+    irr::scene::ISceneNode* yArrowNode = smgr->addBillboardSceneNode(nullptr, irr::core::dimension2d<irr::f32>(319, 48));
+    auto axisTextureY = driver->getTexture("Resources/Sprites/arrow_g.png");
+    yArrowNode->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+    yArrowNode->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
+    yArrowNode->setMaterialTexture(0, axisTextureY);
+    yArrowNode->setRotation(irr::core::vector3df(0, 0, 90));
+    yArrowNode->setParent(arrowsParentNode);
+
+    irr::scene::ISceneNode* zArrowNode = smgr->addBillboardSceneNode(nullptr, irr::core::dimension2d<irr::f32>(319, 48));
+    auto axisTextureZ = driver->getTexture("Resources/Sprites/arrow_b.png");
+    zArrowNode->setMaterialTexture(0, axisTextureZ);
+    zArrowNode->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+    zArrowNode->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
+    zArrowNode->setRotation(irr::core::vector3df(0, 90, 0));
+    zArrowNode->setParent(arrowsParentNode);
+
+    arrowsParentNode->setVisible(false);
 }
 
 void ApplicationDelegate::createToolbar() {
@@ -128,6 +163,10 @@ void ApplicationDelegate::openAboutWindow() {
     if (aboutWindowIsShown) {
         return;
     }
+
+    const wchar_t* ABOUT_TEXT = L"This is the ShootThem! level editor.\n\n\
+Use the menu to add new levels and targets to the level.\n\n\
+Save and load levels from the levels.xml file that will be picked up by the game later on.";
 
     guienv->addMessageBox(L"About", ABOUT_TEXT);
 
@@ -270,6 +309,11 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
     for (const auto& entity : gameData->getCurrentLevel()->getEntities()) {
         entity->getSceneNode()->setVisible(true);
     }
+
+    if (arrowsParentNode->getParent() != nullptr) {
+        arrowsParentNode->setParent(nullptr);
+        arrowsParentNode->setVisible(false);
+    }
 }
 
 void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
@@ -277,7 +321,12 @@ void ApplicationDelegate::targetSelected(const std::wstring& targetId) {
         return;
     }
 
-    gameData->setCurrentEntity(gameData->getCurrentLevel()->getEntityById(targetId));
+    auto target = gameData->getCurrentLevel()->getEntityById(targetId);
+
+    gameData->setCurrentEntity(target);
+
+    arrowsParentNode->setParent(target->getSceneNode());
+    arrowsParentNode->setVisible(true);
 
     // TODO: additional behavior
 }
@@ -287,7 +336,12 @@ void ApplicationDelegate::lightSelected(const std::wstring& lightId) {
         return;
     }
 
-    gameData->setCurrentEntity(gameData->getCurrentLevel()->getEntityById(lightId));
+    auto light = gameData->getCurrentLevel()->getEntityById(lightId);
+
+    gameData->setCurrentEntity(light);
+
+    arrowsParentNode->setParent(light->getSceneNode());
+    arrowsParentNode->setVisible(true);
 
     // TODO: additional behavior
 }

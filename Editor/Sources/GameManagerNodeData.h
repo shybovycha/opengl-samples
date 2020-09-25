@@ -11,7 +11,7 @@ enum class GameManagerNodeDataType {
 
 class GameManagerNodeData {
 public:
-    GameManagerNodeData(GameManagerNodeDataType _type, std::wstring  _id);
+    GameManagerNodeData(GameManagerNodeDataType _type, const std::wstring& _id);
 
     GameManagerNodeDataType getType() const;
 

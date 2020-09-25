@@ -14,9 +14,9 @@
 
 class Level {
 public:
-    Level(std::wstring meshFilename, std::wstring id);
+    Level(const std::wstring& meshFilename, const std::wstring& id);
 
-    Level(std::wstring  meshFilename, std::wstring  id, std::wstring  meshBasename);
+    Level(const std::wstring& meshFilename, const std::wstring& id, const std::wstring& meshBasename);
 
     void setSceneNode(irr::scene::ISceneNode* sceneNode);
 
