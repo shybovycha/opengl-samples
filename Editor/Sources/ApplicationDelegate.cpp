@@ -46,29 +46,17 @@ void ApplicationDelegate::createAxis() {
     arrowsParentNode->setName("ArrowRoot");
     arrowsParentNode->grab();
 
-    auto axisTextureX = driver->getTexture("Resources/Sprites/arrow_r.png");
-    irr::scene::ISceneNode* xArrowNode = smgr->addBillboardSceneNode(nullptr, irr::core::dimension2d<irr::f32>(319, 48));
-    xArrowNode->setMaterialTexture(0, axisTextureX);
+    auto xArrowMesh = smgr->getGeometryCreator()->createArrowMesh(4, 8, 25.f, 20.0f, 0.3f, 1.f, irr::video::SColor(255, 255, 0, 0));
+    irr::scene::ISceneNode* xArrowNode = smgr->addMeshSceneNode(xArrowMesh, arrowsParentNode, -1, irr::core::vector3df(0, 0, 0), irr::core::vector3df(0, 0, -90));
     xArrowNode->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-    xArrowNode->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
-    // xArrowNode->setRotation(irr::core::vector3df());
-    xArrowNode->setParent(arrowsParentNode);
 
-    irr::scene::ISceneNode* yArrowNode = smgr->addBillboardSceneNode(nullptr, irr::core::dimension2d<irr::f32>(319, 48));
-    auto axisTextureY = driver->getTexture("Resources/Sprites/arrow_g.png");
+    auto yArrowMesh = smgr->getGeometryCreator()->createArrowMesh(4, 8, 25.f, 20.f, 0.3f, 1.f, irr::video::SColor(255, 0, 255, 0));
+    irr::scene::ISceneNode* yArrowNode = smgr->addMeshSceneNode(yArrowMesh, arrowsParentNode, -1, irr::core::vector3df(0, 0, 0), irr::core::vector3df(0, 0, 0));
     yArrowNode->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-    yArrowNode->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
-    yArrowNode->setMaterialTexture(0, axisTextureY);
-    yArrowNode->setRotation(irr::core::vector3df(0, 0, 90));
-    yArrowNode->setParent(arrowsParentNode);
 
-    irr::scene::ISceneNode* zArrowNode = smgr->addBillboardSceneNode(nullptr, irr::core::dimension2d<irr::f32>(319, 48));
-    auto axisTextureZ = driver->getTexture("Resources/Sprites/arrow_b.png");
-    zArrowNode->setMaterialTexture(0, axisTextureZ);
+    auto zArrowMesh = smgr->getGeometryCreator()->createArrowMesh(4, 8, 25.f, 20.f, 0.3f, 1.f, irr::video::SColor(255, 0, 0, 255));
+    irr::scene::ISceneNode* zArrowNode = smgr->addMeshSceneNode(zArrowMesh, arrowsParentNode, -1, irr::core::vector3df(0, 0, 0), irr::core::vector3df(90, 0, 0));
     zArrowNode->setMaterialFlag(irr::video::EMF_LIGHTING, false);
-    zArrowNode->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
-    zArrowNode->setRotation(irr::core::vector3df(0, 90, 0));
-    zArrowNode->setParent(arrowsParentNode);
 
     arrowsParentNode->setVisible(false);
 }
@@ -119,6 +107,8 @@ void ApplicationDelegate::update() {
     driver->beginScene(true, true, irr::video::SColor(0, 200, 200, 200));
 
     smgr->drawAll();
+    arrowsParentNode->render();
+
     guienv->drawAll();
 
     driver->endScene();
