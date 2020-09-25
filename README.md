@@ -74,11 +74,13 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [x] manage lights
 - [x] refactor Light and Target on level to Entity
 - [ ] add & manage properties for level entities (?)
-- [ ] render AABB around selected entity
-- [ ] draw axes to allow for translation of entities
+- [x] ~~render AABB around selected entity~~
+- [x] draw axes to allow for translation of entities
 - [x] ~~set ambient light so that levels are not pitch black~~
 - [x] do not hide scene nodes - drop them; but first figure out why that causes runtime exception
-- [ ] replace mouse wheel for moving camera back/forth with Shift + Mouse Right Button + Mouse Move
+- [x] replace mouse wheel for moving camera back/forth with Shift + Mouse Right Button + Mouse Move
+- [ ] camera translation does not work in **current** camera plane, but rather in initial
+- [ ] moving selected entity relies on the **previous** mouse position, but should rely on **initial** mouse position instead
 
 ### Miscellanious
 
