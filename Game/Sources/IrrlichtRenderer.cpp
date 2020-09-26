@@ -103,81 +103,23 @@ void IrrlichtRenderer::processAction(PlaySoundAction* action) {
 }
 
 void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
-    irr::scene::IAnimatedMesh* levelMesh = smgr->getMesh(action->getLevel()->getModelFilename().c_str());
+    loadLevel(action->getLevel());
 
-    irr::scene::IAnimatedMeshSceneNode* level = smgr->addAnimatedMeshSceneNode(levelMesh);
-
-    std::wostringstream levelName;
-    levelName << L"level-" << gameState->getCurrentLevelIndex();
-    level->setName(levelName.str().c_str());
-
-    action->getLevel()->setModel(level);
-
-    auto metaTriangleSelector = smgr->createMetaTriangleSelector();
-
-    metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(level));
-
-    irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
-    std::vector<irr::scene::ISceneNode*> targets;
-
-    int targetIdx = 0;
-
-    for (const auto& position : action->getLevel()->getTargetPositions()) {
-        auto target = smgr->addAnimatedMeshSceneNode(targetMesh);
-
-        target->setVisible(true);
-
-        target->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
-        target->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
-        target->setPosition(position);
-
-        metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(target));
-
-        std::wostringstream targetName;
-        targetName << "target-";
-        targetName << gameState->getCurrentLevelIndex();
-        targetName << "-";
-        targetName << targetIdx++;
-        target->setName(targetName.str().c_str());
-
-        targets.push_back(target);
-    }
-
-    std::vector<irr::scene::ISceneNode*> lights;
-
-    for (const auto& position : action->getLevel()->getLightPositions()) {
-        auto light = smgr->addLightSceneNode(nullptr, position);
-
-        lights.push_back(light);
-    }
-
-    selector = metaTriangleSelector;
-
-    gameState->getCurrentScore()->resetCurrentTime();
-
-    action->getLevel()->setTargets(targets);
-    action->getLevel()->setLights(lights);
     actionDispatcher->firstLevelLoaded();
 }
 
 void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
     // unload existing level data
-    for (auto target : action->getPreviousLevel()->getTargets()) {
-        if (target) {
-            target->remove();
-        }
-    }
-
-    for (auto light : action->getPreviousLevel()->getLights()) {
-        if (light) {
-            light->remove();
-        }
-    }
-
-    action->getPreviousLevel()->getModel()->remove();
+    unloadLevel(action->getPreviousLevel());
 
     // load next level
-    irr::scene::IAnimatedMesh* levelMesh = smgr->getMesh(action->getNextLevel()->getModelFilename().c_str());
+    loadLevel(action->getNextLevel());
+
+    actionDispatcher->nextLevelLoaded();
+}
+
+void IrrlichtRenderer::loadLevel(std::shared_ptr<Level> levelDescriptor) {
+    irr::scene::IAnimatedMesh* levelMesh = smgr->getMesh(levelDescriptor->getModelFilename().c_str());
 
     irr::scene::IAnimatedMeshSceneNode* level = smgr->addAnimatedMeshSceneNode(levelMesh);
 
@@ -185,7 +127,7 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
     levelName << L"level-" << gameState->getCurrentLevelIndex();
     level->setName(levelName.str().c_str());
 
-    action->getNextLevel()->setModel(level);
+    levelDescriptor->setModel(level);
 
     auto metaTriangleSelector = smgr->createMetaTriangleSelector();
 
@@ -197,7 +139,7 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 
     int targetIdx = 0;
 
-    for (const auto& position : action->getNextLevel()->getTargetPositions()) {
+    for (const auto& position : levelDescriptor->getTargetPositions()) {
         auto target = smgr->addAnimatedMeshSceneNode(targetMesh);
 
         target->setVisible(true);
@@ -220,7 +162,7 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 
     std::vector<irr::scene::ISceneNode*> lights;
 
-    for (const auto& position : action->getNextLevel()->getLightPositions()) {
+    for (const auto& position : levelDescriptor->getLightPositions()) {
         auto light = smgr->addLightSceneNode(nullptr, position);
 
         lights.push_back(light);
@@ -230,9 +172,24 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
 
     gameState->getCurrentScore()->resetCurrentTime();
 
-    action->getNextLevel()->setTargets(targets);
-    action->getNextLevel()->setLights(lights);
-    actionDispatcher->nextLevelLoaded();
+    levelDescriptor->setTargets(targets);
+    levelDescriptor->setLights(lights);
+}
+
+void IrrlichtRenderer::unloadLevel(std::shared_ptr<Level> levelDescriptor) {
+    for (auto target : levelDescriptor->getTargets()) {
+        if (target) {
+            target->remove();
+        }
+    }
+
+    for (auto light : levelDescriptor->getLights()) {
+        if (light) {
+            light->remove();
+        }
+    }
+
+    levelDescriptor->getModel()->remove();
 }
 
 void IrrlichtRenderer::processAction(TargetEliminatedAction* action) {
@@ -363,8 +320,6 @@ void IrrlichtRenderer::updateTimer() {
 void IrrlichtRenderer::shutdown() {
     timer->stop();
 
-    /*smgr->drop();
-    guienv->drop();*/
     device->closeDevice();
     // soundEngine->drop();
 }
@@ -373,35 +328,14 @@ bool IrrlichtRenderer::isRunning() {
     return device->run();
 }
 
-// TODO: this is the endgame screen
+// TODO: implement this endgame screen
 void IrrlichtRenderer::showResult() {
-    irr::core::stringw title = L"Level complete!";
+    /*irr::core::stringw title = L"Level complete!";
 
     int points = gameState->getCurrentScore()->getTargetsEliminated();
     int targetCnt = gameState->getCurrentLevel()->getTargets().size();
 
-    // int shots = gameState->getCurrentScore()->getShots();
-    int shots = 0;
-
-    /*std::wostringstream msg;
-    msg << "Your time: " << (MAX_TIME / 100) - abs(Tm / 100) << "sec;  Shots: " << shots << "/" << targetCnt << " min" << ";  Target hit: " << points << "/" << targetCnt;*/
-
-    /*Tms += (MAX_TIME / 100) - abs(Tm / 100);
-    Pnts += points;*/
-
-    /*guienv->addMessageBox(title.c_str(), msg.str().c_str(), true, irr::gui::EMBF_OK, 0, 0);
-
-    endLevel = true;
-
-    timer->stop();
-
-    if (levelNumber + 1 < levelCnt) {
-        return;
-    }
-
-    guienv->getSkin()->setFont(guienv->getFont("fontcourier.bmp"));
-    guienv->clear();
-    guienv->addMessageBox(L"Congratulations!", L"Game over!", true, irr::gui::EMBF_OK, 0, 0);*/
+    int shots = gameState->getCurrentScore()->getShots();*/
 }
 
 void IrrlichtRenderer::updateCrosshair() {

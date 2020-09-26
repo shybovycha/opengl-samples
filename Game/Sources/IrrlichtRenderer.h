@@ -57,6 +57,10 @@ protected:
     // TODO: this is the endgame screen
     void showResult();
 
+    void loadLevel(std::shared_ptr<Level> levelDescriptor);
+
+    void unloadLevel(std::shared_ptr<Level> levelDescriptor);
+
     void updateTimer();
 
 private:
