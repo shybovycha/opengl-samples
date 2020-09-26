@@ -57,6 +57,17 @@ std::wstring Level::generateNewEntityId(LevelEntityType entityType) const {
 }
 
 void Level::deleteEntityById(const std::wstring& entityId) {
+    auto entity = entities.at(entityId);
+
+    if (entity == nullptr) {
+        return;
+    }
+
+    if (entity->getSceneNode() != nullptr) {
+        entity->getSceneNode()->removeAll();
+        entity->getSceneNode()->remove();
+    }
+
     entities.erase(entityId);
 }
 

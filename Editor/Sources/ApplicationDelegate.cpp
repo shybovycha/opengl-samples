@@ -292,7 +292,9 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
         }
 
         for (const auto& entity : level->getEntities()) {
-            entity->getSceneNode()->setVisible(false);
+            if (entity->getSceneNode() != nullptr) {
+                entity->getSceneNode()->setVisible(false);
+            }
         }
     }
 
@@ -312,7 +314,9 @@ void ApplicationDelegate::levelSelected(const std::wstring& levelId) {
     gameData->getCurrentLevel()->getSceneNode()->setVisible(true);
 
     for (const auto& entity : gameData->getCurrentLevel()->getEntities()) {
-        entity->getSceneNode()->setVisible(true);
+        if (entity->getSceneNode() != nullptr) {
+            entity->getSceneNode()->setVisible(true);
+        }
     }
 
     arrowsParentNode->setParent(nullptr);
@@ -365,27 +369,31 @@ void ApplicationDelegate::gameManagerNodeSelected() {
 }
 
 void ApplicationDelegate::deleteSelectedEntity() {
-    if (gameData->getCurrentLevel() != nullptr && gameData->getCurrentEntity() == nullptr) {
-        std::vector<std::shared_ptr<LevelEntity>> entities = gameData->getCurrentLevel()->getEntities();
+    auto currentLevel = gameData->getCurrentLevel();
+    auto currentEntity = gameData->getCurrentEntity();
+
+    if (currentLevel != nullptr && currentEntity == nullptr) {
+
+        std::vector<std::shared_ptr<LevelEntity>> entities = currentLevel->getEntities();
 
         for (auto const& it : entities) {
-            gameData->getCurrentLevel()->deleteEntityById(it->getId());
+            currentLevel->deleteEntityById(it->getId());
         }
 
-        if (gameData->getCurrentLevel()->getSceneNode() != nullptr) {
-            gameData->getCurrentLevel()->getSceneNode()->remove();
+        if (currentLevel->getSceneNode() != nullptr) {
+            currentLevel->getSceneNode()->remove();
         }
 
-        gameData->deleteLevelById(gameData->getCurrentLevel()->getId());
+        gameData->deleteLevelById(currentLevel->getId());
         gameData->setCurrentLevel(nullptr);
         gameManagerTree->rebuild();
     }
-    else if (gameData->getCurrentEntity() != nullptr) {
-        if (gameData->getCurrentEntity()->getSceneNode() != nullptr) {
-            gameData->getCurrentEntity()->getSceneNode()->remove();
+    else if (currentEntity != nullptr) {
+        if (currentEntity->getSceneNode() != nullptr) {
+            currentEntity->getSceneNode()->remove();
         }
 
-        gameData->getCurrentLevel()->deleteEntityById(gameData->getCurrentEntity()->getId());
+        currentLevel->deleteEntityById(currentEntity->getId());
         gameData->setCurrentEntity(nullptr);
         gameManagerTree->rebuild();
     }
