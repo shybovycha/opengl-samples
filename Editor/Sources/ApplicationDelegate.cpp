@@ -411,7 +411,6 @@ irr::core::vector3df ApplicationDelegate::getTargetPositionFromCameraView() cons
         return collisionPoint;
     }*/
 
-
     const float PICK_DISTANCE = 200.f;
 
     irr::core::vector3df target = (camera->getTarget() - camera->getPosition()).normalize();
@@ -448,9 +447,7 @@ void ApplicationDelegate::updateSelectedNodeMovement(bool isLeftMouseButtonDown)
         return;
     }
 
-    auto ray = smgr->getSceneCollisionManager()->getRayFromScreenCoordinates(mousePosition, camera);
-
-    auto selectedSceneNode = smgr->getSceneCollisionManager()->getSceneNodeFromRayBB(ray);
+    auto selectedSceneNode = smgr->getSceneCollisionManager()->getSceneNodeFromScreenCoordinatesBB(mousePosition);
 
     if (selectedSceneNode == nullptr) {
         return;
