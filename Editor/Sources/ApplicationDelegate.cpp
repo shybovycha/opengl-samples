@@ -26,8 +26,7 @@ void ApplicationDelegate::init() {
 
     createAxis();
 
-    // this does not look very good
-    // smgr->setAmbientLight(irr::video::SColor(255, 255, 255, 255));
+    lightBillboardTexture = driver->getTexture("Resources/Icons/idea.png");
 
     initUI();
 }
@@ -264,16 +263,23 @@ void ApplicationDelegate::addLight() {
         return;
     }
 
-    irr::core::vector3df targetPosition = getTargetPositionFromCameraView();
+    irr::core::vector3df lightPosition = getTargetPositionFromCameraView();
 
-    std::shared_ptr<Light> light = gameData->getCurrentLevel()->createLight(targetPosition);
+    std::shared_ptr<Light> light = gameData->getCurrentLevel()->createLight(lightPosition);
 
-    // TODO: replace with any model?
-    irr::scene::ILightSceneNode* lightSceneNode = smgr->addLightSceneNode(nullptr, targetPosition, irr::video::SColor(255, 255, 255, 255), 200.f);
+    irr::scene::ISceneNode* lightParentSceneNode = smgr->addEmptySceneNode();
+    lightParentSceneNode->grab();
+    lightParentSceneNode->setPosition(lightPosition);
+
+    irr::scene::ILightSceneNode* lightSceneNode = smgr->addLightSceneNode(lightParentSceneNode, irr::core::vector3df(0, 0, 0), irr::video::SColor(255, 255, 255, 255), 200.f);
+    light->setSceneNode(lightParentSceneNode);
+
+    irr::scene::IBillboardSceneNode* lightIconSceneNode = smgr->addBillboardSceneNode(lightParentSceneNode, irr::core::dimension2df(8, 8));
+    lightIconSceneNode->setMaterialTexture(0, lightBillboardTexture);
+    lightIconSceneNode->setMaterialFlag(irr::video::EMF_LIGHTING, false);
+    lightIconSceneNode->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);
 
     lightSceneNode->setLightType(irr::video::ELT_POINT);
-
-    light->setSceneNode(lightSceneNode);
 
     lightSelected(light->getId());
 

@@ -95,6 +95,7 @@ private:
     irr::scene::ISceneNode* zArrowNode;
     irr::core::vector2di previousMousePosition;
     irr::scene::ITriangleSelector* triangleSelector;
+    irr::video::ITexture* lightBillboardTexture;
     std::optional<irr::core::vector3df> selectedEntityMoveDirection;
 
     std::optional<std::wstring> levelsFilename;
