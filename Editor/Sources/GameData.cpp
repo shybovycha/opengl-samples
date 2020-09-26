@@ -143,6 +143,17 @@ std::shared_ptr<Level> GameData::createLevel(const std::wstring& meshFilename) {
 }
 
 void GameData::deleteLevelById(const std::wstring& levelId) {
+    auto level = levels.at(levelId);
+
+    if (level == nullptr) {
+        return;
+    }
+
+    if (level->getSceneNode() != nullptr) {
+        level->getSceneNode()->remove();
+        level->setSceneNode(nullptr);
+    }
+
     levels.erase(levelId);
 }
 

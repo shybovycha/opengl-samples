@@ -380,19 +380,11 @@ void ApplicationDelegate::deleteSelectedEntity() {
             currentLevel->deleteEntityById(it->getId());
         }
 
-        if (currentLevel->getSceneNode() != nullptr) {
-            currentLevel->getSceneNode()->remove();
-        }
-
         gameData->deleteLevelById(currentLevel->getId());
         gameData->setCurrentLevel(nullptr);
         gameManagerTree->rebuild();
     }
     else if (currentEntity != nullptr) {
-        if (currentEntity->getSceneNode() != nullptr) {
-            currentEntity->getSceneNode()->remove();
-        }
-
         currentLevel->deleteEntityById(currentEntity->getId());
         gameData->setCurrentEntity(nullptr);
         gameManagerTree->rebuild();

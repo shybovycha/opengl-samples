@@ -66,6 +66,7 @@ void Level::deleteEntityById(const std::wstring& entityId) {
     if (entity->getSceneNode() != nullptr) {
         entity->getSceneNode()->removeAll();
         entity->getSceneNode()->remove();
+        entity->setSceneNode(nullptr);
     }
 
     entities.erase(entityId);
