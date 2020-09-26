@@ -9,7 +9,7 @@ Settings ModernResourceManager::loadSettings() {
 
     if (xmlError != tinyxml2::XML_SUCCESS) {
         std::cerr << "Can not load settings.xml file" << std::endl;
-        throw "Can not load settings";
+        throw std::exception("Can not load settings");
     }
 
     auto settingsNode = xml->FirstChildElement("settings");
@@ -35,7 +35,7 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
 
     if (xmlError != tinyxml2::XML_SUCCESS) {
         std::cerr << "Can not load levels.xml file" << std::endl;
-        throw "Can not load levels";
+        throw std::exception("Can not load levels");
     }
 
     auto levelsNode = xml->FirstChildElement("levels");
