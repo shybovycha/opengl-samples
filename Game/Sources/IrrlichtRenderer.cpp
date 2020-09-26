@@ -263,7 +263,7 @@ void IrrlichtRenderer::renderMainMenu() {
     }
 
     mainMenuWindow = guienv->addWindow(
-        irr::core::rect<irr::s32>(100, 100, 300, 300),
+        irr::core::rect<irr::s32>(100, 100, 315, 265),
         false,
         L"Main menu"
     );
@@ -271,14 +271,14 @@ void IrrlichtRenderer::renderMainMenu() {
     mainMenuWindow->getCloseButton()->remove();
 
     guienv->addButton(
-        irr::core::rect<irr::s32>(35, 35, 120, 60),
+        irr::core::rect<irr::s32>(35, 35, 180, 60),
         mainMenuWindow,
         NEW_GAME_BUTTON_ID,
         L"New game"
     );
 
     irr::gui::IGUIButton* continueButton = guienv->addButton(
-        irr::core::rect<irr::s32>(35, 70, 120, 95),
+        irr::core::rect<irr::s32>(35, 70, 180, 95),
         mainMenuWindow,
         CONTINUE_BUTTON_ID,
         L"Back to the game"
@@ -287,7 +287,7 @@ void IrrlichtRenderer::renderMainMenu() {
     continueButton->setEnabled(false);
 
     guienv->addButton(
-        irr::core::rect<irr::s32>(35, 105, 120, 130),
+        irr::core::rect<irr::s32>(35, 105, 180, 130),
         mainMenuWindow,
         QUIT_BUTTON_ID,
         L"Quit"
