@@ -268,6 +268,8 @@ void IrrlichtRenderer::renderMainMenu() {
         L"Main menu"
     );
 
+    mainMenuWindow->getCloseButton()->remove();
+
     guienv->addButton(
         irr::core::rect<irr::s32>(35, 35, 120, 60),
         mainMenuWindow,
