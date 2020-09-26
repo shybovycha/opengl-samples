@@ -491,9 +491,15 @@ void ApplicationDelegate::updateSelectedNodeMovement(bool isLeftMouseButtonDown)
     auto distanceToCamera = (currentEntity->getSceneNode()->getPosition() - camera->getPosition()).getLength();
     auto offset = mousePositionDelta.getLength();
 
-    // TODO: instead of doing this, figure out the offset sign coefficient based on cos((VIEW_MATRIX * (entityPosition + direction)), mousePositionDelta)
+    // figure out the offset sign coefficient based on cos((VIEW_MATRIX * (entityPosition + direction)), mousePositionDelta)
     // e.g. the angle (> 90 deg or < 90 deg) between the direction from the entity position, as projected onto a screen AND mouse offset vector
-    auto sign = ((mousePositionDelta.X < 0) || (mousePositionDelta.Y < 0)) ? -1 : 1;
+    auto entityPosition = currentEntity->getPosition();
+    auto entityPositionNext = currentEntity->getPosition() + direction;
+    auto entityPositionOnScreen = smgr->getSceneCollisionManager()->getScreenCoordinatesFrom3DPosition(entityPosition);
+    auto entityPositionOnScreenNext = smgr->getSceneCollisionManager()->getScreenCoordinatesFrom3DPosition(entityPositionNext);
+    auto screenEntityDirection = entityPositionOnScreenNext - entityPositionOnScreen;
+    auto dotProduct = screenEntityDirection.dotProduct(mousePositionDelta);
+    auto sign = (dotProduct > 0) ? 1 : -1;
 
     auto newPosition = currentEntity->getPosition() + direction * distanceToCamera * offset / 100.f * sign;
 
