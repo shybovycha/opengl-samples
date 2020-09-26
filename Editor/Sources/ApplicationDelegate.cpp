@@ -203,8 +203,8 @@ void ApplicationDelegate::loadLevels(const std::wstring& filename) {
 }
 
 void ApplicationDelegate::saveLevels() {
-    if (levelsFilename != std::nullopt) {
-        saveLevels(*levelsFilename);
+    if (levelsFilename.has_value()) {
+        saveLevels(levelsFilename.value());
     }
     else {
         openSaveLevelsDialog();
@@ -213,10 +213,9 @@ void ApplicationDelegate::saveLevels() {
 
 void ApplicationDelegate::saveLevels(const std::wstring& filename) {
     loadLevelsDialogIsShown = false;
+    levelsFilename = filename;
 
     gameData->saveToFile(filename);
-
-    levelsFilename = filename;
 }
 
 void ApplicationDelegate::addLevel(const std::wstring& meshFilename) {
