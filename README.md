@@ -37,7 +37,7 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [ ] do not use exceptions (https://google.github.io/styleguide/cppguide.html#Exceptions)
 - [ ] new game in the middle of the game should reset everything
 - [x] properly copy resources to the directory with the binary
-- [ ] copy the DLLs to the directory with the binary
+- [x] ~~copy the DLLs to the directory with the binary~~
 - [x] replace status text with some sane HUD
 - [ ] add settings menu
 - [ ] write settings to file
@@ -56,13 +56,13 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [x] add multiple levels in one run
 - [x] allow for level removal
 - [x] remove targets
-- [ ] change target position
+- [x] change target position
 - [x] place target in front of camera instead of in place of camera
 - [x] replace FPS camera with mouse-controlled one
 - [ ] add helpful help in UI
 - [x] update the default low-res font with something more readable
 - [x] make button icons use transparency
-- [ ] prevent game manager window from closing
+- [x] prevent game manager window from closing
 - [x] ~~save file dialog does not pick up non-existent files~~
 - [x] use mesh filename when adding game manager tree node
 - [x] store level mesh in level object
@@ -80,7 +80,8 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [x] do not hide scene nodes - drop them; but first figure out why that causes runtime exception
 - [x] replace mouse wheel for moving camera back/forth with Shift + Mouse Right Button + Mouse Move
 - [ ] camera translation does not work in **current** camera plane, but rather in initial
-- [ ] moving selected entity relies on the **previous** mouse position, but should rely on **initial** mouse position instead
+- [ ] moving selected entity relies on the **absolute** offset, whilst it should rely on **relative** offset instead
+- [ ] load UI from file
 
 ### Miscellanious
 
