@@ -41,7 +41,6 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
     auto levelsNode = xml->FirstChildElement("levels");
 
     auto levelNode = levelsNode->FirstChildElement("level");
-    auto lastLevelNode = levelsNode->LastChildElement("level");
 
     std::vector<std::shared_ptr<Level>> levels;
 
@@ -53,9 +52,8 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
         auto entitiesNode = levelNode->FirstChildElement("entities");
 
         auto targetNode = entitiesNode->FirstChildElement("target");
-        auto lastTargetNode = entitiesNode->LastChildElement("target");
 
-        while (targetNode != lastTargetNode) {
+        while (targetNode != nullptr) {
             auto positionNode = targetNode->FirstChildElement("position");
 
             irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
@@ -66,9 +64,8 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
         }
 
         auto lightNode = entitiesNode->FirstChildElement("light");
-        auto lastLightNode = entitiesNode->LastChildElement("light");
 
-        while (lightNode != lastLightNode) {
+        while (lightNode != nullptr) {
             auto positionNode = lightNode->FirstChildElement("position");
 
             irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
