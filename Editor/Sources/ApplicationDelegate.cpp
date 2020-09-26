@@ -104,6 +104,8 @@ void ApplicationDelegate::createManagerWindow() {
         static_cast<irr::s32>(GUIElementId::MANAGER_WINDOW)
     );
 
+    managerWindow->getCloseButton()->remove();
+
     guienv->addTreeView(
         irr::core::rect<irr::s32>(10, 30, 190, 390),
         managerWindow,
