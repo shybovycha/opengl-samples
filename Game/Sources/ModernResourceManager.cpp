@@ -50,12 +50,12 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
 
         auto levelDescriptor = std::make_shared<Level>(meshName);
 
-        auto targetsNode = levelNode->FirstChildElement("targets");
+        auto entitiesNode = levelNode->FirstChildElement("entities");
 
-        auto targetNode = targetsNode->FirstChildElement("target");
-        auto lastTargetNode = targetsNode->LastChildElement("target");
+        auto targetNode = entitiesNode->FirstChildElement("target");
+        auto lastTargetNode = entitiesNode->LastChildElement("target");
 
-        while (targetNode != nullptr) {
+        while (targetNode != lastTargetNode) {
             auto positionNode = targetNode->FirstChildElement("position");
 
             irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
@@ -63,6 +63,19 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
             levelDescriptor->addTargetPosition(position);
 
             targetNode = targetNode->NextSiblingElement("target");
+        }
+
+        auto lightNode = entitiesNode->FirstChildElement("light");
+        auto lastLightNode = entitiesNode->LastChildElement("light");
+
+        while (lightNode != lastLightNode) {
+            auto positionNode = lightNode->FirstChildElement("position");
+
+            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+
+            levelDescriptor->addLightPosition(position);
+
+            lightNode = lightNode->NextSiblingElement("light");
         }
 
         levels.push_back(levelDescriptor);

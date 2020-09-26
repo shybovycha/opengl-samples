@@ -143,11 +143,20 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
         targets.push_back(target);
     }
 
+    std::vector<irr::scene::ISceneNode*> lights;
+
+    for (const auto& position : action->getLevel()->getLightPositions()) {
+        auto light = smgr->addLightSceneNode(nullptr, position);
+
+        lights.push_back(light);
+    }
+
     selector = metaTriangleSelector;
 
     gameState->getCurrentScore()->resetCurrentTime();
 
     action->getLevel()->setTargets(targets);
+    action->getLevel()->setLights(lights);
     actionDispatcher->firstLevelLoaded();
 }
 
@@ -156,6 +165,12 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
     for (auto target : action->getPreviousLevel()->getTargets()) {
         if (target) {
             target->remove();
+        }
+    }
+
+    for (auto light : action->getPreviousLevel()->getLights()) {
+        if (light) {
+            light->remove();
         }
     }
 
@@ -203,11 +218,20 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action) {
         targets.push_back(target);
     }
 
+    std::vector<irr::scene::ISceneNode*> lights;
+
+    for (const auto& position : action->getNextLevel()->getLightPositions()) {
+        auto light = smgr->addLightSceneNode(nullptr, position);
+
+        lights.push_back(light);
+    }
+
     selector = metaTriangleSelector;
 
     gameState->getCurrentScore()->resetCurrentTime();
 
     action->getNextLevel()->setTargets(targets);
+    action->getNextLevel()->setLights(lights);
     actionDispatcher->nextLevelLoaded();
 }
 
