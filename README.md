@@ -29,7 +29,7 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [x] ~~`ResourceManager` is redundant~~
 - [x] clean up the design - `InputHandler` (aka dispatcher) is probably redundant, `GameState` (aka state) should be read-only, maybe extract event / action queue to a separate class
 - [ ] rework the abuse of `std::shared_ptr` and raw pointers (according to https://www.internalpointers.com/post/move-smart-pointers-and-out-functions-modern-c and https://www.modernescpp.com/index.php/c-core-guidelines-passing-smart-pointer)
-- [ ] two targets on 3rd level are indestructable
+- [x] ~~two targets on 3rd level are indestructable~~
 - [x] when the time runs out the next level is not loaded
 - [ ] add end level menu
 - [ ] change 3D models to the artwork
@@ -46,7 +46,7 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [x] replace level meshes with OBJ
 - [x] replace level meshes with Collada
 - [x] update font in menu
-- [ ] load UI from file
+- [x] ~~load UI from file~~
 
 ### Editor
 
@@ -81,7 +81,7 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [x] replace mouse wheel for moving camera back/forth with Shift + Mouse Right Button + Mouse Move
 - [x] camera translation does not work in **current** camera plane, but rather in initial
 - [x] moving selected entity relies on the **absolute** offset, whilst it should rely on **relative** offset instead
-- [ ] load UI from file
+- [x] ~~load UI from file~~
 
 ### Miscellanious
 
