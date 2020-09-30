@@ -99,8 +99,6 @@ private:
     irr::video::ITexture* lightBillboardTexture;
     std::optional<irr::core::vector3df> selectedEntityMoveDirection;
 
-    std::optional<std::wstring> levelsFilename;
-
     std::shared_ptr<GameData> gameData;
     std::shared_ptr<GameManagerTree> gameManagerTree;
 

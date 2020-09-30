@@ -6,7 +6,6 @@ ApplicationDelegate::ApplicationDelegate(irr::IrrlichtDevice* _device) :
     guienv(device->getGUIEnvironment()),
     driver(device->getVideoDriver()),
     camera(nullptr),
-    levelsFilename(std::nullopt),
     loadLevelsDialogIsShown(false),
     saveLevelsDialogIsShown(false),
     aboutWindowIsShown(false),
@@ -209,17 +208,11 @@ void ApplicationDelegate::loadLevels(const std::wstring& filename) {
 }
 
 void ApplicationDelegate::saveLevels() {
-    if (levelsFilename.has_value()) {
-        saveLevels(levelsFilename.value());
-    }
-    else {
-        openSaveLevelsDialog();
-    }
+    openSaveLevelsDialog();
 }
 
 void ApplicationDelegate::saveLevels(const std::wstring& filename) {
     loadLevelsDialogIsShown = false;
-    levelsFilename = filename;
 
     gameData->saveToFile(filename);
 }
