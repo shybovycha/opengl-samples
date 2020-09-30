@@ -59,7 +59,7 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [x] change target position
 - [x] place target in front of camera instead of in place of camera
 - [x] replace FPS camera with mouse-controlled one
-- [ ] add helpful help in UI
+- [x] add helpful help in UI
 - [x] update the default low-res font with something more readable
 - [x] make button icons use transparency
 - [x] prevent game manager window from closing

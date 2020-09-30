@@ -164,7 +164,11 @@ void ApplicationDelegate::openAboutWindow() {
     }
 
     const wchar_t* ABOUT_TEXT = L"This is the ShootThem! level editor.\n\n\
-Use the menu to add new levels and targets to the level.\n\n\
+Use the toolbar at the top to load level models, add targets and lights to the level.\n\
+You can also delete the currently selected (in the game tree, on the right) light, \n\
+target or level using the Delete button from the toolbar.\n\n\
+Use Right mouse button to move camera around, Middle mouse button to move camera left/right/up/down.\n\
+Shift + Middle mouse button to move camera back and forward.\n\n\
 Save and load levels from the levels.xml file that will be picked up by the game later on.";
 
     guienv->addMessageBox(L"About", ABOUT_TEXT);
@@ -373,7 +377,6 @@ void ApplicationDelegate::deleteSelectedEntity() {
     auto currentEntity = gameData->getCurrentEntity();
 
     if (currentLevel != nullptr && currentEntity == nullptr) {
-
         std::vector<std::shared_ptr<LevelEntity>> entities = currentLevel->getEntities();
 
         for (auto const& it : entities) {
