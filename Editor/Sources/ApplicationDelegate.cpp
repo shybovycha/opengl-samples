@@ -137,7 +137,9 @@ void ApplicationDelegate::openSaveLevelsDialog() {
         return;
     }
 
-    guienv->addFileOpenDialog(L"Save levels file", true, nullptr, static_cast<irr::s32>(GUIElementId::SAVE_LEVELS_DIALOG));
+    // guienv->addFileOpenDialog(L"Save levels file", true, nullptr, static_cast<irr::s32>(GUIElementId::SAVE_LEVELS_DIALOG));
+    auto saveFileDialog = new SaveFileDialog(L"Save levels file", guienv, nullptr, static_cast<irr::s32>(GUIElementId::SAVE_LEVELS_DIALOG), true);
+    guienv->getRootGUIElement()->addChild(saveFileDialog);
     saveLevelsDialogIsShown = true;
 }
 

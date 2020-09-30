@@ -18,6 +18,7 @@
 #include "GameManagerTree.h"
 #include "GUIElementId.h"
 #include "Level.h"
+#include "SaveFileDialog.h"
 
 class ApplicationDelegate {
 public:

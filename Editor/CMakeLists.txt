@@ -5,7 +5,7 @@ project(Editor VERSION 1.0.1 LANGUAGES CXX)
 set(EXECUTABLE_NAME Editor)
 
 set(SOURCES
-    "Sources/main.cpp" 
+    "Sources/main.cpp"
     "Sources/ApplicationDelegate.h"
     "Sources/ApplicationDelegate.cpp"
     "Sources/IrrlichtEventReceiver.h"
@@ -28,7 +28,9 @@ set(SOURCES
     "Sources/Light.h"
     "Sources/Light.cpp"
     "Sources/LevelEntity.h"
-    "Sources/LevelEntity.cpp")
+    "Sources/LevelEntity.cpp"
+    "Sources/SaveFileDialog.h"
+    "Sources/SaveFileDialog.cpp")
 
 set(LIBRARIES
     ${X11_LIBRARIES}
@@ -69,6 +71,6 @@ target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${LIBRARIES} tinyxml2::tinyxml2
 
 # Copy resources
 add_custom_command(
-    TARGET ${EXECUTABLE_NAME} POST_BUILD 
+    TARGET ${EXECUTABLE_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/Resources $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/Resources
 )
