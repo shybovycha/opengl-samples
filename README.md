@@ -70,7 +70,7 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [x] ~~camera can not be controlled with keyboard~~
 - [ ] when loading levels file, load models from the same directory
 - [x] create custom camera animator to control camera with both keyboard and mouse in a reasonable way
-- [ ] create custom file dialog to allow saving files
+- [x] create custom file dialog to allow saving files
 - [x] manage lights
 - [x] refactor Light and Target on level to Entity
 - [ ] add & manage properties for level entities (?)
