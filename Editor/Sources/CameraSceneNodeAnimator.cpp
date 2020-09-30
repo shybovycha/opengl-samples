@@ -33,7 +33,7 @@ void CameraSceneNodeAnimator::animateNode(irr::scene::ISceneNode* sceneNode, irr
 
     auto* camera = reinterpret_cast<irr::scene::ICameraSceneNode*>(sceneNode);
 
-    const irr::core::vector3df up = camera->getUpVector() / camera->getUpVector().getLength();
+    const irr::core::vector3df up = irr::core::vector3df(camera->getUpVector()).normalize();
     const irr::core::vector3df forward = (camera->getTarget() - camera->getPosition()).normalize();
     const irr::core::vector3df right = up.crossProduct(forward).normalize();
 
@@ -77,7 +77,8 @@ void CameraSceneNodeAnimator::animateNode(irr::scene::ISceneNode* sceneNode, irr
                                                                                      0).normalize();
 
             irr::core::vector3df offset =
-                    ((right * normalizedDeltaMousePosition) + (up * normalizedDeltaMousePosition)) * moveSpeed *
+                    ((right * normalizedDeltaMousePosition.X) + (up * normalizedDeltaMousePosition.Y)) *
+                    moveSpeed *
                     deltaTime;
 
             camera->setPosition(camera->getPosition() + offset);

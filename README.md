@@ -79,7 +79,7 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [x] ~~set ambient light so that levels are not pitch black~~
 - [x] do not hide scene nodes - drop them; but first figure out why that causes runtime exception
 - [x] replace mouse wheel for moving camera back/forth with Shift + Mouse Right Button + Mouse Move
-- [ ] camera translation does not work in **current** camera plane, but rather in initial
+- [x] camera translation does not work in **current** camera plane, but rather in initial
 - [x] moving selected entity relies on the **absolute** offset, whilst it should rely on **relative** offset instead
 - [ ] load UI from file
 
