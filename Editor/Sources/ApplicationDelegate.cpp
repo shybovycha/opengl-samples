@@ -68,7 +68,7 @@ void ApplicationDelegate::createAxis() {
 }
 
 void ApplicationDelegate::createToolbar() {
-    irr::gui::IGUIToolBar* toolbar = guienv->addToolBar();
+    /*irr::gui::IGUIToolBar* toolbar = guienv->addToolBar();
     toolbar->setMinSize(irr::core::dimension2du(100, 40));
 
     irr::video::ITexture* openFileIcon = driver->getTexture("Resources/Icons/opened-folder.png");
@@ -90,11 +90,11 @@ void ApplicationDelegate::createToolbar() {
     toolbar->addButton(static_cast<irr::s32>(GUIElementId::ADD_LIGHT), nullptr, L"Add light", addLightIcon, nullptr, false, true);
 
     irr::video::ITexture* deleteSelectedIcon = driver->getTexture("Resources/Icons/delete-forever.png");
-    toolbar->addButton(static_cast<irr::s32>(GUIElementId::DELETE_SELECTED), nullptr, L"Delete selected object", deleteSelectedIcon, nullptr, false, true);
+    toolbar->addButton(static_cast<irr::s32>(GUIElementId::DELETE_SELECTED), nullptr, L"Delete selected object", deleteSelectedIcon, nullptr, false, true);*/
 }
 
 void ApplicationDelegate::createManagerWindow() {
-    irr::gui::IGUIWindow* managerWindow = guienv->addWindow(
+    /*irr::gui::IGUIWindow* managerWindow = guienv->addWindow(
         irr::core::rect<irr::s32>(600, 70, 800, 470),
         false,
         L"Levels manager",
@@ -102,7 +102,11 @@ void ApplicationDelegate::createManagerWindow() {
         static_cast<irr::s32>(GUIElementId::MANAGER_WINDOW)
     );
 
-    managerWindow->getCloseButton()->remove();
+    managerWindow->getCloseButton()->remove();*/
+
+    guienv->loadGUI(L"Resources/gui.xml");
+
+    auto managerWindow = guienv->getRootGUIElement()->getElementFromId(static_cast<irr::s32>(GUIElementId::MANAGER_WINDOW), true);
 
     guienv->addTreeView(
         irr::core::rect<irr::s32>(10, 30, 190, 390),
