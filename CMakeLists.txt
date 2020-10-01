@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 project(shoot-them VERSION 1.0.1 LANGUAGES CXX)
 
-include(ExternalProject)
+include(FetchContent)
 
 if (APPLE)
     set(MAKE_COMMAND make)
@@ -51,17 +51,17 @@ if(NOT IRRLICHT_LIBRARY_PATH)
         endif()
     endif()
 
-    ExternalProject_Add(irrlicht-dep
+    FetchContent_Declare(irrlicht
         URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.4.zip
-        PREFIX Dependencies/irrlicht
-        SOURCE_SUBDIR source/Irrlicht
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND "${MAKE_COMMAND}"
-        INSTALL_COMMAND ""
     )
 
-    ExternalProject_Get_Property(irrlicht-dep SOURCE_DIR)
-    set(IRRLICHT_PATH ${SOURCE_DIR})
+    FetchContent_GetProperties(irrlicht)
+
+    if(NOT irrlicht_POPULATED)
+        FetchContent_Populate(irrlicht)
+    endif()
+
+    set(IRRLICHT_PATH ${irrlicht_SOURCE_DIR})
 
     add_library(irrlicht SHARED IMPORTED GLOBAL)
 
@@ -88,16 +88,17 @@ if(NOT IRRKLANG_LIBRARY_PATH)
         endif()
     endif()
 
-    ExternalProject_Add(irrklang-dep
-        URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrKlang-64bit-1.5.0.zip
-        PREFIX Dependencies/irrklang
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
+    FetchContent_Declare(irrklang
+        URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrKlang-${EX_PLATFORM}bit-1.5.0.zip
     )
 
-    ExternalProject_Get_Property(irrklang-dep SOURCE_DIR)
-    set(IRRKLANG_PATH ${SOURCE_DIR})
+    FetchContent_GetProperties(irrklang)
+
+    if(NOT irrklang_POPULATED)
+        FetchContent_Populate(irrklang)
+    endif()
+
+    set(IRRKLANG_PATH ${irrklang_SOURCE_DIR})
 
     add_library(irrklang SHARED IMPORTED GLOBAL)
 
@@ -109,16 +110,11 @@ if(NOT IRRKLANG_LIBRARY_PATH)
     )
 endif()
 
-ExternalProject_Add(tinyxml2-dep
+FetchContent_Declare(tinyxml2
     URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/tinyxml2-master.zip
-    PREFIX Dependencies/tinyxml2
-    INSTALL_COMMAND ""
 )
 
-ExternalProject_Get_Property(tinyxml2-dep SOURCE_DIR)
-set(TINYXML2_PATH ${SOURCE_DIR})
-
-add_subdirectory(${TINYXML2_PATH})
+FetchContent_MakeAvailable(tinyxml2)
 
 add_subdirectory(Game)
 add_subdirectory(Editor)
