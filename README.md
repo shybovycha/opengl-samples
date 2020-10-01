@@ -6,10 +6,7 @@ This is a very simple shooting game I made many years ago. It is written in C++ 
 
 ## Build
 
-You will need [vcpkg](https://github.com/microsoft/vcpkg), [CMake](https://cmake.org) and a C++ toolchain (like VC, GCC or Clang) installed.
-
-Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buildsystems/vcpkg.cmake
- && cmake --build build`
+Run CMake: `cmake -Bbuild -H. && cmake --build build`
 
 ## TODO
 
@@ -91,7 +88,6 @@ Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buil
 - [ ] add github releases
 - [ ] document progress
 - [ ] add screenshots to github page
-- [x] fix dependency management
 
 ## Other notes
 

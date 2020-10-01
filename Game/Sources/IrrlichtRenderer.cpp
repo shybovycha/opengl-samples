@@ -22,7 +22,7 @@ void IrrlichtRenderer::init(Settings settings) {
     smgr = device->getSceneManager();
     guienv = device->getGUIEnvironment();
 
-    // soundEngine = irrklang::createIrrKlangDevice();
+    soundEngine = irrklang::createIrrKlangDevice();
 
     device->getFileSystem()->addFileArchive("Resources/Packs/data.zip");
 
@@ -99,7 +99,7 @@ void IrrlichtRenderer::processActionQueue() {
 }
 
 void IrrlichtRenderer::processAction(PlaySoundAction* action) {
-    // soundEngine->play2D(action->getSoundFile().c_str(), false);
+    soundEngine->play2D(action->getSoundFile().c_str(), false);
 }
 
 void IrrlichtRenderer::processAction(LoadFirstLevelAction* action) {
