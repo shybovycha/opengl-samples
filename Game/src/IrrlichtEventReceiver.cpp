@@ -11,8 +11,12 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
     if (gameState->getCurrentState() == GameStateType::PLAYING) {
         if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
             if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
-                irr::core::line3df ray(camera->getAbsolutePosition(), (camera->getTarget() - camera->getAbsolutePosition()) * 10000.0f);
-                irr::scene::ISceneNode* objectAtCursor = sceneManager->getSceneCollisionManager()->getSceneNodeFromRayBB(ray); // getSceneNodeFromCameraBB(camera.get());
+                const irr::f32 MAX_RAYCAST_DISTANCE = 10000.0f;
+                const irr::f32 RAY_OFFSET_DISTANCE = 10.0f;
+
+                irr::core::vector3df cameraDirection = camera->getTarget() - camera->getAbsolutePosition();
+                irr::core::line3df ray(camera->getAbsolutePosition() + (cameraDirection * RAY_OFFSET_DISTANCE), cameraDirection * MAX_RAYCAST_DISTANCE);
+                irr::scene::ISceneNode* objectAtCursor = sceneManager->getSceneCollisionManager()->getSceneNodeFromRayBB(ray);
 
                 actionDispatcher->shoot(objectAtCursor);
             }
