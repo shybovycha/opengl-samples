@@ -4,11 +4,11 @@ ActionDispatcher::ActionDispatcher(std::shared_ptr<GameState> _gameState) : game
 
 void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor) {
     if (gameState->getPlayerState()->getCurrentAmmo() <= 0) {
-        gameState->enqueue(new PlaySoundAction("Resources/Sounds/noammo.wav"));
+        gameState->enqueue(new PlaySoundAction("resources/sounds/noammo.wav"));
         return;
     }
 
-    gameState->enqueue(new PlaySoundAction("Resources/Sounds/shot.wav"));
+    gameState->enqueue(new PlaySoundAction("resources/sounds/shot.wav"));
 
     gameState->getPlayerState()->shoot();
 
@@ -22,7 +22,7 @@ void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor) {
         }
 
         gameState->enqueue(new TargetEliminatedAction(target));
-        gameState->enqueue(new PlaySoundAction("Resources/Sounds/bell.wav"));
+        gameState->enqueue(new PlaySoundAction("resources/sounds/bell.wav"));
 
         break;
     }
@@ -30,7 +30,7 @@ void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor) {
 
 void ActionDispatcher::reload() {
     gameState->getPlayerState()->reload();
-    gameState->enqueue(new PlaySoundAction("Resources/Sounds/reload.wav"));
+    gameState->enqueue(new PlaySoundAction("resources/sounds/reload.wav"));
 }
 
 void ActionDispatcher::mainMenu() {

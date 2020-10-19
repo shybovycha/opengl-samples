@@ -3,10 +3,10 @@
 IrrlichtHUD::IrrlichtHUD(irr::video::IVideoDriver* _driver, irr::gui::IGUIEnvironment* _guienv, std::shared_ptr<GameState> _gameState) : driver(_driver), guienv(_guienv), gameState(_gameState) {}
 
 void IrrlichtHUD::init() {
-    bulletTexture = driver->getTexture("Resources/Sprites/bullet.png");
-    targetTexture = driver->getTexture("Resources/Sprites/chicken_head.png");
+    bulletTexture = driver->getTexture("resources/sprites/bullet.png");
+    targetTexture = driver->getTexture("resources/sprites/chicken_head.png");
 
-    statsFont = guienv->getFont("Resources/Fonts/candyshop_24px.xml");
+    statsFont = guienv->getFont("resources/fonts/candyshop_24px.xml");
 }
 
 void IrrlichtHUD::render() {
@@ -21,9 +21,9 @@ void IrrlichtHUD::renderAmmo() {
             bulletTexture,
             irr::core::position2d<irr::s32>(30 + (i * (bulletTexture->getOriginalSize().Width + 5)), driver->getScreenSize().Height - bulletTexture->getOriginalSize().Height * 1.25),
             irr::core::rect<irr::s32>(
-                0, 
-                0, 
-                bulletTexture->getOriginalSize().Width, 
+                0,
+                0,
+                bulletTexture->getOriginalSize().Width,
                 bulletTexture->getOriginalSize().Height
             ),
             0,
@@ -54,13 +54,13 @@ void IrrlichtHUD::renderTargets() {
     targetsStr << "x" << targetsAlive;
 
     statsFont->draw(
-        targetsStr.str().c_str(), 
+        targetsStr.str().c_str(),
         irr::core::rect<irr::s32>(
-            150 + targetTexture->getOriginalSize().Width * 0.75, 
+            150 + targetTexture->getOriginalSize().Width * 0.75,
             10 + targetTexture->getOriginalSize().Height * 0.75,
             150 + targetTexture->getOriginalSize().Height * 0.75 + 70,
             10 + targetTexture->getOriginalSize().Height * 0.75 + 50
-        ), 
+        ),
         TARGET_COUNT_COLOR
     );
 }
@@ -79,11 +79,11 @@ void IrrlichtHUD::renderTime() {
 
     timeStr << minutes;
     timeStr << ":";
-    
+
     if (seconds < 10) {
         timeStr << 0;
     }
-    
+
     timeStr << seconds;;
 
     statsFont->draw(

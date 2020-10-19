@@ -25,7 +25,7 @@ void ApplicationDelegate::init() {
 
     createAxis();
 
-    lightBillboardTexture = driver->getTexture("Resources/Icons/idea.png");
+    lightBillboardTexture = driver->getTexture("resources/icons/idea.png");
 
     initUI();
 }
@@ -71,25 +71,25 @@ void ApplicationDelegate::createToolbar() {
     irr::gui::IGUIToolBar* toolbar = guienv->addToolBar();
     toolbar->setMinSize(irr::core::dimension2du(100, 40));
 
-    irr::video::ITexture* openFileIcon = driver->getTexture("Resources/Icons/opened-folder.png");
+    irr::video::ITexture* openFileIcon = driver->getTexture("resources/icons/opened-folder.png");
     toolbar->addButton(static_cast<irr::s32>(GUIElementId::LOAD_LEVELS), nullptr, L"Load game levels", openFileIcon, nullptr, false, true);
 
-    irr::video::ITexture* saveFileIcon = driver->getTexture("Resources/Icons/save.png");
+    irr::video::ITexture* saveFileIcon = driver->getTexture("resources/icons/save.png");
     toolbar->addButton(static_cast<irr::s32>(GUIElementId::SAVE_LEVELS), nullptr, L"Save game levels", saveFileIcon, nullptr, false, true);
 
-    irr::video::ITexture* helpIcon = driver->getTexture("Resources/Icons/help.png");
+    irr::video::ITexture* helpIcon = driver->getTexture("resources/icons/help.png");
     toolbar->addButton(static_cast<irr::s32>(GUIElementId::ABOUT), nullptr, L"About", helpIcon, nullptr, false, true);
 
-    irr::video::ITexture* addLevelIcon = driver->getTexture("Resources/Icons/map.png");
+    irr::video::ITexture* addLevelIcon = driver->getTexture("resources/icons/map.png");
     toolbar->addButton(static_cast<irr::s32>(GUIElementId::ADD_LEVEL), nullptr, L"Add level", addLevelIcon, nullptr, false, true);
 
-    irr::video::ITexture* addTargetIcon = driver->getTexture("Resources/Icons/accuracy.png");
+    irr::video::ITexture* addTargetIcon = driver->getTexture("resources/icons/accuracy.png");
     toolbar->addButton(static_cast<irr::s32>(GUIElementId::ADD_TARGET), nullptr, L"Add target", addTargetIcon, nullptr, false, true);
 
-    irr::video::ITexture* addLightIcon = driver->getTexture("Resources/Icons/light-on.png");
+    irr::video::ITexture* addLightIcon = driver->getTexture("resources/icons/light-on.png");
     toolbar->addButton(static_cast<irr::s32>(GUIElementId::ADD_LIGHT), nullptr, L"Add light", addLightIcon, nullptr, false, true);
 
-    irr::video::ITexture* deleteSelectedIcon = driver->getTexture("Resources/Icons/delete-forever.png");
+    irr::video::ITexture* deleteSelectedIcon = driver->getTexture("resources/icons/delete-forever.png");
     toolbar->addButton(static_cast<irr::s32>(GUIElementId::DELETE_SELECTED), nullptr, L"Delete selected object", deleteSelectedIcon, nullptr, false, true);
 }
 
@@ -127,7 +127,7 @@ void ApplicationDelegate::quit() {
 }
 
 void ApplicationDelegate::setFont() {
-    irr::gui::IGUIFont* font = guienv->getFont("Resources/Fonts/calibri.xml");
+    irr::gui::IGUIFont* font = guienv->getFont("resources/Fonts/calibri.xml");
     guienv->getSkin()->setFont(font);
 }
 

@@ -24,7 +24,7 @@ void IrrlichtRenderer::init(Settings settings) {
 
     soundEngine = irrklang::createIrrKlangDevice();
 
-    device->getFileSystem()->addFileArchive("Resources/Packs/data.zip");
+    device->getFileSystem()->addFileArchive("resources/packs/data.zip");
 
     bill = smgr->addBillboardSceneNode();
     bill->setMaterialType(irr::video::EMT_TRANSPARENT_ADD_COLOR);

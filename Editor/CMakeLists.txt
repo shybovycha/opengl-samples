@@ -1,36 +1,36 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(Editor VERSION 1.0.1 LANGUAGES CXX)
+project(editor VERSION 1.0.1 LANGUAGES CXX)
 
-set(EXECUTABLE_NAME Editor)
+set(EXECUTABLE_NAME editor)
 
 set(SOURCES
-    "Sources/main.cpp"
-    "Sources/ApplicationDelegate.h"
-    "Sources/ApplicationDelegate.cpp"
-    "Sources/IrrlichtEventReceiver.h"
-    "Sources/IrrlichtEventReceiver.cpp"
-    "Sources/Application.h"
-    "Sources/Application.cpp"
-    "Sources/Level.h"
-    "Sources/Level.cpp"
-    "Sources/GameManagerNodeData.h"
-    "Sources/GameManagerNodeData.cpp"
-    "Sources/Target.h"
-    "Sources/Target.cpp"
-    "Sources/GameData.h"
-    "Sources/GameData.cpp"
-    "Sources/GameManagerTree.h"
-    "Sources/GameManagerTree.cpp"
-    "Sources/GUIElementId.h"
-    "Sources/CameraSceneNodeAnimator.h"
-    "Sources/CameraSceneNodeAnimator.cpp"
-    "Sources/Light.h"
-    "Sources/Light.cpp"
-    "Sources/LevelEntity.h"
-    "Sources/LevelEntity.cpp"
-    "Sources/SaveFileDialog.h"
-    "Sources/SaveFileDialog.cpp")
+    "src/main.cpp"
+    "src/ApplicationDelegate.h"
+    "src/ApplicationDelegate.cpp"
+    "src/IrrlichtEventReceiver.h"
+    "src/IrrlichtEventReceiver.cpp"
+    "src/Application.h"
+    "src/Application.cpp"
+    "src/Level.h"
+    "src/Level.cpp"
+    "src/GameManagerNodeData.h"
+    "src/GameManagerNodeData.cpp"
+    "src/Target.h"
+    "src/Target.cpp"
+    "src/GameData.h"
+    "src/GameData.cpp"
+    "src/GameManagerTree.h"
+    "src/GameManagerTree.cpp"
+    "src/GUIElementId.h"
+    "src/CameraSceneNodeAnimator.h"
+    "src/CameraSceneNodeAnimator.cpp"
+    "src/Light.h"
+    "src/Light.cpp"
+    "src/LevelEntity.h"
+    "src/LevelEntity.cpp"
+    "src/SaveFileDialog.h"
+    "src/SaveFileDialog.cpp")
 
 set(LIBRARIES
         ${X11_LIBRARIES}
@@ -50,12 +50,12 @@ if(APPLE)
 endif()
 
 if(APPLE)
-    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCE_FILES})
+    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCES})
 else()
     add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
-    # file(COPY Resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-    # file(COPY Data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    # file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    # file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 set_target_properties(${EXECUTABLE_NAME} PROPERTIES
@@ -70,18 +70,18 @@ target_link_libraries(${EXECUTABLE_NAME} PUBLIC ${LIBRARIES} tinyxml2 irrlicht)
 
 # Copy libraries' DLLs
 add_custom_command(
-    TARGET ${EXECUTABLE_NAME} POST_BUILD 
+    TARGET ${EXECUTABLE_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tinyxml2> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
 )
 
 # TODO: copy DLLs, not LIBs
 # add_custom_command(
-#     TARGET ${EXECUTABLE_NAME} POST_BUILD 
+#     TARGET ${EXECUTABLE_NAME} POST_BUILD
 #     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:irrlicht> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
 # )
 
 # Copy resources
 add_custom_command(
     TARGET ${EXECUTABLE_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/Resources $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/Resources
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/resources $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources
 )

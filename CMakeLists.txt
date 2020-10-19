@@ -52,7 +52,7 @@ if(NOT IRRLICHT_LIBRARY_PATH)
     endif()
 
     FetchContent_Declare(irrlicht
-        URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrlicht-1.8.4.zip
+        URL ${CMAKE_CURRENT_LIST_DIR}/dependencies/irrlicht-1.8.4.zip
     )
 
     FetchContent_GetProperties(irrlicht)
@@ -89,7 +89,7 @@ if(NOT IRRKLANG_LIBRARY_PATH)
     endif()
 
     FetchContent_Declare(irrklang
-        URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/irrKlang-${EX_PLATFORM}bit-1.5.0.zip
+        URL ${CMAKE_CURRENT_LIST_DIR}/dependencies/irrKlang-${EX_PLATFORM}bit-1.5.0.zip
     )
 
     FetchContent_GetProperties(irrklang)
@@ -111,10 +111,10 @@ if(NOT IRRKLANG_LIBRARY_PATH)
 endif()
 
 FetchContent_Declare(tinyxml2
-    URL ${CMAKE_CURRENT_LIST_DIR}/Dependencies/tinyxml2-master.zip
+    URL ${CMAKE_CURRENT_LIST_DIR}/dependencies/tinyxml2-master.zip
 )
 
 FetchContent_MakeAvailable(tinyxml2)
 
-add_subdirectory(Game)
-add_subdirectory(Editor)
+add_subdirectory(game)
+add_subdirectory(editor)

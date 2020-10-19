@@ -1,36 +1,36 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(Game VERSION 1.0.1 LANGUAGES CXX)
+project(game VERSION 1.0.1 LANGUAGES CXX)
 
 set(SOURCES
-    "Sources/main.cpp" 
-    "Sources/Settings.h" 
-    "Sources/Level.h"
-    "Sources/Score.h"
-    "Sources/PlayerState.h"
-    "Sources/GameState.h"
-    "Sources/ActionDispatcher.h"
-    "Sources/IrrlichtEventReceiver.h"
-    "Sources/Renderer.h"
-    "Sources/ResourceManager.h"
-    "Sources/ModernResourceManager.h"
-    "Sources/IrrlichtRenderer.h"
-    "Sources/Application.h"
-    "Sources/QueueAction.h"
-    "Sources/Application.cpp"
-    "Sources/GameState.cpp"
-    "Sources/ActionDispatcher.cpp"
-    "Sources/IrrlichtEventReceiver.cpp"
-    "Sources/IrrlichtRenderer.cpp"
-    "Sources/Level.cpp"
-    "Sources/ModernResourceManager.cpp"
-    "Sources/PlayerState.cpp"
-    "Sources/Score.cpp"
-    "Sources/QueueAction.cpp"
-    "Sources/IrrlichtHUD.h"
-    "Sources/IrrlichtHUD.cpp")
+    "src/main.cpp"
+    "src/Settings.h"
+    "src/Level.h"
+    "src/Score.h"
+    "src/PlayerState.h"
+    "src/GameState.h"
+    "src/ActionDispatcher.h"
+    "src/IrrlichtEventReceiver.h"
+    "src/Renderer.h"
+    "src/ResourceManager.h"
+    "src/ModernResourceManager.h"
+    "src/IrrlichtRenderer.h"
+    "src/Application.h"
+    "src/QueueAction.h"
+    "src/Application.cpp"
+    "src/GameState.cpp"
+    "src/ActionDispatcher.cpp"
+    "src/IrrlichtEventReceiver.cpp"
+    "src/IrrlichtRenderer.cpp"
+    "src/Level.cpp"
+    "src/ModernResourceManager.cpp"
+    "src/PlayerState.cpp"
+    "src/Score.cpp"
+    "src/QueueAction.cpp"
+    "src/IrrlichtHUD.h"
+    "src/IrrlichtHUD.cpp")
 
-set(EXECUTABLE_NAME Game)
+set(EXECUTABLE_NAME game)
 
 set(LIBRARIES
         ${X11_LIBRARIES}
@@ -50,15 +50,15 @@ if(APPLE)
 endif()
 
 if(APPLE)
-    file(GLOB RESOURCE_FILES Resources)
+    file(GLOB RESOURCE_FILES resources)
     set_source_files_properties(${RESOURCE_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
 
-    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCE_FILES} ${RESOURCE_FILES})
+    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCES} ${RESOURCE_FILES})
 else()
     add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
-    # file(COPY Resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-    # file(COPY Data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    # file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    # file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 set_target_properties(${EXECUTABLE_NAME} PROPERTIES
@@ -73,28 +73,28 @@ target_link_libraries(${EXECUTABLE_NAME} PUBLIC ${LIBRARIES} tinyxml2 irrlicht i
 
 # Copy libraries' DLLs
 add_custom_command(
-    TARGET ${EXECUTABLE_NAME} POST_BUILD 
+    TARGET ${EXECUTABLE_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tinyxml2> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
 )
 
 # TODO: copy DLLs, not LIBs
 # add_custom_command(
-#     TARGET ${EXECUTABLE_NAME} POST_BUILD 
+#     TARGET ${EXECUTABLE_NAME} POST_BUILD
 #     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:irrlicht> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
 # )
 
 # add_custom_command(
-#     TARGET ${EXECUTABLE_NAME} POST_BUILD 
+#     TARGET ${EXECUTABLE_NAME} POST_BUILD
 #     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:irrklang> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
 # )
 
 # Copy resources
 add_custom_command(
-    TARGET ${EXECUTABLE_NAME} POST_BUILD 
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/Resources $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/Resources
+    TARGET ${EXECUTABLE_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/resources $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources
 )
 
 add_custom_command(
-    TARGET ${EXECUTABLE_NAME} POST_BUILD 
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/Data $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/Data
+    TARGET ${EXECUTABLE_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/data $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/data
 )
