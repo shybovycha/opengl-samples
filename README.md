@@ -44,6 +44,7 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [x] replace level meshes with Collada
 - [x] update font in menu
 - [x] ~~load UI from file~~
+- [ ] use shader for the post-processing ("drunk" effect)
 
 ### Editor
 

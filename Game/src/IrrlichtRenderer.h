@@ -13,6 +13,8 @@
 #include "IrrlichtEventReceiver.h"
 #include "Renderer.h"
 #include "Settings.h"
+#include "CScreenQuadSceneNode.h"
+#include "CDrunkShaderCallback.h"
 
 class IrrlichtRenderer : public Renderer {
 public:
@@ -88,4 +90,8 @@ private:
     irr::scene::ITriangleSelector* selector = 0;
 
     irrklang::ISoundEngine* soundEngine = 0;
+
+    irr::video::ITexture* screenRenderTarget = 0;
+    CScreenQuadSceneNode* screenQuad = 0;
+    CDrunkShaderCallback* drunkShaderCallback = 0;
 };

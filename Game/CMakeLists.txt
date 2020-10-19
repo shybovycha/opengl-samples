@@ -28,7 +28,11 @@ set(SOURCES
     "src/Score.cpp"
     "src/QueueAction.cpp"
     "src/IrrlichtHUD.h"
-    "src/IrrlichtHUD.cpp")
+    "src/IrrlichtHUD.cpp"
+    "src/CScreenQuadSceneNode.h"
+    "src/CScreenQuadSceneNode.cpp"
+    "src/CDrunkShaderCallback.h"
+    "src/CDrunkShaderCallback.cpp")
 
 set(EXECUTABLE_NAME game)
 

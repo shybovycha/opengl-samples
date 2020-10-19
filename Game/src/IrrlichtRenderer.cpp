@@ -33,6 +33,23 @@ void IrrlichtRenderer::init(std::shared_ptr<Settings> settings) {
     bill->setMaterialFlag(irr::video::EMF_ZBUFFER, false);
     bill->setSize(irr::core::dimension2d<irr::f32>(20.0f, 20.0f));
 
+    irr::video::IGPUProgrammingServices* gpu = driver->getGPUProgrammingServices();
+
+    drunkShaderCallback = new CDrunkShaderCallback();
+
+    irr::s32 drunkShader = gpu->addHighLevelShaderMaterialFromFiles(
+        "resources/shaders/identity.vert.glsl", "main", irr::video::EVST_VS_1_1,
+        "resources/shaders/drunk.frag.glsl", "main", irr::video::EPST_PS_1_1,
+        drunkShaderCallback, irr::video::EMT_SOLID, 0, irr::video::EGSL_DEFAULT
+    );
+
+    screenRenderTarget = driver->addRenderTargetTexture(irr::core::dimension2d<irr::u32>(2048, 1024), "RTT0", irr::video::ECF_A8R8G8B8);
+
+    screenQuad = new CScreenQuadSceneNode(smgr->getRootSceneNode(), smgr, -1);
+    screenQuad->getMaterial(0).MaterialType = (irr::video::E_MATERIAL_TYPE) drunkShader;
+    screenQuad->getMaterial(0).setTexture(0, screenRenderTarget);
+    screenQuad->flipHorizontal();
+
     irr::gui::IGUIFont* font = guienv->getFont("calibri.xml");
     guienv->getSkin()->setFont(font);
 
@@ -236,13 +253,23 @@ void IrrlichtRenderer::render() {
         renderMainMenu();
     }
     else if (gameState->getCurrentState() == GameStateType::PLAYING) {
+        // update shader' data
+        drunkShaderCallback->setTime(timer->getTime());
+
+        // render scene to texture, using the shader as a material
+        driver->setRenderTarget(screenRenderTarget, true, true, irr::video::SColor(0, 0, 0, 0));
         smgr->drawAll();
+
+        // only render quad with the shader-processed material to the screen
+        driver->setRenderTarget(irr::video::ERT_FRAME_BUFFER, false, false, irr::video::SColor(0, 0, 0, 0));
+        screenQuad->render();
 
         updateTimer();
 
         updateCrosshair();
         updatePostProcessingEffects();
 
+        // lastly, always render HUD on top of everything
         hud->render();
     }
     else if (gameState->getCurrentState() == GameStateType::END_GAME) {
