@@ -48,7 +48,6 @@ void IrrlichtRenderer::init(std::shared_ptr<Settings> settings) {
     screenQuad = new CScreenQuadSceneNode(smgr->getRootSceneNode(), smgr, -1);
     screenQuad->getMaterial(0).MaterialType = (irr::video::E_MATERIAL_TYPE) drunkShader;
     screenQuad->getMaterial(0).setTexture(0, screenRenderTarget);
-    screenQuad->flipHorizontal();
 
     irr::gui::IGUIFont* font = guienv->getFont("calibri.xml");
     guienv->getSkin()->setFont(font);
@@ -254,7 +253,7 @@ void IrrlichtRenderer::render() {
     }
     else if (gameState->getCurrentState() == GameStateType::PLAYING) {
         // update shader' data
-        drunkShaderCallback->setTime(timer->getTime());
+        drunkShaderCallback->setTime(timer->getTime() / 1000.f);
 
         // render scene to texture, using the shader as a material
         driver->setRenderTarget(screenRenderTarget, true, true, irr::video::SColor(0, 0, 0, 0));
