@@ -1,8 +1,6 @@
 #include "CScreenQuadSceneNode.h"
 
 CScreenQuadSceneNode::CScreenQuadSceneNode(irr::scene::ISceneNode* parent, irr::scene::ISceneManager* smgr, irr::s32 id) : irr::scene::ISceneNode(parent, smgr, id) {
-  irr::f32 shiftX;
-  irr::f32 shiftY;
   irr::core::dimension2d<irr::u32> currentResolution;
 
   // Here we initialize the vertices of the screen-aligned quad
@@ -11,8 +9,8 @@ CScreenQuadSceneNode::CScreenQuadSceneNode(irr::scene::ISceneNode* parent, irr::
 
   aabb.reset(0, 0, 0);
 
-  shiftX = 0.5 / currentResolution.Width;  // This small shift is necesary to compensate the texture sampling bias
-  shiftY = 0.5 / currentResolution.Height; // It avoids that our effect becomes too blurry.
+  irr::f32 shiftX = 0.5 / currentResolution.Width;  // This small shift is necesary to compensate the texture sampling bias
+  irr::f32 shiftY = 0.5 / currentResolution.Height; // It avoids that our effect becomes too blurry.
 
   vertices[0] = irr::video::S3DVertex2TCoords(-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, -1.0f, irr::video::SColor(255, 255, 255, 255), shiftX, shiftY, shiftX, shiftY);
   vertices[1] = irr::video::S3DVertex2TCoords(1.0f, -1.0, 0.0f, 0.0f, 0.0f, -1.0f, irr::video::SColor(255, 255, 255, 255), 1.0f + shiftX, shiftY, 1.0f + shiftX, shiftY);

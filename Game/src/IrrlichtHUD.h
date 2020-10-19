@@ -3,7 +3,7 @@
 #include <memory>
 #include <sstream>
 
-#include <irrlicht.h>
+#include "stdafx.h"
 
 #include "GameState.h"
 

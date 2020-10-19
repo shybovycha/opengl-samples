@@ -383,7 +383,7 @@ void IrrlichtRenderer::updateCrosshair() {
 void IrrlichtRenderer::updatePostProcessingEffects() {
     unsigned long time = gameState->getCurrentScore()->getCurrentTime();
     int levelIdx = gameState->getCurrentLevelIndex();
-    double k = sin(time / 100) / (10 - levelIdx);
+    double k = sin(time / 100.0f) / (10.0f - levelIdx);
 
     camera->setRotation(
         irr::core::vector3df(

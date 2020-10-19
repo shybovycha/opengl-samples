@@ -301,9 +301,6 @@ bool SaveFileDialog::OnEvent(const irr::SEvent &event) {
                     default:
                         break;
                 }
-
-            default:
-                break;
         }
     }
 

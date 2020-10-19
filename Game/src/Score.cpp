@@ -1,6 +1,6 @@
 #include "Score.h"
 
-Score::Score() : targetsEliminated(0), currentTime(0) {}
+Score::Score() : targetsEliminated(0), currentTime(0), totalTimeUsed(0) {}
 
 void Score::targetEliminated() {
     targetsEliminated++;

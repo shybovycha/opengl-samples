@@ -1,6 +1,6 @@
 #include "CDrunkShaderCallback.h"
 
-CDrunkShaderCallback::CDrunkShaderCallback() {}
+CDrunkShaderCallback::CDrunkShaderCallback() : time(0.0f) {}
 
 CDrunkShaderCallback::~CDrunkShaderCallback() {}
 

@@ -14,7 +14,8 @@ CameraSceneNodeAnimator::CameraSceneNodeAnimator(
     previousTimestamp(0),
     isLeftMouseButtonPressed(false),
     isMiddleMouseButtonPressed(false),
-    isRightMouseButtonPressed(false)
+    isRightMouseButtonPressed(false),
+    isShiftPressed(false)
 {}
 
 irr::scene::ISceneNodeAnimator* CameraSceneNodeAnimator::createClone(irr::scene::ISceneNode* node, irr::scene::ISceneManager* newManager) {

@@ -5,8 +5,7 @@
 #include <string>
 #include <vector>
 
-#include <irrlicht.h>
-#include <tinyxml2.h>
+#include "stdafx.h"
 
 #include "Level.h"
 #include "ResourceManager.h"

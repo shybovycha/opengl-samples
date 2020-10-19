@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include <irrlicht.h>
+#include "stdafx.h"
 
 class Level {
 public:

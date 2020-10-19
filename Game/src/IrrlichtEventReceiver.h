@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include <irrlicht.h>
+#include "stdafx.h"
 
 #include "ActionDispatcher.h"
 #include "GameState.h"

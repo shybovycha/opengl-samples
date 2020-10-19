@@ -4,8 +4,7 @@
 #include <sstream>
 #include <vector>
 
-#include <irrlicht.h>
-#include <irrKlang.h>
+#include "stdafx.h"
 
 #include "GameState.h"
 #include "ActionDispatcher.h"

@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include <irrlicht.h>
+#include "stdafx.h"
 
 #include "Level.h"
 
