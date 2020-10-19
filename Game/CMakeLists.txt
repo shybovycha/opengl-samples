@@ -106,16 +106,11 @@ if (WIN32)
     )
 endif()
 
-# TODO: copy DLLs, not LIBs
-# add_custom_command(
-#     TARGET ${EXECUTABLE_NAME} POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:irrlicht> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
-# )
-
-# add_custom_command(
-#     TARGET ${EXECUTABLE_NAME} POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:irrklang> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
-# )
+target_precompile_headers(
+    ${EXECUTABLE_NAME}
+    PRIVATE
+    "src/stdafx.h"
+)
 
 # Copy resources
 add_custom_command(
