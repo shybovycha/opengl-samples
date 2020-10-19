@@ -16,6 +16,8 @@ const GameStateType GameState::getCurrentState() const {
 
 const std::shared_ptr<Level> GameState::getCurrentLevel() const {
     if (levels.empty() || currentLevel < 0 || currentLevel >= levels.size()) {
+        // TODO: replace this with some sort of logger
+        // since Irrlicht only exposes its logger through IrrlichtDevice instance, which i don't really want to mix in in this clas, screw it
         std::cerr << "Invalid current level index" << std::endl;
         return nullptr;
     }

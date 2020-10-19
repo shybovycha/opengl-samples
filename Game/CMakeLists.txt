@@ -28,7 +28,11 @@ set(SOURCES
     "src/Score.cpp"
     "src/QueueAction.cpp"
     "src/IrrlichtHUD.h"
-    "src/IrrlichtHUD.cpp")
+    "src/IrrlichtHUD.cpp"
+    "src/CScreenQuadSceneNode.h"
+    "src/CScreenQuadSceneNode.cpp"
+    "src/CDrunkShaderCallback.h"
+    "src/CDrunkShaderCallback.cpp")
 
 set(EXECUTABLE_NAME game)
 
@@ -76,6 +80,31 @@ add_custom_command(
     TARGET ${EXECUTABLE_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tinyxml2> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
 )
+
+if (WIN32)
+    if (EX_PLATFORM EQUAL "64")
+        set(IRRKLANG_BIN_PATH "${irrklang_SOURCE_DIR}/bin/winx64-visualStudio")
+    else()
+        set(IRRKLANG_BIN_PATH "${irrklang_SOURCE_DIR}/bin/win32-visualStudio")
+    endif()
+
+    message("IrrKlang DLLs: ${IRRKLANG_BIN_PATH}/irrKlang.dll ${IRRKLANG_BIN_PATH}/ikpFlac.dll ${IRRKLANG_BIN_PATH}/ikpMP3.dll")
+
+    add_custom_command(
+        TARGET ${EXECUTABLE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${IRRKLANG_BIN_PATH}/irrKlang.dll $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+    )
+
+    add_custom_command(
+        TARGET ${EXECUTABLE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${IRRKLANG_BIN_PATH}/ikpFlac.dll $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+    )
+
+    add_custom_command(
+        TARGET ${EXECUTABLE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${IRRKLANG_BIN_PATH}/ikpMP3.dll $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+    )
+endif()
 
 # TODO: copy DLLs, not LIBs
 # add_custom_command(

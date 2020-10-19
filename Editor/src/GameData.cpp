@@ -12,7 +12,7 @@ void GameData::loadFromFile(const std::wstring& filename) {
 
     if (xmlError != tinyxml2::XML_SUCCESS) {
         std::cerr << "Can not load levels.xml file" << std::endl;
-        throw std::exception("Can not load levels");
+        return;
     }
 
     auto levelsNode = xml->FirstChildElement("levels");
