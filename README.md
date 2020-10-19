@@ -31,7 +31,7 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [ ] add end level menu
 - [ ] change 3D models to the artwork
 - [x] ~~change the default GUI theme~~
-- [ ] do not use exceptions (https://google.github.io/styleguide/cppguide.html#Exceptions)
+- [x] do not use exceptions (https://google.github.io/styleguide/cppguide.html#Exceptions)
 - [ ] new game in the middle of the game should reset everything
 - [x] properly copy resources to the directory with the binary
 - [x] ~~copy the DLLs to the directory with the binary~~

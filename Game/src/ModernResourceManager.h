@@ -16,7 +16,7 @@ class ModernResourceManager : public ResourceManager {
 public:
     ModernResourceManager();
 
-    virtual Settings loadSettings();
+    virtual std::shared_ptr<Settings> loadSettings();
 
     virtual std::vector<std::shared_ptr<Level>> loadLevels();
 };

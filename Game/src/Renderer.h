@@ -9,7 +9,7 @@ class Renderer {
 public:
     Renderer(std::shared_ptr<GameState> _gameState) : gameState(_gameState) {}
 
-    virtual void init(Settings settings) = 0;
+    virtual void init(std::shared_ptr<Settings> settings) = 0;
 
     virtual void processActionQueue() = 0;
 

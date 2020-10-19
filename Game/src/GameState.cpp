@@ -16,7 +16,7 @@ const GameStateType GameState::getCurrentState() const {
 
 const std::shared_ptr<Level> GameState::getCurrentLevel() const {
     if (levels.empty() || currentLevel < 0 || currentLevel >= levels.size()) {
-        throw "Invalid current level index";
+        std::cerr << "Invalid current level index" << std::endl;
         return nullptr;
     }
 

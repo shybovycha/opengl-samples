@@ -2,14 +2,14 @@
 
 ModernResourceManager::ModernResourceManager() : ResourceManager() {}
 
-Settings ModernResourceManager::loadSettings() {
+std::shared_ptr<Settings> ModernResourceManager::loadSettings() {
     std::shared_ptr<tinyxml2::XMLDocument> xml = std::make_shared<tinyxml2::XMLDocument>();
 
-    tinyxml2::XMLError xmlError = xml->LoadFile("Data/settings.xml");
+    tinyxml2::XMLError xmlError = xml->LoadFile("data/settings.xml");
 
     if (xmlError != tinyxml2::XML_SUCCESS) {
         std::cerr << "Can not load settings.xml file" << std::endl;
-        throw std::exception("Can not load settings");
+        return nullptr;
     }
 
     auto settingsNode = xml->FirstChildElement("settings");
@@ -25,17 +25,17 @@ Settings ModernResourceManager::loadSettings() {
     bool vsync = graphicsSettingsNode->FirstChildElement("vsync")->BoolText(false);
     bool stencil = graphicsSettingsNode->FirstChildElement("stencilBuffer")->BoolText(false);
 
-    return Settings{ driverName, resolutionWidth, resolutionHeight, colorDepth, fullScreen, vsync, stencil };
+    return std::make_shared<Settings>(driverName, resolutionWidth, resolutionHeight, colorDepth, fullScreen, vsync, stencil);
 }
 
 std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
     std::shared_ptr<tinyxml2::XMLDocument> xml = std::make_shared<tinyxml2::XMLDocument>();
 
-    tinyxml2::XMLError xmlError = xml->LoadFile("Data/levels.xml");
+    tinyxml2::XMLError xmlError = xml->LoadFile("data/levels.xml");
 
     if (xmlError != tinyxml2::XML_SUCCESS) {
         std::cerr << "Can not load levels.xml file" << std::endl;
-        throw std::exception("Can not load levels");
+        return std::vector<std::shared_ptr<Level>>();
     }
 
     auto levelsNode = xml->FirstChildElement("levels");

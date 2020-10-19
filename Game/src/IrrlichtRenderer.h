@@ -18,7 +18,7 @@ class IrrlichtRenderer : public Renderer {
 public:
     IrrlichtRenderer(std::shared_ptr<GameState> _gameState, std::shared_ptr<ActionDispatcher> _actionDispatcher);
 
-    virtual void init(Settings settings);
+    virtual void init(std::shared_ptr<Settings> settings);
 
     virtual void processActionQueue();
 

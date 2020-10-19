@@ -5,16 +5,16 @@ IrrlichtRenderer::IrrlichtRenderer(std::shared_ptr<GameState> _gameState, std::s
     actionDispatcher(_actionDispatcher)
 {}
 
-void IrrlichtRenderer::init(Settings settings) {
+void IrrlichtRenderer::init(std::shared_ptr<Settings> settings) {
     irr::video::E_DRIVER_TYPE driverType = irr::video::EDT_OPENGL;
 
-    if (settings.driverName == "DirectX") {
+    if (settings->driverName == "DirectX") {
         driverType = irr::video::EDT_DIRECT3D9;
     }
 
-    irr::core::dimension2d<irr::u32> resolution = irr::core::dimension2d<irr::u32>(settings.resolutionWidth, settings.resolutionHeight);
+    irr::core::dimension2d<irr::u32> resolution = irr::core::dimension2d<irr::u32>(settings->resolutionWidth, settings->resolutionHeight);
 
-    device = irr::createDevice(driverType, resolution, settings.colorDepth, settings.fullScreen, settings.stencil, settings.vsync);
+    device = irr::createDevice(driverType, resolution, settings->colorDepth, settings->fullScreen, settings->stencil, settings->vsync);
 
     device->setWindowCaption(L"ShootThem!");
 
