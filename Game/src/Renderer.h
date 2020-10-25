@@ -5,9 +5,12 @@
 #include "GameState.h"
 #include "Settings.h"
 
-class Renderer {
+class Renderer
+{
 public:
-    Renderer(std::shared_ptr<GameState> _gameState) : gameState(_gameState) {}
+    Renderer(std::shared_ptr<GameState> _gameState) : gameState(_gameState)
+    {
+    }
 
     virtual void init(std::shared_ptr<Settings> settings) = 0;
 

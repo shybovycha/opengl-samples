@@ -11,7 +11,8 @@
 #include "ResourceManager.h"
 #include "Settings.h"
 
-class ModernResourceManager : public ResourceManager {
+class ModernResourceManager : public ResourceManager
+{
 public:
     ModernResourceManager();
 

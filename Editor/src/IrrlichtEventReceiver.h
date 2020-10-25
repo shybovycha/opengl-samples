@@ -7,7 +7,8 @@
 #include "ApplicationDelegate.h"
 #include "GUIElementId.h"
 
-class IrrlichtEventReceiver : public irr::IEventReceiver {
+class IrrlichtEventReceiver : public irr::IEventReceiver
+{
 public:
     explicit IrrlichtEventReceiver(std::shared_ptr<ApplicationDelegate> _delegate);
 

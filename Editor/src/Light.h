@@ -6,7 +6,8 @@
 
 #include "LevelEntity.h"
 
-class Light : public LevelEntity {
+class Light : public LevelEntity
+{
 public:
     Light(const irr::core::vector3df& _position, const std::wstring& _id);
 };

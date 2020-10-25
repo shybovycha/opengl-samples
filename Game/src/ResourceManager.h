@@ -5,9 +5,12 @@
 
 #include "Settings.h"
 
-class ResourceManager {
+class ResourceManager
+{
 public:
-    ResourceManager() {}
+    ResourceManager()
+    {
+    }
 
     virtual std::shared_ptr<Settings> loadSettings() = 0;
 

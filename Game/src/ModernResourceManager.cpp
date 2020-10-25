@@ -1,13 +1,17 @@
 #include "ModernResourceManager.h"
 
-ModernResourceManager::ModernResourceManager() : ResourceManager() {}
+ModernResourceManager::ModernResourceManager() : ResourceManager()
+{
+}
 
-std::shared_ptr<Settings> ModernResourceManager::loadSettings() {
+std::shared_ptr<Settings> ModernResourceManager::loadSettings()
+{
     std::shared_ptr<tinyxml2::XMLDocument> xml = std::make_shared<tinyxml2::XMLDocument>();
 
     tinyxml2::XMLError xmlError = xml->LoadFile("data/settings.xml");
 
-    if (xmlError != tinyxml2::XML_SUCCESS) {
+    if (xmlError != tinyxml2::XML_SUCCESS)
+    {
         std::cerr << "Can not load settings.xml file" << std::endl;
         return nullptr;
     }
@@ -25,15 +29,18 @@ std::shared_ptr<Settings> ModernResourceManager::loadSettings() {
     bool vsync = graphicsSettingsNode->FirstChildElement("vsync")->BoolText(false);
     bool stencil = graphicsSettingsNode->FirstChildElement("stencilBuffer")->BoolText(false);
 
-    return std::make_shared<Settings>(driverName, resolutionWidth, resolutionHeight, colorDepth, fullScreen, vsync, stencil);
+    return std::make_shared<Settings>(driverName, resolutionWidth, resolutionHeight, colorDepth, fullScreen, vsync,
+            stencil);
 }
 
-std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
+std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels()
+{
     std::shared_ptr<tinyxml2::XMLDocument> xml = std::make_shared<tinyxml2::XMLDocument>();
 
     tinyxml2::XMLError xmlError = xml->LoadFile("data/levels.xml");
 
-    if (xmlError != tinyxml2::XML_SUCCESS) {
+    if (xmlError != tinyxml2::XML_SUCCESS)
+    {
         std::cerr << "Can not load levels.xml file" << std::endl;
         return std::vector<std::shared_ptr<Level>>();
     }
@@ -44,7 +51,8 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
 
     std::vector<std::shared_ptr<Level>> levels;
 
-    while (levelNode != nullptr) {
+    while (levelNode != nullptr)
+    {
         std::string meshName = levelNode->FirstChildElement("model")->GetText();
 
         auto levelDescriptor = std::make_shared<Level>(meshName);
@@ -53,10 +61,12 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
 
         auto targetNode = entitiesNode->FirstChildElement("target");
 
-        while (targetNode != nullptr) {
+        while (targetNode != nullptr)
+        {
             auto positionNode = targetNode->FirstChildElement("position");
 
-            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f),
+                    positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
 
             levelDescriptor->addTargetPosition(position);
 
@@ -65,10 +75,12 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels() {
 
         auto lightNode = entitiesNode->FirstChildElement("light");
 
-        while (lightNode != nullptr) {
+        while (lightNode != nullptr)
+        {
             auto positionNode = lightNode->FirstChildElement("position");
 
-            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f),
+                    positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
 
             levelDescriptor->addLightPosition(position);
 

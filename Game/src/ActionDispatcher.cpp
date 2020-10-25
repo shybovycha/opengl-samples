@@ -1,9 +1,13 @@
 #include "ActionDispatcher.h"
 
-ActionDispatcher::ActionDispatcher(std::shared_ptr<GameState> _gameState) : gameState(_gameState) {}
+ActionDispatcher::ActionDispatcher(std::shared_ptr<GameState> _gameState) : gameState(_gameState)
+{
+}
 
-void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor) {
-    if (gameState->getPlayerState()->getCurrentAmmo() <= 0) {
+void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor)
+{
+    if (gameState->getPlayerState()->getCurrentAmmo() <= 0)
+    {
         gameState->enqueue(new PlaySoundAction("resources/sounds/noammo.wav"));
         return;
     }
@@ -12,12 +16,15 @@ void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor) {
 
     gameState->getPlayerState()->shoot();
 
-    if (objectAtCursor == gameState->getCurrentLevel()->getModel()) {
+    if (objectAtCursor == gameState->getCurrentLevel()->getModel())
+    {
         return;
     }
 
-    for (auto target : gameState->getCurrentLevel()->getTargets()) {
-        if (target != objectAtCursor) {
+    for (auto target : gameState->getCurrentLevel()->getTargets())
+    {
+        if (target != objectAtCursor)
+        {
             continue;
         }
 
@@ -28,50 +35,61 @@ void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor) {
     }
 }
 
-void ActionDispatcher::reload() {
+void ActionDispatcher::reload()
+{
     gameState->getPlayerState()->reload();
     gameState->enqueue(new PlaySoundAction("resources/sounds/reload.wav"));
 }
 
-void ActionDispatcher::mainMenu() {
+void ActionDispatcher::mainMenu()
+{
     gameState->setCurrentState(GameStateType::MAIN_MENU);
     gameState->enqueue(new MainMenuAction());
 }
 
-void ActionDispatcher::hideMainMenu() {
+void ActionDispatcher::hideMainMenu()
+{
     gameState->setCurrentState(GameStateType::PLAYING);
     gameState->enqueue(new HideMainMenuAction());
 }
 
-void ActionDispatcher::targetEliminated() {
+void ActionDispatcher::targetEliminated()
+{
     gameState->getCurrentScore()->targetEliminated();
 }
 
-void ActionDispatcher::loadNextLevel() {
+void ActionDispatcher::loadNextLevel()
+{
     gameState->enqueue(new LoadNextLevelAction(gameState->getCurrentLevel(), gameState->getNextLevel()));
 }
 
-void ActionDispatcher::loadFirstLevel() {
+void ActionDispatcher::loadFirstLevel()
+{
     gameState->enqueue(new LoadFirstLevelAction(gameState->getCurrentLevel()));
 }
 
-void ActionDispatcher::firstLevelLoaded() {
+void ActionDispatcher::firstLevelLoaded()
+{
     gameState->setCurrentState(GameStateType::PLAYING);
 }
 
-void ActionDispatcher::nextLevelLoaded() {
+void ActionDispatcher::nextLevelLoaded()
+{
     gameState->nextLevelLoaded();
     gameState->getCurrentScore()->resetTargetEliminated();
 }
 
-void ActionDispatcher::levelsLoaded(std::vector<std::shared_ptr<Level>> levels) {
+void ActionDispatcher::levelsLoaded(std::vector<std::shared_ptr<Level>> levels)
+{
     gameState->setLevels(levels);
 }
 
-void ActionDispatcher::startNewGame() {
+void ActionDispatcher::startNewGame()
+{
     gameState->enqueue(new StartNewGameAction());
 }
 
-void ActionDispatcher::quit() {
+void ActionDispatcher::quit()
+{
     gameState->enqueue(new QuitAction());
 }

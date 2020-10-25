@@ -7,7 +7,8 @@
 #include "Level.h"
 #include "QueueAction.h"
 
-class ActionDispatcher {
+class ActionDispatcher
+{
 public:
     ActionDispatcher(std::shared_ptr<GameState> _gameState);
 

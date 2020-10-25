@@ -18,7 +18,8 @@
 #include "LevelEntity.h"
 #include "Target.h"
 
-class GameData {
+class GameData
+{
 public:
     GameData(irr::IrrlichtDevice* _device);
 

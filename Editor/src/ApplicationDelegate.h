@@ -20,7 +20,8 @@
 #include "Level.h"
 #include "SaveFileDialog.h"
 
-class ApplicationDelegate {
+class ApplicationDelegate
+{
 public:
     explicit ApplicationDelegate(irr::IrrlichtDevice* _device);
 

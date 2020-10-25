@@ -1,6 +1,7 @@
 #pragma once
 
-class PlayerState {
+class PlayerState
+{
 public:
     PlayerState();
 

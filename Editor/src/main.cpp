@@ -4,7 +4,8 @@
 #pragma comment(lib, "irrlicht.lib")
 #endif
 
-int main() {
+int main()
+{
     std::unique_ptr<Application> app = std::make_unique<Application>();
 
     app->run();

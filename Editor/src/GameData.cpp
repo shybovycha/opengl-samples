@@ -1,8 +1,11 @@
 #include "GameData.h"
 
-GameData::GameData(irr::IrrlichtDevice* _device) : device(_device) {}
+GameData::GameData(irr::IrrlichtDevice* _device) : device(_device)
+{
+}
 
-void GameData::loadFromFile(const std::wstring& filename) {
+void GameData::loadFromFile(const std::wstring& filename)
+{
     auto xml = new tinyxml2::XMLDocument();
 
     // setup wstring -> string converter
@@ -10,7 +13,8 @@ void GameData::loadFromFile(const std::wstring& filename) {
 
     tinyxml2::XMLError xmlError = xml->LoadFile(wstringConverter.to_bytes(filename).c_str());
 
-    if (xmlError != tinyxml2::XML_SUCCESS) {
+    if (xmlError != tinyxml2::XML_SUCCESS)
+    {
         std::cerr << "Can not load levels.xml file" << std::endl;
         return;
     }
@@ -22,23 +26,27 @@ void GameData::loadFromFile(const std::wstring& filename) {
 
     levels.clear();
 
-    while (levelNode != nullptr) {
+    while (levelNode != nullptr)
+    {
         std::string meshName = levelNode->FirstChildElement("model")->GetText();
 
         std::wostringstream levelIdString;
         levelIdString << "level-" << levels.size();
 
-        auto levelDescriptor = std::make_shared<Level>(wstringConverter.from_bytes(meshName.c_str()), levelIdString.str());
+        auto levelDescriptor = std::make_shared<Level>(wstringConverter.from_bytes(meshName.c_str()),
+                levelIdString.str());
 
         auto entitiesNode = levelNode->FirstChildElement("entities");
 
         auto currentTargetNode = entitiesNode->FirstChildElement("target");
         auto lastTargetNode = entitiesNode->LastChildElement("target");
 
-        while (currentTargetNode != nullptr) {
+        while (currentTargetNode != nullptr)
+        {
             auto positionNode = currentTargetNode->FirstChildElement("position");
 
-            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f),
+                    positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
 
             levelDescriptor->createTarget(position);
 
@@ -48,10 +56,12 @@ void GameData::loadFromFile(const std::wstring& filename) {
         auto currentLightNode = entitiesNode->FirstChildElement("light");
         auto lastLightNode = entitiesNode->LastChildElement("light");
 
-        while (currentLightNode != nullptr) {
+        while (currentLightNode != nullptr)
+        {
             auto positionNode = currentLightNode->FirstChildElement("position");
 
-            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f), positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f),
+                    positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
 
             levelDescriptor->createLight(position);
 
@@ -64,7 +74,8 @@ void GameData::loadFromFile(const std::wstring& filename) {
     }
 }
 
-void GameData::saveToFile(const std::wstring& filename) {
+void GameData::saveToFile(const std::wstring& filename)
+{
     // setup wstring -> string converter
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wstringConverter;
 
@@ -73,7 +84,8 @@ void GameData::saveToFile(const std::wstring& filename) {
 
     writer->OpenElement("levels");
 
-    for (auto const &it : levels) {
+    for (auto const& it : levels)
+    {
         std::shared_ptr<Level> level = it.second;
 
         writer->OpenElement("level");
@@ -88,13 +100,16 @@ void GameData::saveToFile(const std::wstring& filename) {
 
         writer->OpenElement("entities");
 
-        for (const auto& entity : level->getEntities()) {
+        for (const auto& entity : level->getEntities())
+        {
             irr::core::vector3df position = entity->getPosition();
 
-            if (entity->getType() == LevelEntityType::TARGET) {
+            if (entity->getType() == LevelEntityType::TARGET)
+            {
                 writer->OpenElement("target");
             }
-            else {
+            else
+            {
                 writer->OpenElement("light");
             }
 
@@ -106,10 +121,12 @@ void GameData::saveToFile(const std::wstring& filename) {
 
             writer->CloseElement(); // position
 
-            if (entity->getType() == LevelEntityType::TARGET) {
+            if (entity->getType() == LevelEntityType::TARGET)
+            {
                 writer->CloseElement("target");
             }
-            else {
+            else
+            {
                 writer->CloseElement("light");
             }
         }
@@ -122,11 +139,13 @@ void GameData::saveToFile(const std::wstring& filename) {
     writer->CloseElement(); // levels
 }
 
-std::shared_ptr<Level> GameData::getLevelById(const std::wstring& levelId) const {
+std::shared_ptr<Level> GameData::getLevelById(const std::wstring& levelId) const
+{
     return levels.at(levelId);
 }
 
-std::shared_ptr<Level> GameData::createLevel(const std::wstring& meshFilename) {
+std::shared_ptr<Level> GameData::createLevel(const std::wstring& meshFilename)
+{
     std::wostringstream idString;
     idString << L"level-" << levels.size();
 
@@ -142,14 +161,17 @@ std::shared_ptr<Level> GameData::createLevel(const std::wstring& meshFilename) {
     return level;
 }
 
-void GameData::deleteLevelById(const std::wstring& levelId) {
+void GameData::deleteLevelById(const std::wstring& levelId)
+{
     auto level = levels.at(levelId);
 
-    if (level == nullptr) {
+    if (level == nullptr)
+    {
         return;
     }
 
-    if (level->getSceneNode() != nullptr) {
+    if (level->getSceneNode() != nullptr)
+    {
         level->getSceneNode()->remove();
         level->setSceneNode(nullptr);
     }
@@ -157,28 +179,34 @@ void GameData::deleteLevelById(const std::wstring& levelId) {
     levels.erase(levelId);
 }
 
-std::vector<std::shared_ptr<Level>> GameData::getLevels() const {
+std::vector<std::shared_ptr<Level>> GameData::getLevels() const
+{
     std::vector<std::shared_ptr<Level>> result;
 
-    for (auto const& it : levels) {
+    for (auto const& it : levels)
+    {
         result.push_back(it.second);
     }
 
     return result;
 }
 
-std::shared_ptr<Level> GameData::getCurrentLevel() const {
+std::shared_ptr<Level> GameData::getCurrentLevel() const
+{
     return currentLevel;
 }
 
-std::shared_ptr<LevelEntity> GameData::getCurrentEntity() const {
+std::shared_ptr<LevelEntity> GameData::getCurrentEntity() const
+{
     return currentEntity;
 }
 
-void GameData::setCurrentLevel(std::shared_ptr<Level> level) {
+void GameData::setCurrentLevel(std::shared_ptr<Level> level)
+{
     currentLevel = level;
 }
 
-void GameData::setCurrentEntity(std::shared_ptr<LevelEntity> entity) {
+void GameData::setCurrentEntity(std::shared_ptr<LevelEntity> entity)
+{
     currentEntity = entity;
 }

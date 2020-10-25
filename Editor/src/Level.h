@@ -12,7 +12,8 @@
 #include "Light.h"
 #include "Target.h"
 
-class Level {
+class Level
+{
 public:
     Level(const std::wstring& meshFilename, const std::wstring& id);
 

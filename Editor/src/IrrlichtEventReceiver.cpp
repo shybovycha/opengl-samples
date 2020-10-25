@@ -1,72 +1,86 @@
 #include "IrrlichtEventReceiver.h"
 
-IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<ApplicationDelegate> _delegate) : delegate(_delegate) {}
+IrrlichtEventReceiver::IrrlichtEventReceiver(std::shared_ptr<ApplicationDelegate> _delegate) : delegate(_delegate)
+{
+}
 
-bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
-    if (event.EventType == irr::EET_KEY_INPUT_EVENT) {
+bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event)
+{
+    if (event.EventType == irr::EET_KEY_INPUT_EVENT)
+    {
         // CTRL+S saves levels file
-        if (event.KeyInput.Key == irr::KEY_KEY_S && event.KeyInput.Control) {
+        if (event.KeyInput.Key == irr::KEY_KEY_S && event.KeyInput.Control)
+        {
             delegate->saveLevels();
         }
 
         return false;
     }
 
-    if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
-        if (event.MouseInput.Event == irr::EMIE_MOUSE_MOVED) {
+    if (event.EventType == irr::EET_MOUSE_INPUT_EVENT)
+    {
+        if (event.MouseInput.Event == irr::EMIE_MOUSE_MOVED)
+        {
             delegate->updateSelectedNodeMovement(event.MouseInput.isLeftPressed());
         }
     }
 
-    if (event.EventType == irr::EET_GUI_EVENT) {
-        if (event.GUIEvent.EventType == irr::gui::EGET_FILE_SELECTED) {
+    if (event.EventType == irr::EET_GUI_EVENT)
+    {
+        if (event.GUIEvent.EventType == irr::gui::EGET_FILE_SELECTED)
+        {
             auto dialog = reinterpret_cast<irr::gui::IGUIFileOpenDialog*>(event.GUIEvent.Caller);
             auto dialogId = static_cast<GUIElementId>(dialog->getID());
 
-            switch (dialogId) {
-                case GUIElementId::SAVE_LEVELS_DIALOG:
-                    delegate->saveLevels(dialog->getFileName());
-                    break;
-                case GUIElementId::LOAD_LEVELS_DIALOG:
-                    delegate->loadLevels(dialog->getFileName());
-                    break;
-                case GUIElementId::LOAD_LEVEL_MESH_DIALOG:
-                    delegate->addLevel(dialog->getFileName());
-                    break;
+            switch (dialogId)
+            {
+            case GUIElementId::SAVE_LEVELS_DIALOG:
+                delegate->saveLevels(dialog->getFileName());
+                break;
+            case GUIElementId::LOAD_LEVELS_DIALOG:
+                delegate->loadLevels(dialog->getFileName());
+                break;
+            case GUIElementId::LOAD_LEVEL_MESH_DIALOG:
+                delegate->addLevel(dialog->getFileName());
+                break;
             }
 
             return false;
         }
 
-        if (event.GUIEvent.EventType == irr::gui::EGET_FILE_CHOOSE_DIALOG_CANCELLED) {
+        if (event.GUIEvent.EventType == irr::gui::EGET_FILE_CHOOSE_DIALOG_CANCELLED)
+        {
             auto dialog = reinterpret_cast<irr::gui::IGUIFileOpenDialog*>(event.GUIEvent.Caller);
             auto dialogId = static_cast<GUIElementId>(dialog->getID());
 
-            switch (dialogId) {
-                case GUIElementId::ABOUT_DIALOG:
-                    delegate->closeAboutWindow();
-                    break;
+            switch (dialogId)
+            {
+            case GUIElementId::ABOUT_DIALOG:
+                delegate->closeAboutWindow();
+                break;
 
-                case GUIElementId::LOAD_LEVELS_DIALOG:
-                    delegate->closeLoadLevelsDialog();
-                    break;
+            case GUIElementId::LOAD_LEVELS_DIALOG:
+                delegate->closeLoadLevelsDialog();
+                break;
 
-                case GUIElementId::SAVE_LEVELS_DIALOG:
-                    delegate->closeSaveLevelsDialog();
-                    break;
-                case GUIElementId::LOAD_LEVEL_MESH_DIALOG:
-                    delegate->closeLoadLevelMeshDialog();
-                    break;
+            case GUIElementId::SAVE_LEVELS_DIALOG:
+                delegate->closeSaveLevelsDialog();
+                break;
+            case GUIElementId::LOAD_LEVEL_MESH_DIALOG:
+                delegate->closeLoadLevelMeshDialog();
+                break;
             }
 
             return false;
         }
 
-        if (event.GUIEvent.EventType == irr::gui::EGET_BUTTON_CLICKED) {
+        if (event.GUIEvent.EventType == irr::gui::EGET_BUTTON_CLICKED)
+        {
             auto button = reinterpret_cast<irr::gui::IGUIButton*>(event.GUIEvent.Caller);
             const auto buttonId = static_cast<GUIElementId>(button->getID());
 
-            switch (buttonId) {
+            switch (buttonId)
+            {
             case GUIElementId::QUIT:
                 delegate->quit();
                 break;
@@ -103,7 +117,8 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event) {
             return false;
         }
 
-        if (event.GUIEvent.EventType == irr::gui::EGET_TREEVIEW_NODE_SELECT) {
+        if (event.GUIEvent.EventType == irr::gui::EGET_TREEVIEW_NODE_SELECT)
+        {
             delegate->gameManagerNodeSelected();
 
             return false;

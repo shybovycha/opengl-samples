@@ -1,16 +1,19 @@
 #include "Application.h"
 
-Application::Application() : device(nullptr) {}
+Application::Application() : device(nullptr)
+{
+}
 
-void Application::run() {
+void Application::run()
+{
     device = irr::createDevice(
-        irr::video::EDT_OPENGL,
-        irr::core::dimension2d<irr::u32>(1024, 768),
-        32,
-        false,
-        false,
-        false,
-        nullptr
+            irr::video::EDT_OPENGL,
+            irr::core::dimension2d<irr::u32>(1024, 768),
+            32,
+            false,
+            false,
+            false,
+            nullptr
     );
 
     device->setWindowCaption(L"Shoot Them! Editor");
@@ -23,7 +26,8 @@ void Application::run() {
 
     delegate->init();
 
-    while (device->run()) {
+    while (device->run())
+    {
         delegate->update();
     }
 

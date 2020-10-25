@@ -1,0 +1,5 @@
+---
+Language: Cpp
+BasedOnStyle: Microsoft
+Standard: c++20
+UseTab: Never

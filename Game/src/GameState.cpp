@@ -1,21 +1,29 @@
 #include "GameState.h"
 
-GameState::GameState() : currentState(GameStateType::MAIN_MENU), currentScore(std::make_shared<Score>()), playerState(std::make_shared<PlayerState>()), currentLevel(0) {}
+GameState::GameState() : currentState(GameStateType::MAIN_MENU), currentScore(std::make_shared<Score>()),
+                         playerState(std::make_shared<PlayerState>()), currentLevel(0)
+{
+}
 
-void GameState::timeElapsed(unsigned long time) {
+void GameState::timeElapsed(unsigned long time)
+{
     currentScore->timeUsed(time);
 }
 
-const std::shared_ptr<Score> GameState::getCurrentScore() const {
+const std::shared_ptr<Score> GameState::getCurrentScore() const
+{
     return currentScore;
 }
 
-const GameStateType GameState::getCurrentState() const {
+const GameStateType GameState::getCurrentState() const
+{
     return currentState;
 }
 
-const std::shared_ptr<Level> GameState::getCurrentLevel() const {
-    if (levels.empty() || currentLevel < 0 || currentLevel >= levels.size()) {
+const std::shared_ptr<Level> GameState::getCurrentLevel() const
+{
+    if (levels.empty() || currentLevel < 0 || currentLevel >= levels.size())
+    {
         // TODO: replace this with some sort of logger
         // since Irrlicht only exposes its logger through IrrlichtDevice instance, which i don't really want to mix in in this clas, screw it
         std::cerr << "Invalid current level index" << std::endl;
@@ -25,36 +33,45 @@ const std::shared_ptr<Level> GameState::getCurrentLevel() const {
     return levels.at(currentLevel);
 }
 
-const std::shared_ptr<PlayerState> GameState::getPlayerState() const {
+const std::shared_ptr<PlayerState> GameState::getPlayerState() const
+{
     return playerState;
 }
 
-const int GameState::getCurrentLevelIndex() const {
+const int GameState::getCurrentLevelIndex() const
+{
     return currentLevel;
 }
 
-const int GameState::getLevelsCnt() const {
+const int GameState::getLevelsCnt() const
+{
     return levels.size();
 }
 
-void GameState::nextLevelLoaded() {
+void GameState::nextLevelLoaded()
+{
     ++currentLevel;
 }
 
-void GameState::enqueue(QueueAction* action) {
+void GameState::enqueue(QueueAction* action)
+{
     actionQueue.push(action);
 }
 
-const bool GameState::hasActions() const {
+const bool GameState::hasActions() const
+{
     return actionQueue.size() > 0;
 }
 
-void GameState::setCurrentState(GameStateType _state) {
+void GameState::setCurrentState(GameStateType _state)
+{
     currentState = _state;
 }
 
-QueueAction* GameState::nextAction() {
-    if (actionQueue.size() < 1) {
+QueueAction* GameState::nextAction()
+{
+    if (actionQueue.size() < 1)
+    {
         return nullptr;
     }
 
@@ -63,13 +80,15 @@ QueueAction* GameState::nextAction() {
     return action;
 }
 
-void GameState::setLevels(std::vector<std::shared_ptr<Level>> _levels) {
+void GameState::setLevels(std::vector<std::shared_ptr<Level>> _levels)
+{
     levels = _levels;
 }
 
 const std::shared_ptr<Level> GameState::getNextLevel() const
 {
-    if (currentLevel + 1 >= levels.size()) {
+    if (currentLevel + 1 >= levels.size())
+    {
         return nullptr;
     }
 

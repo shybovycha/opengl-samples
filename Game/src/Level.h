@@ -5,7 +5,8 @@
 
 #include "stdafx.h"
 
-class Level {
+class Level
+{
 public:
     Level(const std::string filename);
 

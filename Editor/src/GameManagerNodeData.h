@@ -2,14 +2,16 @@
 
 #include <string>
 
-enum class GameManagerNodeDataType {
+enum class GameManagerNodeDataType
+{
     LEVEL,
     TARGET,
     LIGHT,
     PLAYER
 };
 
-class GameManagerNodeData {
+class GameManagerNodeData
+{
 public:
     GameManagerNodeData(GameManagerNodeDataType _type, const std::wstring& _id);
 

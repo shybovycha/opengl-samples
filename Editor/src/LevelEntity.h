@@ -5,12 +5,14 @@
 
 #include <irrlicht.h>
 
-enum class LevelEntityType {
+enum class LevelEntityType
+{
     TARGET,
     LIGHT
 };
 
-class LevelEntity {
+class LevelEntity
+{
 public:
     irr::core::vector3df getPosition() const;
 

@@ -11,7 +11,8 @@
 #include "QueueAction.h"
 #include "Score.h"
 
-class GameState {
+class GameState
+{
 public:
     GameState();
 

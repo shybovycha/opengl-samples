@@ -7,7 +7,8 @@
 #include "ApplicationDelegate.h"
 #include "IrrlichtEventReceiver.h"
 
-class Application {
+class Application
+{
 public:
     Application();
 

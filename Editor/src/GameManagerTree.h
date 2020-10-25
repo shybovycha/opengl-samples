@@ -10,7 +10,8 @@
 #include "GameManagerNodeData.h"
 #include "GUIElementId.h"
 
-class GameManagerTree {
+class GameManagerTree
+{
 public:
     GameManagerTree(irr::gui::IGUIEnvironment* guienv, std::shared_ptr<GameData> gameData);
 
@@ -22,8 +23,12 @@ public:
 
 private:
     irr::gui::IGUITreeViewNode* addManagerTreeNodeToRootNode(const std::wstring& label, GameManagerNodeData* nodeData);
-    irr::gui::IGUITreeViewNode* addManagerTreeNodeToSelectedNode(const std::wstring& label, GameManagerNodeData* nodeData);
-    irr::gui::IGUITreeViewNode* addManagerTreeNodeToNode(const std::wstring& label, GameManagerNodeData* nodeData, irr::gui::IGUITreeViewNode* parent);
+
+    irr::gui::IGUITreeViewNode*
+    addManagerTreeNodeToSelectedNode(const std::wstring& label, GameManagerNodeData* nodeData);
+
+    irr::gui::IGUITreeViewNode* addManagerTreeNodeToNode(const std::wstring& label, GameManagerNodeData* nodeData,
+            irr::gui::IGUITreeViewNode* parent);
 
     irr::gui::IGUIEnvironment* guienv;
     std::shared_ptr<GameData> gameData;

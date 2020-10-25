@@ -3,7 +3,8 @@
 // max time per level; in milliseconds, not microseconds
 const unsigned long MAX_TIME = 60 * 100;
 
-class Score {
+class Score
+{
 public:
     Score();
 

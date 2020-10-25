@@ -15,15 +15,17 @@
 * - Right mouse + mouse move - rotate camera FPS-style
 * - Shift + Middle mouse + mouse move - move camera forward / backward
 */
-class CameraSceneNodeAnimator : public irr::scene::ISceneNodeAnimator {
+class CameraSceneNodeAnimator : public irr::scene::ISceneNodeAnimator
+{
 public:
     explicit CameraSceneNodeAnimator(
-        irr::gui::ICursorControl* cursorControl,
-        irr::f32 rotateSpeed = 1000.f,
-        irr::f32 moveSpeed = 1500.f
+            irr::gui::ICursorControl* cursorControl,
+            irr::f32 rotateSpeed = 1000.f,
+            irr::f32 moveSpeed = 1500.f
     );
 
-    irr::scene::ISceneNodeAnimator* createClone(irr::scene::ISceneNode* node, irr::scene::ISceneManager* newManager) override;
+    irr::scene::ISceneNodeAnimator*
+    createClone(irr::scene::ISceneNode* node, irr::scene::ISceneManager* newManager) override;
 
     bool isEventReceiverEnabled() const override;
 

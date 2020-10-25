@@ -7,7 +7,8 @@
 
 #include "Level.h"
 
-enum class GameStateType {
+enum class GameStateType
+{
     MAIN_MENU,
     PLAYING,
     END_LEVEL,
@@ -23,7 +24,8 @@ enum class GameStateType {
 * But if you want to use anything outside of Renderer otherwise available inside Renderer itself (like for loading resources) - you won't be able to.
 * Also, I want to keep all the engine-specific logic in one place.
 */
-enum class QueueActionType {
+enum class QueueActionType
+{
     HIDE_MAIN_MENU,
     LOAD_FIRST_LEVEL,
     LOAD_NEXT_LEVEL,
@@ -34,7 +36,8 @@ enum class QueueActionType {
     TARGET_ELIMINATED
 };
 
-class QueueAction {
+class QueueAction
+{
 protected:
     QueueAction(const QueueActionType _type);
 
@@ -45,7 +48,8 @@ private:
     QueueActionType type;
 };
 
-class PlaySoundAction : public QueueAction {
+class PlaySoundAction : public QueueAction
+{
 public:
     PlaySoundAction(std::string _soundFile);
 
@@ -55,7 +59,8 @@ private:
     std::string soundFile;
 };
 
-class LoadNextLevelAction : public QueueAction {
+class LoadNextLevelAction : public QueueAction
+{
 public:
     LoadNextLevelAction(std::shared_ptr<Level> _previousLevel, std::shared_ptr<Level> _nextLevel);
 
@@ -68,7 +73,8 @@ private:
     std::shared_ptr<Level> nextLevel;
 };
 
-class LoadFirstLevelAction : public QueueAction {
+class LoadFirstLevelAction : public QueueAction
+{
 public:
     LoadFirstLevelAction(std::shared_ptr<Level> _level);
 
@@ -78,7 +84,8 @@ private:
     std::shared_ptr<Level> level;
 };
 
-class TargetEliminatedAction : public QueueAction {
+class TargetEliminatedAction : public QueueAction
+{
 public:
     TargetEliminatedAction(irr::scene::ISceneNode* _target);
 
@@ -88,22 +95,26 @@ private:
     irr::scene::ISceneNode* target;
 };
 
-class StartNewGameAction : public QueueAction {
+class StartNewGameAction : public QueueAction
+{
 public:
     StartNewGameAction();
 };
 
-class QuitAction : public QueueAction {
+class QuitAction : public QueueAction
+{
 public:
     QuitAction();
 };
 
-class MainMenuAction : public QueueAction {
+class MainMenuAction : public QueueAction
+{
 public:
     MainMenuAction();
 };
 
-class HideMainMenuAction : public QueueAction {
+class HideMainMenuAction : public QueueAction
+{
 public:
     HideMainMenuAction();
 };

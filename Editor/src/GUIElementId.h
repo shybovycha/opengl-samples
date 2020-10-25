@@ -1,6 +1,7 @@
 #pragma once
 
-enum class GUIElementId {
+enum class GUIElementId
+{
     LOAD_LEVELS,
     SAVE_LEVELS,
     ABOUT,
