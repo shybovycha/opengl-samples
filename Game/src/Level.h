@@ -5,6 +5,10 @@
 
 #include "stdafx.h"
 
+#include "Vector3.h"
+
+using Vector3df = Vector3<float>;
+
 class Level
 {
 public:
@@ -12,13 +16,13 @@ public:
 
     std::string getModelFilename() const;
 
-    void addTargetPosition(irr::core::vector3df position);
+    void addTargetPosition(Vector3df position);
 
-    void addLightPosition(irr::core::vector3df position);
+    void addLightPosition(Vector3df position);
 
-    std::vector<irr::core::vector3df> getTargetPositions() const;
+    std::vector<Vector3df> getTargetPositions() const;
 
-    std::vector<irr::core::vector3df> getLightPositions() const;
+    std::vector<Vector3df> getLightPositions() const;
 
     void setModel(irr::scene::ISceneNode* mesh);
 
@@ -35,12 +39,10 @@ public:
 private:
     std::string meshFilename;
 
-    std::vector<irr::core::vector3df> targetPositions;
-    std::vector<irr::core::vector3df> lightPositions;
+    std::vector<Vector3df> targetPositions;
+    std::vector<Vector3df> lightPositions;
     std::vector<irr::scene::ISceneNode*> targets;
     std::vector<irr::scene::ISceneNode*> lights;
-
-    irr::core::vector3df playerPosition;
 
     irr::scene::ISceneNode* model;
 };

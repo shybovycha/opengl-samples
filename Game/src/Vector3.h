@@ -38,7 +38,7 @@ private:
     T y;
     T z;
 
-    static T ZERO = { 0 };
+    T ZERO = { 0 };
 
-    static T ONE = { 1 };
+    T ONE = { 1 };
 };

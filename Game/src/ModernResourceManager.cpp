@@ -65,8 +65,11 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels()
         {
             auto positionNode = targetNode->FirstChildElement("position");
 
-            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f),
-                    positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+            Vector3df position{
+                    positionNode->FloatAttribute("x", 0.0f),
+                    positionNode->FloatAttribute("y", 0.0f),
+                    positionNode->FloatAttribute("z", 0.0f)
+            };
 
             levelDescriptor->addTargetPosition(position);
 
@@ -79,8 +82,11 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels()
         {
             auto positionNode = lightNode->FirstChildElement("position");
 
-            irr::core::vector3df position = irr::core::vector3df(positionNode->FloatAttribute("x", 0.0f),
-                    positionNode->FloatAttribute("y", 0.0f), positionNode->FloatAttribute("z", 0.0f));
+            Vector3df position{
+                    positionNode->FloatAttribute("x", 0.0f),
+                    positionNode->FloatAttribute("y", 0.0f),
+                    positionNode->FloatAttribute("z", 0.0f)
+            };
 
             levelDescriptor->addLightPosition(position);
 

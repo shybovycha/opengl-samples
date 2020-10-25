@@ -178,7 +178,7 @@ void IrrlichtRenderer::loadLevel(std::shared_ptr<Level> levelDescriptor)
 
         target->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
         target->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
-        target->setPosition(position);
+        target->setPosition(irr::core::vector3df(position.getX(), position.getY(), position.getZ()));
 
         metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(target));
 
@@ -196,7 +196,8 @@ void IrrlichtRenderer::loadLevel(std::shared_ptr<Level> levelDescriptor)
 
     for (const auto& position : levelDescriptor->getLightPositions())
     {
-        auto light = smgr->addLightSceneNode(nullptr, position);
+        auto lightPosition = irr::core::vector3df(position.getX(), position.getY(), position.getZ());
+        auto light = smgr->addLightSceneNode(nullptr, lightPosition);
 
         lights.push_back(light);
     }

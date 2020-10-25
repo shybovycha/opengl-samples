@@ -9,12 +9,12 @@ std::string Level::getModelFilename() const
     return meshFilename;
 }
 
-void Level::addTargetPosition(irr::core::vector3df position)
+void Level::addTargetPosition(Vector3df position)
 {
     targetPositions.push_back(position);
 }
 
-std::vector<irr::core::vector3df> Level::getTargetPositions() const
+std::vector<Vector3df> Level::getTargetPositions() const
 {
     return targetPositions;
 }
@@ -39,12 +39,12 @@ void Level::setTargets(std::vector<irr::scene::ISceneNode*> _targets)
     targets = _targets;
 }
 
-void Level::addLightPosition(irr::core::vector3df position)
+void Level::addLightPosition(Vector3df position)
 {
     lightPositions.push_back(position);
 }
 
-std::vector<irr::core::vector3df> Level::getLightPositions() const
+std::vector<Vector3df> Level::getLightPositions() const
 {
     return lightPositions;
 }
