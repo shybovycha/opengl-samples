@@ -174,3 +174,16 @@ Few other resources on CMake "best practices":
 
 * http://mesos.apache.org/documentation/latest/cmake-examples/
 * https://www.youtube.com/watch?v=y9kSr5enrSk
+
+### C++
+
+Upon compilation, there's gonna be a lot of compiler warnings re. `Vector3::${ANYTHING}` being undefined
+(similar to `'Vector3<double>::METHOD_NAME': no suitable definition provided for explicit template instantiation request`).
+
+This is caused by the specifics of C++ itself, where unless one either defines the implicit implementation for each 
+template type param used in the same header where template is used or define an alias in that header.
+
+The idea is that headers are compiled separately in C++, so just defining a template class does not mean the thing is going
+to work.
+
+Note how everything will still continue to work no matter how many of those warnings have been thrown by a compiler.
