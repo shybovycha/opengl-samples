@@ -65,7 +65,7 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels()
         {
             auto positionNode = targetNode->FirstChildElement("position");
 
-            Vector3df position{
+            Vector3<double> position{
                     positionNode->FloatAttribute("x", 0.0f),
                     positionNode->FloatAttribute("y", 0.0f),
                     positionNode->FloatAttribute("z", 0.0f)
@@ -82,7 +82,7 @@ std::vector<std::shared_ptr<Level>> ModernResourceManager::loadLevels()
         {
             auto positionNode = lightNode->FirstChildElement("position");
 
-            Vector3df position{
+            Vector3<double> position{
                     positionNode->FloatAttribute("x", 0.0f),
                     positionNode->FloatAttribute("y", 0.0f),
                     positionNode->FloatAttribute("z", 0.0f)

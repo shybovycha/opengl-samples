@@ -2,10 +2,11 @@
 
 #include <memory>
 
-#include "stdafx.h"
+#include <irrlicht.h>
 
 #include "ActionDispatcher.h"
 #include "GameState.h"
+#include "IrrlichtSceneNode.h"
 
 #define NEW_GAME_BUTTON_ID 1
 #define CONTINUE_BUTTON_ID 2

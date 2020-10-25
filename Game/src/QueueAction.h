@@ -3,8 +3,6 @@
 #include <memory>
 #include <string>
 
-#include "stdafx.h"
-
 #include "Level.h"
 
 enum class GameStateType
@@ -87,12 +85,12 @@ private:
 class TargetEliminatedAction : public QueueAction
 {
 public:
-    TargetEliminatedAction(irr::scene::ISceneNode* _target);
+    TargetEliminatedAction(SceneNode* _target);
 
-    irr::scene::ISceneNode* getTarget() const;
+    SceneNode* getTarget() const;
 
 private:
-    irr::scene::ISceneNode* target;
+    SceneNode* target;
 };
 
 class StartNewGameAction : public QueueAction

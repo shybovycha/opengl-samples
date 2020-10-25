@@ -33,8 +33,12 @@ set(SOURCES
     "src/CScreenQuadSceneNode.cpp"
     "src/CDrunkShaderCallback.h"
     "src/CDrunkShaderCallback.cpp"
+    "src/Vector3.h"
     "src/Vector3.cpp"
-    "src/Vector3.h")
+    "src/SceneNode.h"
+    "src/SceneNode.cpp"
+    "src/IrrlichtSceneNode.h"
+    "src/IrrlichtSceneNode.cpp")
 
 set(EXECUTABLE_NAME game)
 
@@ -107,12 +111,6 @@ if (WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${IRRKLANG_BIN_PATH}/ikpMP3.dll $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
     )
 endif()
-
-target_precompile_headers(
-    ${EXECUTABLE_NAME}
-    PRIVATE
-    "src/stdafx.h"
-)
 
 # Copy resources
 add_custom_command(

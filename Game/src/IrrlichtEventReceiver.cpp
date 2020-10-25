@@ -27,7 +27,7 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event)
                 irr::scene::ISceneNode* objectAtCursor = sceneManager->getSceneCollisionManager()->getSceneNodeFromRayBB(
                         ray);
 
-                actionDispatcher->shoot(objectAtCursor);
+                actionDispatcher->shoot(new IrrlichtSceneNode(objectAtCursor));
             }
             else if (event.MouseInput.Event == irr::EMIE_RMOUSE_PRESSED_DOWN)
             {

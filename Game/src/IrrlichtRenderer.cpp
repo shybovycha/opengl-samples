@@ -158,7 +158,7 @@ void IrrlichtRenderer::loadLevel(std::shared_ptr<Level> levelDescriptor)
     levelName << L"level-" << gameState->getCurrentLevelIndex();
     level->setName(levelName.str().c_str());
 
-    levelDescriptor->setModel(level);
+    levelDescriptor->setModel(new IrrlichtSceneNode(level));
 
     auto metaTriangleSelector = smgr->createMetaTriangleSelector();
 
@@ -166,7 +166,7 @@ void IrrlichtRenderer::loadLevel(std::shared_ptr<Level> levelDescriptor)
 
     irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
 
-    std::vector<irr::scene::ISceneNode*> targets;
+    std::vector<SceneNode*> targets;
 
     int targetIdx = 0;
 
@@ -189,17 +189,17 @@ void IrrlichtRenderer::loadLevel(std::shared_ptr<Level> levelDescriptor)
         targetName << targetIdx++;
         target->setName(targetName.str().c_str());
 
-        targets.push_back(target);
+        targets.push_back(new IrrlichtSceneNode(target));
     }
 
-    std::vector<irr::scene::ISceneNode*> lights;
+    std::vector<SceneNode*> lights;
 
     for (const auto& position : levelDescriptor->getLightPositions())
     {
         auto lightPosition = irr::core::vector3df(position.getX(), position.getY(), position.getZ());
         auto light = smgr->addLightSceneNode(nullptr, lightPosition);
 
-        lights.push_back(light);
+        lights.push_back(new IrrlichtSceneNode(light));
     }
 
     selector = metaTriangleSelector;

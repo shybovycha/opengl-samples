@@ -4,7 +4,7 @@ ActionDispatcher::ActionDispatcher(std::shared_ptr<GameState> _gameState) : game
 {
 }
 
-void ActionDispatcher::shoot(irr::scene::ISceneNode* objectAtCursor)
+void ActionDispatcher::shoot(SceneNode* objectAtCursor)
 {
     if (gameState->getPlayerState()->getCurrentAmmo() <= 0)
     {

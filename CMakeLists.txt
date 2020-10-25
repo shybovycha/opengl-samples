@@ -116,5 +116,7 @@ FetchContent_Declare(tinyxml2
 
 FetchContent_MakeAvailable(tinyxml2)
 
+set(BUILD_TESTING OFF)
+
 add_subdirectory(game)
 add_subdirectory(editor)

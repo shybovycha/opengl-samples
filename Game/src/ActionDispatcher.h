@@ -12,7 +12,7 @@ class ActionDispatcher
 public:
     ActionDispatcher(std::shared_ptr<GameState> _gameState);
 
-    void shoot(irr::scene::ISceneNode* objectAtCursor);
+    void shoot(SceneNode* objectAtCursor);
 
     void reload();
 

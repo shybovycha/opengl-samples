@@ -3,8 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "stdafx.h"
-
+#include "SceneNode.h"
 #include "Vector3.h"
 
 class Level
@@ -14,33 +13,33 @@ public:
 
     std::string getModelFilename() const;
 
-    void addTargetPosition(Vector3df position);
+    void addTargetPosition(Vector3<double> position);
 
-    void addLightPosition(Vector3df position);
+    void addLightPosition(Vector3<double> position);
 
-    std::vector<Vector3df> getTargetPositions() const;
+    std::vector<Vector3<double>> getTargetPositions() const;
 
-    std::vector<Vector3df> getLightPositions() const;
+    std::vector<Vector3<double>> getLightPositions() const;
 
-    void setModel(irr::scene::ISceneNode* mesh);
+    void setModel(SceneNode* model);
 
-    irr::scene::ISceneNode* getModel() const;
+    SceneNode* getModel() const;
 
-    std::vector<irr::scene::ISceneNode*> getTargets() const;
+    std::vector<SceneNode*> getTargets() const;
 
-    std::vector<irr::scene::ISceneNode*> getLights() const;
+    std::vector<SceneNode*> getLights() const;
 
-    void setTargets(std::vector<irr::scene::ISceneNode*> targets);
+    void setTargets(std::vector<SceneNode*> targets);
 
-    void setLights(std::vector<irr::scene::ISceneNode*> lights);
+    void setLights(std::vector<SceneNode*> lights);
 
 private:
     std::string meshFilename;
 
-    std::vector<Vector3df> targetPositions;
-    std::vector<Vector3df> lightPositions;
-    std::vector<irr::scene::ISceneNode*> targets;
-    std::vector<irr::scene::ISceneNode*> lights;
+    std::vector<Vector3<double>> targetPositions;
+    std::vector<Vector3<double>> lightPositions;
+    std::vector<SceneNode*> targets;
+    std::vector<SceneNode*> lights;
 
-    irr::scene::ISceneNode* model;
+    SceneNode* model;
 };

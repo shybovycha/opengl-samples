@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdafx.h"
+#include <irrlicht.h>
 
 class CScreenQuadSceneNode : public irr::scene::ISceneNode
 {

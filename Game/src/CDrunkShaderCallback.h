@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdafx.h"
+#include <irrlicht.h>
 
 class CDrunkShaderCallback : public irr::video::IShaderConstantSetCallBack
 {

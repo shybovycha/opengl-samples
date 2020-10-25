@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "stdafx.h"
+#include <tinyxml2.h>
 
 #include "Level.h"
 #include "ResourceManager.h"

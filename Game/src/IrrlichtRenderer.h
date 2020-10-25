@@ -4,13 +4,16 @@
 #include <sstream>
 #include <vector>
 
-#include "stdafx.h"
+#include <irrlicht.h>
+#include <irrKlang.h>
 
 #include "GameState.h"
 #include "ActionDispatcher.h"
 #include "IrrlichtHUD.h"
 #include "IrrlichtEventReceiver.h"
+#include "IrrlichtSceneNode.h"
 #include "Renderer.h"
+#include "SceneNode.h"
 #include "Settings.h"
 #include "CScreenQuadSceneNode.h"
 #include "CDrunkShaderCallback.h"

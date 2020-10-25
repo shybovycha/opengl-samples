@@ -19,12 +19,6 @@ public:
 
     T getZ() const;
 
-    Vector3<T> setX(T x) const;
-
-    Vector3<T> setY(T y) const;
-
-    Vector3<T> setZ(T z) const;
-
     Vector3<T> operator+(const Vector3<T> &other) const;
 
     Vector3<T> operator*(const T value) const;
@@ -41,8 +35,6 @@ private:
     T z;
 
     T ZERO = { 0 };
-
-    T ONE = { 1 };
 };
 
-using Vector3df = Vector3<double>;
+template class Vector3<double>;

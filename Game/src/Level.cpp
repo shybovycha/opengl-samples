@@ -9,52 +9,52 @@ std::string Level::getModelFilename() const
     return meshFilename;
 }
 
-void Level::addTargetPosition(Vector3df position)
+void Level::addTargetPosition(Vector3<double> position)
 {
     targetPositions.push_back(position);
 }
 
-std::vector<Vector3df> Level::getTargetPositions() const
+std::vector<Vector3<double>> Level::getTargetPositions() const
 {
     return targetPositions;
 }
 
-void Level::setModel(irr::scene::ISceneNode* mesh)
+void Level::setModel(SceneNode* _model)
 {
-    model = mesh;
+    model = _model;
 }
 
-irr::scene::ISceneNode* Level::getModel() const
+SceneNode* Level::getModel() const
 {
     return model;
 }
 
-std::vector<irr::scene::ISceneNode*> Level::getTargets() const
+std::vector<SceneNode*> Level::getTargets() const
 {
     return targets;
 }
 
-void Level::setTargets(std::vector<irr::scene::ISceneNode*> _targets)
+void Level::setTargets(std::vector<SceneNode*> _targets)
 {
     targets = _targets;
 }
 
-void Level::addLightPosition(Vector3df position)
+void Level::addLightPosition(Vector3<double> position)
 {
     lightPositions.push_back(position);
 }
 
-std::vector<Vector3df> Level::getLightPositions() const
+std::vector<Vector3<double>> Level::getLightPositions() const
 {
     return lightPositions;
 }
 
-void Level::setLights(std::vector<irr::scene::ISceneNode*> _lights)
+void Level::setLights(std::vector<SceneNode*> _lights)
 {
     lights = _lights;
 }
 
-std::vector<irr::scene::ISceneNode*> Level::getLights() const
+std::vector<SceneNode*> Level::getLights() const
 {
     return lights;
 }
