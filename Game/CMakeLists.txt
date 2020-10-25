@@ -32,7 +32,9 @@ set(SOURCES
     "src/CScreenQuadSceneNode.h"
     "src/CScreenQuadSceneNode.cpp"
     "src/CDrunkShaderCallback.h"
-    "src/CDrunkShaderCallback.cpp")
+    "src/CDrunkShaderCallback.cpp"
+    "src/Vector3.cpp"
+    "src/Vector3.h")
 
 set(EXECUTABLE_NAME game)
 
