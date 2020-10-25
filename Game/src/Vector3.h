@@ -11,6 +11,8 @@ public:
 
     Vector3(T x, T y, T z);
 
+    Vector3(const Vector3<T> &other);
+
     T getX() const;
 
     T getY() const;
@@ -42,3 +44,5 @@ private:
 
     T ONE = { 1 };
 };
+
+using Vector3df = Vector3<double>;

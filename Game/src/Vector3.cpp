@@ -7,6 +7,9 @@ template<typename T>
 Vector3<T>::Vector3(T _x, T _y, T _z) : x(_x), y(_y), z(_z) {}
 
 template<typename T>
+Vector3<T>::Vector3(const Vector3<T>& other) :x(other.getX()), y(other.getY()), z(other.getZ()) {}
+
+template<typename T>
 T Vector3<T>::getX() const
 {
     return x;

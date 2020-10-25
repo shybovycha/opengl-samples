@@ -7,8 +7,6 @@
 
 #include "Vector3.h"
 
-using Vector3df = Vector3<float>;
-
 class Level
 {
 public:
