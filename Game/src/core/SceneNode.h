@@ -9,6 +9,10 @@ public:
 
     SceneNode(const Vector3<double>& initialPosition);
 
+    virtual bool operator==(const SceneNode& other) const;
+
+    virtual bool operator!=(const SceneNode& other) const;
+
     virtual Vector3<double> getPosition() const = 0;
 
     virtual void remove() = 0;

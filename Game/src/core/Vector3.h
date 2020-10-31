@@ -25,6 +25,8 @@ public:
 
     Vector3<T> operator/(const T value) const;
 
+    bool operator==(const Vector3<T> &other) const;
+
     T length() const;
 
     Vector3<T> normalize() const;
