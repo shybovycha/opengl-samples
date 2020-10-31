@@ -7,16 +7,16 @@
 #include <irrlicht.h>
 #include <irrKlang.h>
 
-#include "../game/GameState.h"
 #include "../core/ActionDispatcher.h"
-#include "IrrlichtHUD.h"
-#include "IrrlichtEventReceiver.h"
-#include "IrrlichtSceneNode.h"
 #include "../core/Renderer.h"
 #include "../core/SceneNode.h"
 #include "../core/Settings.h"
-#include "CScreenQuadSceneNode.h"
+#include "../game/GameState.h"
 #include "CDrunkShaderCallback.h"
+#include "CScreenQuadSceneNode.h"
+#include "IrrlichtEventReceiver.h"
+#include "IrrlichtHUD.h"
+#include "IrrlichtSceneNode.h"
 
 class IrrlichtRenderer : public Renderer
 {

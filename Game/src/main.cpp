@@ -1,10 +1,7 @@
 #include "core/ActionDispatcher.h"
 #include "core/Application.h"
-#include "game/GameState.h"
 #include "renderer/IrrlichtRenderer.h"
 #include "core/ModernResourceManager.h"
-#include "core/Renderer.h"
-#include "core/ResourceManager.h"
 
 #ifdef _IRR_WINDOWS_
 #pragma comment(lib, "Irrlicht.lib")

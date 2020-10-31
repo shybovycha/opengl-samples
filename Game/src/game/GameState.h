@@ -6,9 +6,9 @@
 #include <queue>
 #include <iostream>
 
+#include "../core/QueueAction.h"
 #include "Level.h"
 #include "PlayerState.h"
-#include "../core/QueueAction.h"
 #include "Score.h"
 
 class GameState
