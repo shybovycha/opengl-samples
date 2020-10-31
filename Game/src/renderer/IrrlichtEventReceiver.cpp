@@ -22,10 +22,14 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event)
                 const irr::f32 RAY_OFFSET_DISTANCE = 10.0f;
 
                 irr::core::vector3df cameraDirection = camera->getTarget() - camera->getAbsolutePosition();
-                irr::core::line3df ray(camera->getAbsolutePosition() + (cameraDirection * RAY_OFFSET_DISTANCE),
-                        cameraDirection * MAX_RAYCAST_DISTANCE);
-                irr::scene::ISceneNode* objectAtCursor = sceneManager->getSceneCollisionManager()->getSceneNodeFromRayBB(
-                        ray);
+                
+                irr::core::line3df ray(
+                    camera->getAbsolutePosition() + (cameraDirection * RAY_OFFSET_DISTANCE),
+                    cameraDirection * MAX_RAYCAST_DISTANCE
+                );
+
+                irr::scene::ISceneNode* objectAtCursor = sceneManager->getSceneCollisionManager()
+                    ->getSceneNodeFromRayBB(ray);
 
                 actionDispatcher->shoot(new IrrlichtSceneNode(objectAtCursor));
             }
