@@ -86,6 +86,7 @@ void ActionDispatcher::levelsLoaded(std::vector<std::shared_ptr<Level>> levels)
 
 void ActionDispatcher::startNewGame()
 {
+    gameState->startGame();
     gameState->enqueue(new StartNewGameAction());
 }
 
@@ -98,4 +99,5 @@ void ActionDispatcher::gameOver()
 {
     gameState->setCurrentState(GameStateType::END_GAME);
     gameState->enqueue(new GameOverAction());
+    gameState->endGame();
 }

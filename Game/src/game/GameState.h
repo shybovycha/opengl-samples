@@ -30,6 +30,10 @@ public:
 
     const bool hasActions() const;
 
+    const bool isGameOver() const;
+
+    const bool isGameStarted() const;
+
     QueueAction* nextAction();
 
     const std::shared_ptr<Level> getNextLevel() const;
@@ -47,6 +51,10 @@ private:
 
     void setCurrentState(GameStateType _state);
 
+    void startGame();
+
+    void endGame();
+
     GameStateType currentState;
 
     std::shared_ptr<Score> currentScore;
@@ -56,4 +64,7 @@ private:
 
     std::vector<std::shared_ptr<Level>> levels;
     size_t currentLevel;
+
+    bool hasGameStarted = false;
+    bool hasGameEnded = false;
 };

@@ -274,7 +274,16 @@ void IrrlichtRenderer::processAction(MainMenuAction* action)
     }
 
     mainMenuWindow->setVisible(true);
-    mainMenuWindow->getElementFromId(CONTINUE_BUTTON_ID)->setEnabled(true);
+
+    if (gameState->isGameOver() || !gameState->isGameStarted())
+    {
+        mainMenuWindow->getElementFromId(CONTINUE_BUTTON_ID)->setEnabled(false);
+    }
+    else
+    {
+        mainMenuWindow->getElementFromId(CONTINUE_BUTTON_ID)->setEnabled(true);
+    }
+    
     device->getCursorControl()->setVisible(true);
 }
 

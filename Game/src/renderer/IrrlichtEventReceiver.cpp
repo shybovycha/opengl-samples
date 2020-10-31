@@ -39,7 +39,8 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event)
             }
         }
     }
-    else if (gameState->getCurrentState() == GameStateType::PLAYING || gameState->getCurrentState() == GameStateType::END_GAME)
+    
+    if (gameState->getCurrentState() == GameStateType::PLAYING || gameState->getCurrentState() == GameStateType::END_GAME)
     {
         if (event.EventType == irr::EET_KEY_INPUT_EVENT)
         {
@@ -49,7 +50,7 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event)
             }
         }
     }
-    else
+    
     {
         if (event.EventType == irr::EET_GUI_EVENT)
         {

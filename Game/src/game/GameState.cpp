@@ -94,3 +94,24 @@ const std::shared_ptr<Level> GameState::getNextLevel() const
 
     return levels.at(currentLevel + 1);
 }
+
+void GameState::startGame()
+{
+    hasGameStarted = true;
+}
+
+void GameState::endGame()
+{
+    hasGameStarted = false;
+    hasGameEnded = true;
+}
+
+const bool GameState::isGameOver() const
+{
+    return hasGameEnded;
+}
+
+const bool GameState::isGameStarted() const
+{
+    return hasGameStarted;
+}
