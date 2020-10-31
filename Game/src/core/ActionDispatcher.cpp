@@ -23,7 +23,7 @@ void ActionDispatcher::shoot(SceneNode* objectAtCursor)
 
     for (auto target : gameState->getCurrentLevel()->getTargets())
     {
-        if (target != objectAtCursor)
+        if (*target != *objectAtCursor)
         {
             continue;
         }
@@ -92,4 +92,10 @@ void ActionDispatcher::startNewGame()
 void ActionDispatcher::quit()
 {
     gameState->enqueue(new QuitAction());
+}
+
+void ActionDispatcher::gameOver()
+{
+    gameState->setCurrentState(GameStateType::END_GAME);
+    gameState->enqueue(new GameOverAction());
 }
