@@ -18,7 +18,7 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [x] fix wobbling effect
 - [x] record a video (https://youtu.be/m65z9kvWdYA)
 - [x] fix timer speed
-- [ ] display endgame screen with high scores `¯\_(ツ)_/¯`
+- [x] display endgame screen with high scores `¯\_(ツ)_/¯`
 - [x] import each scene from a scene file rather than DAT files with questionable undocumented format
 - [x] load game settings from a separate file rather than being hard-coded vector population code O_o
 - [ ] add splash screen
@@ -46,7 +46,7 @@ Run CMake: `cmake -Bbuild -H. && cmake --build build`
 - [x] ~~load UI from file~~
 - [x] use shader for the post-processing ("drunk" effect)
 - [ ] clamp the rendered picture so there are no artifacts (mb zoom the quad a bit)
-- [ ] fix collision detection - potentially the ray overlaps the rendering quad first and hence no collisions with targets are detected (either hide the quad or start ray a bit further from the camera)
+- [x] fix collision detection - potentially the ray overlaps the rendering quad first and hence no collisions with targets are detected (either hide the quad or start ray a bit further from the camera)
 - [ ] add hints for controls to the first level
 
 ### Editor
