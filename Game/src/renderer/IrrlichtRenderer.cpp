@@ -157,89 +157,6 @@ void IrrlichtRenderer::processAction(LoadNextLevelAction* action)
     actionDispatcher->nextLevelLoaded();
 }
 
-void IrrlichtRenderer::loadLevel(std::shared_ptr<Level> levelDescriptor)
-{
-    irr::scene::IAnimatedMesh* levelMesh = smgr->getMesh(levelDescriptor->getModelFilename().c_str());
-
-    irr::scene::IAnimatedMeshSceneNode* level = smgr->addAnimatedMeshSceneNode(levelMesh);
-
-    std::wostringstream levelName;
-    levelName << L"level-" << gameState->getCurrentLevelIndex();
-    level->setName(levelName.str().c_str());
-
-    levelDescriptor->setModel(new IrrlichtSceneNode(level));
-
-    auto metaTriangleSelector = smgr->createMetaTriangleSelector();
-
-    metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(level));
-
-    irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
-
-    std::vector<SceneNode*> targets;
-
-    int targetIdx = 0;
-
-    for (const auto& position : levelDescriptor->getTargetPositions())
-    {
-        auto target = smgr->addAnimatedMeshSceneNode(targetMesh);
-
-        target->setVisible(true);
-
-        target->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
-        target->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
-        target->setPosition(irr::core::vector3df(position.getX(), position.getY(), position.getZ()));
-
-        metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(target));
-
-        std::wostringstream targetName;
-        targetName << "target-";
-        targetName << gameState->getCurrentLevelIndex();
-        targetName << "-";
-        targetName << targetIdx++;
-        target->setName(targetName.str().c_str());
-
-        targets.push_back(new IrrlichtSceneNode(target));
-    }
-
-    std::vector<SceneNode*> lights;
-
-    for (const auto& position : levelDescriptor->getLightPositions())
-    {
-        auto lightPosition = irr::core::vector3df(position.getX(), position.getY(), position.getZ());
-        auto light = smgr->addLightSceneNode(nullptr, lightPosition);
-
-        lights.push_back(new IrrlichtSceneNode(light));
-    }
-
-    selector = metaTriangleSelector;
-
-    gameState->getCurrentScore()->resetCurrentTime();
-
-    levelDescriptor->setTargets(targets);
-    levelDescriptor->setLights(lights);
-}
-
-void IrrlichtRenderer::unloadLevel(std::shared_ptr<Level> levelDescriptor)
-{
-    for (auto target : levelDescriptor->getTargets())
-    {
-        if (target)
-        {
-            target->remove();
-        }
-    }
-
-    for (auto light : levelDescriptor->getLights())
-    {
-        if (light)
-        {
-            light->remove();
-        }
-    }
-
-    levelDescriptor->getModel()->remove();
-}
-
 void IrrlichtRenderer::processAction(TargetEliminatedAction* action)
 {
     // hide in here, remove when the next level is loaded
@@ -490,4 +407,87 @@ void IrrlichtRenderer::updatePostProcessingEffects()
                     camera->getRotation().Z
             )
     );
+}
+
+void IrrlichtRenderer::loadLevel(std::shared_ptr<Level> levelDescriptor)
+{
+    irr::scene::IAnimatedMesh* levelMesh = smgr->getMesh(levelDescriptor->getModelFilename().c_str());
+
+    irr::scene::IAnimatedMeshSceneNode* level = smgr->addAnimatedMeshSceneNode(levelMesh);
+
+    std::wostringstream levelName;
+    levelName << L"level-" << gameState->getCurrentLevelIndex();
+    level->setName(levelName.str().c_str());
+
+    levelDescriptor->setModel(new IrrlichtSceneNode(level));
+
+    auto metaTriangleSelector = smgr->createMetaTriangleSelector();
+
+    metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(level));
+
+    irr::scene::IAnimatedMesh* targetMesh = smgr->getMesh("chicken.3ds");
+
+    std::vector<SceneNode*> targets;
+
+    int targetIdx = 0;
+
+    for (const auto& position : levelDescriptor->getTargetPositions())
+    {
+        auto target = smgr->addAnimatedMeshSceneNode(targetMesh);
+
+        target->setVisible(true);
+
+        target->setMaterialTexture(0, driver->getTexture("Chick02.bmp"));
+        target->setMaterialFlag(irr::video::EMF_ANISOTROPIC_FILTER, true);
+        target->setPosition(irr::core::vector3df(position.getX(), position.getY(), position.getZ()));
+
+        metaTriangleSelector->addTriangleSelector(smgr->createTriangleSelector(target));
+
+        std::wostringstream targetName;
+        targetName << "target-";
+        targetName << gameState->getCurrentLevelIndex();
+        targetName << "-";
+        targetName << targetIdx++;
+        target->setName(targetName.str().c_str());
+
+        targets.push_back(new IrrlichtSceneNode(target));
+    }
+
+    std::vector<SceneNode*> lights;
+
+    for (const auto& position : levelDescriptor->getLightPositions())
+    {
+        auto lightPosition = irr::core::vector3df(position.getX(), position.getY(), position.getZ());
+        auto light = smgr->addLightSceneNode(nullptr, lightPosition);
+
+        lights.push_back(new IrrlichtSceneNode(light));
+    }
+
+    selector = metaTriangleSelector;
+
+    gameState->getCurrentScore()->resetCurrentTime();
+
+    levelDescriptor->setTargets(targets);
+    levelDescriptor->setLights(lights);
+}
+
+void IrrlichtRenderer::unloadLevel(std::shared_ptr<Level> levelDescriptor)
+{
+    for (auto target : levelDescriptor->getTargets())
+    {
+        if (target)
+        {
+            target->remove();
+        }
+    }
+
+    for (auto light : levelDescriptor->getLights())
+    {
+        if (light)
+        {
+            light->remove();
+        }
+    }
+
+    levelDescriptor->getModel()->remove();
 }
