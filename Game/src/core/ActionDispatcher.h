@@ -34,6 +34,8 @@ public:
 
     void startNewGame();
 
+    void gameOver();
+
     void quit();
 
 private:

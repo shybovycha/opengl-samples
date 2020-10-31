@@ -31,7 +31,8 @@ enum class QueueActionType
     PLAY_SOUND,
     QUIT,
     START_NEW_GAME,
-    TARGET_ELIMINATED
+    TARGET_ELIMINATED,
+    GAME_OVER
 };
 
 class QueueAction
@@ -115,4 +116,10 @@ class HideMainMenuAction : public QueueAction
 {
 public:
     HideMainMenuAction();
+};
+
+class GameOverAction : public QueueAction
+{
+public:
+    GameOverAction();
 };

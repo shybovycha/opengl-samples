@@ -43,6 +43,8 @@ public:
 
     void processAction(QuitAction* action);
 
+    void processAction(GameOverAction* action);
+
     virtual void render();
 
     virtual void shutdown();
@@ -78,6 +80,7 @@ private:
     irr::gui::IGUIWindow* msgbox = 0;
     irr::gui::IGUIListBox* hiscoreTable = 0;
     irr::gui::IGUIWindow* mainMenuWindow = 0;
+    irr::gui::IGUIStaticText* gameOverLabel = 0;
 
     irr::IrrlichtDevice* device = 0;
     irr::video::IVideoDriver* driver = 0;

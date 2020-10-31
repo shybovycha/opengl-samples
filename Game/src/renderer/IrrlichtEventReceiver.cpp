@@ -38,7 +38,9 @@ bool IrrlichtEventReceiver::OnEvent(const irr::SEvent& event)
                 actionDispatcher->reload();
             }
         }
-
+    }
+    else if (gameState->getCurrentState() == GameStateType::PLAYING || gameState->getCurrentState() == GameStateType::END_GAME)
+    {
         if (event.EventType == irr::EET_KEY_INPUT_EVENT)
         {
             if (event.KeyInput.Key == irr::KEY_ESCAPE)

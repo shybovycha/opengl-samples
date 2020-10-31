@@ -121,6 +121,9 @@ void IrrlichtRenderer::processActionQueue()
         case QueueActionType::HIDE_MAIN_MENU:
             processAction(reinterpret_cast<HideMainMenuAction*>(action));
             break;
+        case QueueActionType::GAME_OVER:
+            processAction(reinterpret_cast<GameOverAction*>(action));
+            break;
         }
     }
 }
@@ -139,6 +142,12 @@ void IrrlichtRenderer::processAction(LoadFirstLevelAction* action)
 
 void IrrlichtRenderer::processAction(LoadNextLevelAction* action)
 {
+    if (action->getNextLevel() == nullptr)
+    {
+        actionDispatcher->gameOver();
+        return;
+    }
+
     // unload existing level data
     unloadLevel(action->getPreviousLevel());
 
@@ -246,6 +255,12 @@ void IrrlichtRenderer::processAction(TargetEliminatedAction* action)
 
 void IrrlichtRenderer::processAction(StartNewGameAction* action)
 {
+    if (gameOverLabel != nullptr)
+    {
+        gameOverLabel->remove();
+        gameOverLabel = nullptr;
+    }
+
     actionDispatcher->loadFirstLevel();
     device->getCursorControl()->setVisible(false);
     mainMenuWindow->setVisible(false);
@@ -253,6 +268,11 @@ void IrrlichtRenderer::processAction(StartNewGameAction* action)
 
 void IrrlichtRenderer::processAction(MainMenuAction* action)
 {
+    if (gameOverLabel != nullptr)
+    {
+        gameOverLabel->setVisible(false);
+    }
+
     mainMenuWindow->setVisible(true);
     mainMenuWindow->getElementFromId(CONTINUE_BUTTON_ID)->setEnabled(true);
     device->getCursorControl()->setVisible(true);
@@ -267,6 +287,25 @@ void IrrlichtRenderer::processAction(HideMainMenuAction* action)
 {
     device->getCursorControl()->setVisible(false);
     mainMenuWindow->setVisible(false);
+}
+
+void IrrlichtRenderer::processAction(GameOverAction* action)
+{
+    const auto text = L"Game over";
+    const auto screenSize = driver->getScreenSize();
+    const auto font = guienv->getSkin()->getFont();
+    const auto textSize = font->getDimension(text);
+
+    gameOverLabel = guienv->addStaticText(
+            L"Game over",
+            irr::core::rect<irr::s32>(
+                    (screenSize.Width / 2) - (textSize.Width / 2),
+                    (screenSize.Height / 2) - (textSize.Height / 2),
+                    (screenSize.Width / 2) + (textSize.Width / 2),
+                    (screenSize.Height / 2) + (textSize.Height / 2)
+            ),
+            false
+    );
 }
 
 void IrrlichtRenderer::render()
@@ -359,7 +398,7 @@ void IrrlichtRenderer::renderMainMenu()
 
 void IrrlichtRenderer::renderEndGameMenu()
 {
-    // TODO: implement
+    // nothing to do here, really
 }
 
 void IrrlichtRenderer::renderEndLevelMenu()

@@ -69,3 +69,7 @@ MainMenuAction::MainMenuAction() : QueueAction(QueueActionType::MAIN_MENU)
 HideMainMenuAction::HideMainMenuAction() : QueueAction(QueueActionType::HIDE_MAIN_MENU)
 {
 }
+
+GameOverAction::GameOverAction() : QueueAction(QueueActionType::GAME_OVER)
+{
+}
