@@ -178,6 +178,11 @@ void IrrlichtRenderer::processAction(StartNewGameAction* action)
         gameOverLabel = nullptr;
     }
 
+    if (gameState->isGameStarted())
+    {
+        unloadLevel(gameState->getCurrentLevel());
+    }
+
     actionDispatcher->loadFirstLevel();
     device->getCursorControl()->setVisible(false);
     mainMenuWindow->setVisible(false);
@@ -489,5 +494,8 @@ void IrrlichtRenderer::unloadLevel(std::shared_ptr<Level> levelDescriptor)
         }
     }
 
-    levelDescriptor->getModel()->remove();
+    if (levelDescriptor->getModel())
+    {
+        levelDescriptor->getModel()->remove();
+    }
 }

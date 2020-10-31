@@ -70,6 +70,7 @@ void ActionDispatcher::loadFirstLevel()
 
 void ActionDispatcher::firstLevelLoaded()
 {
+    gameState->startGame();
     gameState->setCurrentState(GameStateType::PLAYING);
 }
 
@@ -86,7 +87,6 @@ void ActionDispatcher::levelsLoaded(std::vector<std::shared_ptr<Level>> levels)
 
 void ActionDispatcher::startNewGame()
 {
-    gameState->startGame();
     gameState->enqueue(new StartNewGameAction());
 }
 

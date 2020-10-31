@@ -98,6 +98,13 @@ const std::shared_ptr<Level> GameState::getNextLevel() const
 void GameState::startGame()
 {
     hasGameStarted = true;
+    currentLevel = 0;
+
+    currentScore->resetTargetEliminated();
+    currentScore->resetTargetEliminated();
+    currentScore->resetTimeUsed();
+
+    playerState->reload();
 }
 
 void GameState::endGame()
