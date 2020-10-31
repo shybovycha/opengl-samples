@@ -1,21 +1,48 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(Game VERSION 1.0.1 LANGUAGES CXX)
+project(game VERSION 1.0.1 LANGUAGES CXX)
 
-set(SOURCE_FILES Sources/main.cpp)
-set(EXECUTABLE_NAME Game)
+set(SOURCES
+    "src/main.cpp"
+    "src/core/Settings.h"
+    "src/game/Level.h"
+    "src/game/Score.h"
+    "src/game/PlayerState.h"
+    "src/game/GameState.h"
+    "src/core/ActionDispatcher.h"
+    "src/renderer/IrrlichtEventReceiver.h"
+    "src/core/Renderer.h"
+    "src/core/ResourceManager.h"
+    "src/core/ModernResourceManager.h"
+    "src/renderer/IrrlichtRenderer.h"
+    "src/core/Application.h"
+    "src/core/QueueAction.h"
+    "src/core/Application.cpp"
+    "src/game/GameState.cpp"
+    "src/core/ActionDispatcher.cpp"
+    "src/renderer/IrrlichtEventReceiver.cpp"
+    "src/renderer/IrrlichtRenderer.cpp"
+    "src/game/Level.cpp"
+    "src/core/ModernResourceManager.cpp"
+    "src/game/PlayerState.cpp"
+    "src/game/Score.cpp"
+    "src/core/QueueAction.cpp"
+    "src/renderer/IrrlichtHUD.h"
+    "src/renderer/IrrlichtHUD.cpp"
+    "src/renderer/CScreenQuadSceneNode.h"
+    "src/renderer/CScreenQuadSceneNode.cpp"
+    "src/renderer/CDrunkShaderCallback.h"
+    "src/renderer/CDrunkShaderCallback.cpp"
+    "src/core/Vector3.h"
+    "src/core/Vector3.cpp"
+    "src/core/SceneNode.h"
+    "src/core/SceneNode.cpp"
+    "src/renderer/IrrlichtSceneNode.h"
+    "src/renderer/IrrlichtSceneNode.cpp")
 
-if(NOT IRRLICHT_LIBRARY_PATH)
-    message("[ERROR]" "Found Irrlicht: ${IRRLICHT_LIBRARY_PATH}")
-endif()
-
-if(NOT IRRKLANG_LIBRARY_PATH)
-    message("[ERROR]" "Found IrrKlang: ${IRRKLANG_LIBRARY_PATH}")
-endif()
+set(EXECUTABLE_NAME game)
 
 set(LIBRARIES
-        ${IRRLICHT_LIBRARY_PATH}
-        ${IRRKLANG_LIBRARY_PATH}
         ${X11_LIBRARIES}
         ${OPENGL_LIBRARIES}
         ${ZLIB_LIBRARIES})
@@ -33,15 +60,15 @@ if(APPLE)
 endif()
 
 if(APPLE)
-    file(GLOB RESOURCE_FILES Resources)
+    file(GLOB RESOURCE_FILES resources)
     set_source_files_properties(${RESOURCE_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
 
-    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCE_FILES} ${RESOURCE_FILES})
+    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCES} ${RESOURCE_FILES})
 else()
-    add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
+    add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
-    file(COPY Resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-    file(COPY Data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    # file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    # file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 set_target_properties(${EXECUTABLE_NAME} PROPERTIES
@@ -50,11 +77,48 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
     CXX_EXTENSIONS ON
 )
 
-message("Found Irrlicht at: ${IRRLICHT_LIBRARY_PATH}")
-message("Found IrrKlang at: ${IRRKLANG_LIBRARY_PATH}")
-message("Linking libraries: ${LIBRARIES}")
+add_dependencies(${EXECUTABLE_NAME} tinyxml2 irrlicht irrklang)
 
-target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRLICHT_PATH}/include)
-target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRKLANG_PATH}/include)
+target_link_libraries(${EXECUTABLE_NAME} PUBLIC ${LIBRARIES} tinyxml2 irrlicht irrklang)
 
-target_link_libraries(${EXECUTABLE_NAME} ${LIBRARIES})
+# Copy libraries' DLLs
+add_custom_command(
+    TARGET ${EXECUTABLE_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tinyxml2> $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+)
+
+if (WIN32)
+    if (EX_PLATFORM EQUAL "64")
+        set(IRRKLANG_BIN_PATH "${irrklang_SOURCE_DIR}/bin/winx64-visualStudio")
+    else()
+        set(IRRKLANG_BIN_PATH "${irrklang_SOURCE_DIR}/bin/win32-visualStudio")
+    endif()
+
+    message("IrrKlang DLLs: ${IRRKLANG_BIN_PATH}/irrKlang.dll ${IRRKLANG_BIN_PATH}/ikpFlac.dll ${IRRKLANG_BIN_PATH}/ikpMP3.dll")
+
+    add_custom_command(
+        TARGET ${EXECUTABLE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${IRRKLANG_BIN_PATH}/irrKlang.dll $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+    )
+
+    add_custom_command(
+        TARGET ${EXECUTABLE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${IRRKLANG_BIN_PATH}/ikpFlac.dll $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+    )
+
+    add_custom_command(
+        TARGET ${EXECUTABLE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${IRRKLANG_BIN_PATH}/ikpMP3.dll $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+    )
+endif()
+
+# Copy resources
+add_custom_command(
+    TARGET ${EXECUTABLE_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/resources $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources
+)
+
+add_custom_command(
+    TARGET ${EXECUTABLE_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/data $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/data
+)
