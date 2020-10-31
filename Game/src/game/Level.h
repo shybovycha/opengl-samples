@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "SceneNode.h"
-#include "Vector3.h"
+#include "../core/SceneNode.h"
+#include "../core/Vector3.h"
 
 class Level
 {

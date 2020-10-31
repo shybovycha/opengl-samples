@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "GameState.h"
+#include "../game/GameState.h"
 #include "ActionDispatcher.h"
 #include "ResourceManager.h"
 #include "Renderer.h"

@@ -8,7 +8,7 @@
 
 #include "Level.h"
 #include "PlayerState.h"
-#include "QueueAction.h"
+#include "../core/QueueAction.h"
 #include "Score.h"
 
 class GameState

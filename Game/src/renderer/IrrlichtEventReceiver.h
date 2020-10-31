@@ -4,8 +4,8 @@
 
 #include <irrlicht.h>
 
-#include "ActionDispatcher.h"
-#include "GameState.h"
+#include "../core/ActionDispatcher.h"
+#include "../game/GameState.h"
 #include "IrrlichtSceneNode.h"
 
 #define NEW_GAME_BUTTON_ID 1

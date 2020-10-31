@@ -3,8 +3,8 @@
 #include <memory>
 #include <vector>
 
-#include "GameState.h"
-#include "Level.h"
+#include "../game/GameState.h"
+#include "../game/Level.h"
 #include "QueueAction.h"
 
 class ActionDispatcher

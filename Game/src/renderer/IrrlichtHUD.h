@@ -5,7 +5,7 @@
 
 #include <irrlicht.h>
 
-#include "GameState.h"
+#include "../game/GameState.h"
 
 const irr::video::SColor TARGET_COUNT_COLOR(255, 232, 141, 40);
 

@@ -2,7 +2,7 @@
 
 #include <irrlicht.h>
 
-#include "SceneNode.h"
+#include "../core/SceneNode.h"
 
 class IrrlichtSceneNode : public SceneNode
 {

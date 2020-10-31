@@ -7,7 +7,7 @@
 
 #include <tinyxml2.h>
 
-#include "Level.h"
+#include "../game/Level.h"
 #include "ResourceManager.h"
 #include "Settings.h"
 

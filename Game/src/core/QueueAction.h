@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "Level.h"
+#include "../game/Level.h"
 
 enum class GameStateType
 {

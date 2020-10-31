@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "GameState.h"
+#include "../game/GameState.h"
 #include "Settings.h"
 
 class Renderer
