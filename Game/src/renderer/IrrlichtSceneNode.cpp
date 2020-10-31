@@ -2,7 +2,7 @@
 
 IrrlichtSceneNode::IrrlichtSceneNode(irr::scene::ISceneNode* _node)
         : node(_node),
-        SceneNode(Vector3<double>(node->getPosition().X, node->getPosition().Y, node->getPosition().Z))
+        SceneNode(Vector3<double>(_node->getPosition().X, _node->getPosition().Y, _node->getPosition().Z))
 {
 }
 
