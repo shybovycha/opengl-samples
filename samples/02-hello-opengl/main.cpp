@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <memory>
 
@@ -54,35 +55,9 @@ int main() {
 
   std::cout << "[INFO] Creating shaders..." << std::endl;
 
-  std::cout << "[INFO] Creating vertex program...";
-
-  auto g_vertexProgram = globjects::Program::create();
-
-  auto error = globjects::Error::get();
-
-  if (error) {
-    std::cerr << "Error " << std::hex << error.code() << ": " << error.name() << std::endl;
-    return 1;
-  }
-
-  std::cout << "done" << std::endl;
-
-  auto g_fragmentProgram = globjects::Program::create();
-
-  std::cout << "[INFO] Creating fragment program...";
-
-  auto g_programPipeline = globjects::ProgramPipeline::create();
-
-  std::cout << "done" << std::endl;
-
-  std::cout << "[INFO] Creating VAO...";
-
-  auto g_vao = globjects::VertexArray::create();
-
-  std::cout << "done" << std::endl;
-
   std::cout << "[INFO] Compiling vertex shader...";
 
+  auto g_vertexProgram = globjects::Program::create();
   auto g_vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
   auto g_vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(g_vertexShaderSource.get());
   auto g_vertexShader = globjects::Shader::create(gl::GL_VERTEX_SHADER, g_vertexShaderTemplate.get());
@@ -91,6 +66,7 @@ int main() {
 
   std::cout << "[INFO] Compiling fragment shader...";
 
+  auto g_fragmentProgram = globjects::Program::create();
   auto g_fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
   auto g_fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(g_fragmentShaderSource.get());
   auto g_fragmentShader = globjects::Shader::create(gl::GL_FRAGMENT_SHADER, g_fragmentShaderTemplate.get());
@@ -99,21 +75,25 @@ int main() {
 
   auto g_size = glm::ivec2{ 600, 800 };
 
-  std::cout << "[INFO] Linking shader program...";
+  std::cout << "[INFO] Linking shader programs...";
 
   g_vertexProgram->attach(g_vertexShader.get());
   g_fragmentProgram->attach(g_fragmentShader.get());
 
   std::cout << "done" << std::endl;
 
-  std::cout << "[INFO] Setting pipeline stages...";
+  std::cout << "[INFO] Creating rendering pipeline...";
+
+  auto g_programPipeline = globjects::ProgramPipeline::create();
 
   g_programPipeline->useStages(g_vertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
   g_programPipeline->useStages(g_fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
 
   std::cout << "done" << std::endl;
 
-  std::cout << "[INFO] Filling VAO buffers with data...";
+  std::cout << "[INFO] Creating VAO...";
+
+  auto g_vao = globjects::VertexArray::create();
 
   g_cornerBuffer->setData(
     std::array<glm::vec2, 4>{
@@ -128,6 +108,8 @@ int main() {
   g_vao->enable(0);
 
   std::cout << "done" << std::endl;
+
+  std::cout << "[INFO] Done initializing" << std::endl;
 
   while (window.isOpen()) {
     sf::Event event;
