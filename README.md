@@ -28,7 +28,7 @@ Game editor now has a proper UI and is generally way more useful, allowing one t
 
 ## Build
 
-Run CMake: `cmake -Bbuild -H. && cmake --build build`
+Run CMake: `cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=$VCPKG_HOME/vcpkg/scripts/buildsystems/vcpkg.cmake && cmake --build build`
 
 ## TODO
 
