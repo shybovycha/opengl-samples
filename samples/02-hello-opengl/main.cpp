@@ -1,5 +1,4 @@
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <memory>
 
@@ -26,21 +25,6 @@
 #include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
 
-std::string readFile(const std::string &fileName) {
-  std::ifstream file(fileName);
-
-  std::string content = "";
-  std::string line;
-
-  while (std::getline(file, line)) {
-    content += line + "\n";
-  }
-
-  file.close();
-
-  return content;
-}
-
 int main() {
   sf::Context context;
 
@@ -64,24 +48,7 @@ int main() {
     std::cout << "[DEBUG] " << message.message() << std::endl;
   });
 
-  std::cout << std::endl
-        << "OpenGL Version:  " << glbinding::aux::ContextInfo::version() << std::endl
-        << "OpenGL Vendor:   " << glbinding::aux::ContextInfo::vendor() << std::endl
-        << "OpenGL Renderer: " << glbinding::aux::ContextInfo::renderer() << std::endl << std::endl;
-
   std::cout << "[INFO] Initializing..." << std::endl;
-
-  std::cout << "[INFO] Loading vertex shader code...";
-
-  const auto vertexShaderCode = readFile("media/vertex.glsl");
-
-  std::cout << "done" << std::endl << vertexShaderCode << std::endl;
-
-  std::cout << "[INFO] Loading fragment shader code...";
-
-  const auto fragmentShaderCode = readFile("media/fragment.glsl");
-
-  std::cout << "done" << std::endl << fragmentShaderCode << std::endl;
 
   auto g_cornerBuffer = globjects::Buffer::create();
 
@@ -116,26 +83,19 @@ int main() {
 
   std::cout << "[INFO] Compiling vertex shader...";
 
-  auto g_vertexShaderSource = globjects::Shader::sourceFromString(vertexShaderCode);
+  auto g_vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
   auto g_vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(g_vertexShaderSource.get());
-  auto g_vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), g_vertexShaderTemplate.get());
+  auto g_vertexShader = globjects::Shader::create(gl::GL_VERTEX_SHADER, g_vertexShaderTemplate.get());
 
   std::cout << "done" << std::endl;
 
   std::cout << "[INFO] Compiling fragment shader...";
 
-  auto g_fragmentShaderSource = globjects::Shader::sourceFromString(fragmentShaderCode);
+  auto g_fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
   auto g_fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(g_fragmentShaderSource.get());
-  auto g_fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), g_fragmentShaderTemplate.get());
+  auto g_fragmentShader = globjects::Shader::create(gl::GL_FRAGMENT_SHADER, g_fragmentShaderTemplate.get());
 
   std::cout << "done" << std::endl;
-
-  // std::cout << "done" << std::endl;
-
-  // std::cout << "Creating pipeline...";
-
-  // auto g_vertexShader = globjects::Shader::fromFile(GL_VERTEX_SHADER, "media/vertex.glsl");
-  // auto g_fragmentShader = globjects::Shader::fromFile(GL_FRAGMENT_SHADER, "media/fragment.glsl");
 
   auto g_size = glm::ivec2{ 600, 800 };
 
@@ -159,7 +119,7 @@ int main() {
     std::array<glm::vec2, 4>{
       { glm::vec2(0, 0), glm::vec2(1, 0), glm::vec2(0, 1), glm::vec2(1, 1) }
     },
-    static_cast<gl::GLenum>(GL_STATIC_DRAW)
+    gl::GL_STATIC_DRAW
   );
 
   g_vao->binding(0)->setAttribute(0);
