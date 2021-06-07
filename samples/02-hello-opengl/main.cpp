@@ -23,7 +23,8 @@
 #include <globjects/VertexAttributeBinding.h>
 #include <globjects/base/StaticStringSource.h>
 
-#include <GLFW/glfw3.h>
+#include <SFML/Window.hpp>
+#include <SFML/OpenGL.hpp>
 
 std::string readFile(const std::string &fileName) {
   std::ifstream file(fileName);
@@ -41,42 +42,20 @@ std::string readFile(const std::string &fileName) {
 }
 
 int main() {
-  if (!glfwInit()) {
-    std::cerr << "Could not initialize GLFW" << std::endl;
-    return 1;
-  }
+  sf::Context context;
 
-  glfwSetErrorCallback([](int errnum, const char *msg) {
-    std::cerr << "[ERROR] " << msg << std::endl;
-  });
+  sf::ContextSettings settings;
+  settings.depthBits = 24;
+  settings.stencilBits = 8;
+  settings.antialiasingLevel = 4;
+  settings.majorVersion = 3;
+  settings.minorVersion = 2;
+  settings.attributeFlags = sf::ContextSettings::Attribute::Core;
 
-  glfwDefaultWindowHints();
-  glfwWindowHint(GLFW_VISIBLE, true);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true);
-
-#ifdef SYSTEM_DARWIN
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#else
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-#endif
-
-  GLFWwindow* window = glfwCreateWindow(640, 480, "Hello OpenGL", nullptr, nullptr);
-
-  if (window == nullptr) {
-    std::cerr << "Failed to create context" << std::endl;
-
-    glfwTerminate();
-
-    return 1;
-  }
-
-  glfwMakeContextCurrent(window);
+  sf::Window window(sf::VideoMode(800, 600), "Hello OpenGL!", sf::Style::Default, settings);
 
   globjects::init([&](const char * name) {
-    return glfwGetProcAddress(name);
+    return context.getFunction(name);
   });
 
   globjects::DebugMessage::enable(); // enable automatic messages if KHR_debug is available
@@ -190,8 +169,15 @@ int main() {
 
   std::cout << "done" << std::endl;
 
-  while (!glfwWindowShouldClose(window)) {
-    glfwPollEvents();
+  while (window.isOpen()) {
+    sf::Event event;
+
+    while (window.pollEvent(event)) {
+      if (event.type == sf::Event::Closed) {
+        window.close();
+        break;
+      }
+    }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -200,10 +186,8 @@ int main() {
     g_programPipeline->use();
     g_vao->drawArrays(static_cast<gl::GLenum>(GL_TRIANGLE_STRIP), 0, 4);
 
-    glfwSwapBuffers(window);
+    window.display();
   }
-
-  glfwTerminate();
 
   return 0;
 }
