@@ -9,10 +9,13 @@ Dependencies/irrKlang-*/
 Dependencies/irrlicht-*/
 Dependencies/tinyxml2*/
 *~
-build
+build/
 .DS_Store
 .vs
 CMakeSettings.json
 .project
 cmake-build-*/
 .idea
+.vscode
+.xmake
+vcpkg_installed
