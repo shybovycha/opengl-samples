@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <memory>
 
 #include <glm/vec2.hpp>
@@ -55,8 +56,6 @@ int main() {
 
   std::cout << "[INFO] Initializing..." << std::endl;
 
-  auto g_cornerBuffer = globjects::Buffer::create();
-
   std::cout << "[INFO] Creating shaders..." << std::endl;
 
   std::cout << "[INFO] Compiling vertex shader...";
@@ -97,18 +96,20 @@ int main() {
 
   std::cout << "[INFO] Creating VAO...";
 
-  auto g_vao = globjects::VertexArray::create();
+  auto g_planeBuffer = globjects::Buffer::create();
 
-  g_cornerBuffer->setData(
-    std::array<glm::vec2, 4> {
-      { glm::vec2(0, 0), glm::vec2(1, 0), glm::vec2(0, 1), glm::vec2(1, 1) }
+  g_planeBuffer->setData(
+    std::array<glm::vec3, 4> {
+      { glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 1, 0) }
     },
     gl::GL_STATIC_DRAW
   );
 
+  auto g_vao = globjects::VertexArray::create();
+
   g_vao->binding(0)->setAttribute(0);
-  g_vao->binding(0)->setBuffer(g_cornerBuffer.get(), 0, sizeof(glm::vec2));
-  g_vao->binding(0)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT));
+  g_vao->binding(0)->setBuffer(g_planeBuffer.get(), 0, sizeof(glm::vec3));
+  g_vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT));
   g_vao->enable(0);
 
   std::cout << "done" << std::endl;
@@ -123,37 +124,46 @@ int main() {
   glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
   glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
+  sf::Clock clock;
+
   while (window.isOpen()) {
     sf::Event event;
+
+    // measure time since last frame, in seconds
+    float deltaTime = static_cast<float>(clock.restart().asSeconds());
+
+    std::ostringstream title;
+
+    title << "Hello camera [frame render time, sec: " << deltaTime << "]";
+
+    window.setTitle(title.str());
 
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
         window.close();
         break;
       }
-
-      if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::W) {
-          cameraPos += cameraSpeed * cameraFront;
-        }
-
-        if (event.key.code == sf::Keyboard::S) {
-          cameraPos -= cameraSpeed * cameraFront;
-        }
-
-        if (event.key.code == sf::Keyboard::A) {
-          cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-        }
-
-        if (event.key.code == sf::Keyboard::D) {
-          cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-        }
-      }
-
-      /*if (event.type == sf::Event::MouseMoved) {
-          event.mouseMove.x
-      }*/
     }
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+      cameraPos += cameraFront * cameraSpeed * deltaTime;
+    }
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+      cameraPos -= cameraFront * cameraSpeed * deltaTime;
+    }
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+      cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed * deltaTime;
+    }
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+      cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed * deltaTime;
+    }
+
+    /*if (event.type == sf::Event::MouseMoved) {
+        event.mouseMove.x
+    }*/
 
     glm::mat4 projection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
 

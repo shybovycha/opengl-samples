@@ -1,6 +1,6 @@
 #version 410
 
-layout (location = 0) in vec2 corner;
+layout (location = 0) in vec3 vertexPos;
 
 out vec4 color;
 
@@ -15,6 +15,6 @@ uniform mat4 projection;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(corner * 2.0 - 1.0, 0.0, 1.0);
-    color = vec4(corner, 0.0, 1.0);
+    gl_Position = projection * view * model * vec4(vertexPos, 1.0);
+    color = vec4(vertexPos, 1.0);
 }
