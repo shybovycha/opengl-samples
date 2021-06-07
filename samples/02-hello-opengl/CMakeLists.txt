@@ -9,8 +9,8 @@ add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
 target_compile_features(${EXECUTABLE_NAME} PRIVATE cxx_std_17)
 
-find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
-target_link_libraries(${EXECUTABLE_NAME} PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
+find_package(glfw3 CONFIG REQUIRED)
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE glfw)
 
 find_package(globjects CONFIG REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE globjects::globjects)
