@@ -9,6 +9,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/scalar_constants.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 #include <glbinding/gl/gl.h>
 #include <glbinding/Version.h>
@@ -118,13 +119,16 @@ int main() {
 
   const float fov = 45.0f;
 
-  const float cameraSpeed = 0.05f;
+  const float cameraMoveSpeed = 1.0f;
+  const float cameraRotateSpeed = 100.0f;
 
   glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-  glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
   glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+  glm::vec3 cameraLeft = glm::vec3(1.0f, 0.0f, 0.0f);
 
   sf::Clock clock;
+
+  glm::vec2 previousMousePos = glm::vec2(sf::Mouse::getPosition().x, sf::Mouse::getPosition().y);
 
   while (window.isOpen()) {
     sf::Event event;
@@ -143,27 +147,38 @@ int main() {
         window.close();
         break;
       }
+
+      if (event.type == sf::Event::MouseMoved) {
+          glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition().x, sf::Mouse::getPosition().y);
+          glm::vec2 mouseDelta = currentMousePos - previousMousePos;
+
+          float horizontalAngle = (mouseDelta.x / window.getSize().x) * -1 * deltaTime * cameraRotateSpeed * fov;
+          float verticalAngle = (mouseDelta.y / window.getSize().y) * -1 * deltaTime * cameraRotateSpeed * fov;
+
+          cameraUp = glm::rotate(cameraUp, verticalAngle, cameraLeft);
+          cameraLeft = glm::rotate(cameraLeft, horizontalAngle, glm::vec3(0, 1, 0));
+
+          previousMousePos = currentMousePos;
+      }
     }
 
+    glm::vec3 cameraFront = glm::normalize(glm::cross(cameraUp, cameraLeft));
+
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-      cameraPos += cameraFront * cameraSpeed * deltaTime;
+      cameraPos += cameraFront * cameraMoveSpeed * deltaTime;
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-      cameraPos -= cameraFront * cameraSpeed * deltaTime;
+      cameraPos -= cameraFront * cameraMoveSpeed * deltaTime;
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-      cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed * deltaTime;
+      cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraMoveSpeed * deltaTime;
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-      cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed * deltaTime;
+      cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraMoveSpeed * deltaTime;
     }
-
-    /*if (event.type == sf::Event::MouseMoved) {
-        event.mouseMove.x
-    }*/
 
     glm::mat4 projection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
 
