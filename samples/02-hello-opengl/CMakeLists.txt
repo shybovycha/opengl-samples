@@ -16,7 +16,7 @@ find_package(globjects CONFIG REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE globjects::globjects)
 
 find_package(glm CONFIG REQUIRED)
-target_link_libraries(${EXECUTABLE_NAME} PRIVATE glm::glm)
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${GLM_LIBRARIES})
 
 find_package(OpenGL REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PUBLIC ${OPENGL_LIBRARIES})

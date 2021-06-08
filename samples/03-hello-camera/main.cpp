@@ -64,7 +64,7 @@ int main() {
   auto g_vertexProgram = globjects::Program::create();
   auto g_vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
   auto g_vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(g_vertexShaderSource.get());
-  auto g_vertexShader = globjects::Shader::create(gl::GL_VERTEX_SHADER, g_vertexShaderTemplate.get());
+  auto g_vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), g_vertexShaderTemplate.get());
 
   std::cout << "done" << std::endl;
 
@@ -73,7 +73,7 @@ int main() {
   auto g_fragmentProgram = globjects::Program::create();
   auto g_fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
   auto g_fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(g_fragmentShaderSource.get());
-  auto g_fragmentShader = globjects::Shader::create(gl::GL_FRAGMENT_SHADER, g_fragmentShaderTemplate.get());
+  auto g_fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), g_fragmentShaderTemplate.get());
 
   std::cout << "done" << std::endl;
 
@@ -103,7 +103,7 @@ int main() {
     std::array<glm::vec3, 4> {
       { glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 1, 0) }
     },
-    gl::GL_STATIC_DRAW
+    static_cast<gl::GLenum>(GL_STATIC_DRAW)
   );
 
   auto g_vao = globjects::VertexArray::create();
