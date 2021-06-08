@@ -77,8 +77,6 @@ int main() {
 
   std::cout << "done" << std::endl;
 
-  auto size = glm::ivec2 {600, 800};
-
   std::cout << "[INFO] Linking shader programs...";
 
   vertexProgram->attach(vertexShader.get());
@@ -195,7 +193,7 @@ int main() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glViewport(0, 0, size.x, size.y);
+    glViewport(0, 0, window.getSize().x, window.getSize().y);
 
     programPipeline->use();
 
