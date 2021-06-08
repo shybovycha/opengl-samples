@@ -1,18 +1,12 @@
 #include <iostream>
 #include <fstream>
-#include <string>
-#include <memory>
 
 #include <glm/vec2.hpp>
 
 #include <glbinding/gl/gl.h>
-#include <glbinding/Version.h>
-#include <glbinding-aux/ContextInfo.h>
-#include <glbinding-aux/types_to_string.h>
 
 #include <globjects/globjects.h>
 #include <globjects/base/File.h>
-#include <globjects/logging.h>
 
 #include <globjects/Error.h>
 #include <globjects/Buffer.h>
@@ -27,8 +21,6 @@
 #include <SFML/OpenGL.hpp>
 
 int main() {
-  sf::Context context;
-
   sf::ContextSettings settings;
   settings.depthBits = 24;
   settings.stencilBits = 8;
@@ -39,8 +31,8 @@ int main() {
 
   sf::Window window(sf::VideoMode(800, 600), "Hello OpenGL!", sf::Style::Default, settings);
 
-  globjects::init([&](const char * name) {
-    return context.getFunction(name);
+  globjects::init([](const char * name) {
+    return sf::Context::getFunction(name);
   });
 
   globjects::DebugMessage::enable(); // enable automatic messages if KHR_debug is available
@@ -110,7 +102,7 @@ int main() {
   std::cout << "[INFO] Done initializing" << std::endl;
 
   while (window.isOpen()) {
-    sf::Event event;
+    sf::Event event {};
 
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
@@ -121,7 +113,7 @@ int main() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glViewport(0, 0, window.getSize().x, window.getSize().y);
+    glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
 
     programPipeline->use();
     vao->drawArrays(static_cast<gl::GLenum>(GL_TRIANGLE_STRIP), 0, 4);

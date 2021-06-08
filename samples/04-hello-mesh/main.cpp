@@ -8,17 +8,12 @@
 #include <glm/mat4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
-#include <glm/ext/scalar_constants.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
 #include <glbinding/gl/gl.h>
-#include <glbinding/Version.h>
-#include <glbinding-aux/ContextInfo.h>
-#include <glbinding-aux/types_to_string.h>
 
 #include <globjects/globjects.h>
 #include <globjects/base/File.h>
-#include <globjects/logging.h>
 
 #include <globjects/Error.h>
 #include <globjects/Buffer.h>
@@ -33,8 +28,6 @@
 #include <SFML/OpenGL.hpp>
 
 int main() {
-  sf::Context context;
-
   sf::ContextSettings settings;
   settings.depthBits = 24;
   settings.stencilBits = 8;
@@ -45,8 +38,8 @@ int main() {
 
   sf::Window window(sf::VideoMode(800, 600), "Hello Mesh!", sf::Style::Default, settings);
 
-  globjects::init([&](const char* name) {
-      return context.getFunction(name);
+  globjects::init([](const char* name) {
+      return sf::Context::getFunction(name);
   });
 
   globjects::DebugMessage::enable();// enable automatic messages if KHR_debug is available
@@ -143,7 +136,7 @@ int main() {
   glm::vec2 previousMousePos = glm::vec2(sf::Mouse::getPosition().x, sf::Mouse::getPosition().y);
 
   while (window.isOpen()) {
-    sf::Event event;
+    sf::Event event {};
 
     // measure time since last frame, in seconds
     float deltaTime = static_cast<float>(clock.restart().asSeconds());
@@ -164,8 +157,8 @@ int main() {
           glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition().x, sf::Mouse::getPosition().y);
           glm::vec2 mouseDelta = currentMousePos - previousMousePos;
 
-          float horizontalAngle = (mouseDelta.x / window.getSize().x) * -1 * deltaTime * cameraRotateSpeed * fov;
-          float verticalAngle = (mouseDelta.y / window.getSize().y) * -1 * deltaTime * cameraRotateSpeed * fov;
+          float horizontalAngle = (mouseDelta.x / static_cast<float>(window.getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
+          float verticalAngle = (mouseDelta.y / static_cast<float>(window.getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
 
           cameraUp = glm::rotate(cameraUp, verticalAngle, cameraLeft);
           cameraLeft = glm::rotate(cameraLeft, horizontalAngle, glm::vec3(0, 1, 0));
@@ -207,7 +200,7 @@ int main() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glViewport(0, 0, window.getSize().x, window.getSize().y);
+    glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
 
     vao->bind();
 
