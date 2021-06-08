@@ -120,6 +120,10 @@ int main() {
   sf::Clock clock;
 
   while (window.isOpen()) {
+    if (!window.hasFocus()) {
+      continue;
+    }
+
     sf::Event event {};
 
     // measure time since last frame, in seconds

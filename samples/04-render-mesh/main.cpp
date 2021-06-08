@@ -102,15 +102,17 @@ int main() {
 
   auto meshIndexBuffer = globjects::Buffer::create();
 
+  const auto numFaces = 12;
+
   meshIndexBuffer->setData(
-    std::array<std::array<GLuint, 3>, 12> {
+    std::array<std::array<GLuint, 3>, numFaces> {
       {
-        { 0, 1, 2 }, { 2, 3, 0 },
-        { 4, 5, 6 }, { 6, 7, 4 },
-        { 0, 1, 5 }, { 5, 7, 0 },
-        { 2, 3, 6 }, { 6, 7, 1 },
-        { 1, 2, 6 }, { 6, 5, 1 },
-        { 0, 1, 7 }, { 7, 4, 0 },
+        { 0, 1, 2 }, { 2, 3, 0 }, // back
+        { 4, 5, 6 }, { 6, 7, 4 }, // front
+        { 0, 1, 5 }, { 5, 4, 0 }, // left
+        { 3, 2, 6 }, { 6, 7, 3 }, // right
+        { 1, 5, 6 }, { 6, 2, 1 }, // top
+        { 0, 3, 7 }, { 7, 4, 0 }, // bottom
       }
     },
     static_cast<gl::GLenum>(gl::GL_STATIC_DRAW)
@@ -144,6 +146,10 @@ int main() {
   glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
 
   while (window.isOpen()) {
+    if (!window.hasFocus()) {
+      continue;
+    }
+
     sf::Event event {};
 
     // measure time since last frame, in seconds
@@ -213,7 +219,7 @@ int main() {
 
     // number of values passed = number of elements * number of vertices per element
     // in this case: 2 triangles, 3 vertex indexes per triangle
-    vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), 12 * 3, static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr);
+    vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), numFaces * 3, static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr);
 
     programPipeline->release();
 
