@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
-project(03-hello-camera VERSION 1.0.2 LANGUAGES CXX)
+project(04-render-mesh VERSION 1.0.2 LANGUAGES CXX)
 
-set(EXECUTABLE_NAME 03-hello-camera)
+set(EXECUTABLE_NAME 04-render-mesh)
 set(SOURCES "main.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})

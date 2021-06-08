@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
-project(02-hello-opengl VERSION 1.0.2 LANGUAGES CXX)
+project(03-fps-camera VERSION 1.0.2 LANGUAGES CXX)
 
-set(EXECUTABLE_NAME 02-hello-opengl)
+set(EXECUTABLE_NAME 03-fps-camera)
 set(SOURCES "main.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})

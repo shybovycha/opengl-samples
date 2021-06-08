@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
-project(04-hello-mesh VERSION 1.0.2 LANGUAGES CXX)
+project(02-init-opengl VERSION 1.0.2 LANGUAGES CXX)
 
-set(EXECUTABLE_NAME 04-hello-mesh)
+set(EXECUTABLE_NAME 02-init-opengl)
 set(SOURCES "main.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})

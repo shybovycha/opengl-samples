@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
-project(01-hello-window VERSION 1.0.2 LANGUAGES CXX)
+project(01-create-window VERSION 1.0.2 LANGUAGES CXX)
 
-set(EXECUTABLE_NAME 01-hello-window)
+set(EXECUTABLE_NAME 01-create-window)
 set(SOURCES "main.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})

@@ -3,7 +3,7 @@ add_requires("glm")
 add_requires("vcpkg::globjects ~1.1.0", { alias = "globjects" })
 add_requires("vcpkg::glbinding", { alias = "glbinding" })
 
-target("02-hello-opengl")
+target("03-camera")
   set_kind("binary")
 
   add_packages("sfml", "glm", "globjects", "glbinding")
