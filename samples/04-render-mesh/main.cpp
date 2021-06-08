@@ -57,7 +57,7 @@ int main() {
   auto vertexProgram = globjects::Program::create();
   auto vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
   auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
-  auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
+  auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(gl::GL_VERTEX_SHADER), vertexShaderTemplate.get());
 
   std::cout << "done" << std::endl;
 
@@ -66,7 +66,7 @@ int main() {
   auto fragmentProgram = globjects::Program::create();
   auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
   auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
-  auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
+  auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(gl::GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
 
   std::cout << "done" << std::endl;
 
@@ -91,22 +91,29 @@ int main() {
   auto meshVertexBuffer = globjects::Buffer::create();
 
   meshVertexBuffer->setData(
-    std::array<glm::vec3, 4> {
-      { glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 1, 0), glm::vec3(1, 0, 0) }
+    std::array<glm::vec3, 8> {
+      {
+        glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 1, 0), glm::vec3(1, 0, 0),
+        glm::vec3(0, 0, 1), glm::vec3(0, 1, 1), glm::vec3(1, 1, 1), glm::vec3(1, 0, 1),
+      }
     },
-    static_cast<gl::GLenum>(GL_STATIC_DRAW)
+    static_cast<gl::GLenum>(gl::GL_STATIC_DRAW)
   );
 
   auto meshIndexBuffer = globjects::Buffer::create();
 
   meshIndexBuffer->setData(
-    std::array<std::array<GLuint, 3>, 2> {
+    std::array<std::array<GLuint, 3>, 12> {
       {
-        { 0, 1, 2 },
-        { 2, 3, 0 }
+        { 0, 1, 2 }, { 2, 3, 0 },
+        { 4, 5, 6 }, { 6, 7, 4 },
+        { 0, 1, 5 }, { 5, 7, 0 },
+        { 2, 3, 6 }, { 6, 7, 1 },
+        { 1, 2, 6 }, { 6, 5, 1 },
+        { 0, 1, 7 }, { 7, 4, 0 },
       }
     },
-    static_cast<gl::GLenum>(GL_STATIC_DRAW)
+    static_cast<gl::GLenum>(gl::GL_STATIC_DRAW)
   );
 
   auto vao = globjects::VertexArray::create();
@@ -134,6 +141,8 @@ int main() {
 
   sf::Clock clock;
 
+  glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
+
   while (window.isOpen()) {
     sf::Event event {};
 
@@ -146,10 +155,8 @@ int main() {
 
     window.setTitle(title.str());
 
-    while (window.pollEvent(event))
-    {
-        if (event.type == sf::Event::Closed)
-        {
+    while (window.pollEvent(event)) {
+        if (event.type == sf::Event::Closed) {
             window.close();
             break;
         }
@@ -163,6 +170,8 @@ int main() {
 
     cameraForward = glm::rotate(cameraForward, horizontalAngle, cameraUp);
     cameraForward = glm::rotate(cameraForward, verticalAngle, cameraRight);
+
+    cameraRight = glm::normalize(glm::rotate(cameraRight, horizontalAngle, cameraUp));
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
       cameraPos += cameraForward * cameraMoveSpeed * deltaTime;
@@ -183,9 +192,10 @@ int main() {
     glm::mat4 projection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
 
     glm::mat4 view = glm::lookAt(
-            cameraPos,
-            cameraPos + cameraForward,
-            cameraUp);
+        cameraPos,
+        cameraPos + cameraForward,
+        cameraUp
+    );
 
     glm::mat4 model = glm::mat4(1.0f); // identity
 
@@ -203,7 +213,7 @@ int main() {
 
     // number of values passed = number of elements * number of vertices per element
     // in this case: 2 triangles, 3 vertex indexes per triangle
-    vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), 2 * 3, static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr);
+    vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), 12 * 3, static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr);
 
     programPipeline->release();
 
