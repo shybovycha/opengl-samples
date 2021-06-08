@@ -61,57 +61,57 @@ int main() {
 
   std::cout << "[INFO] Compiling vertex shader...";
 
-  auto g_vertexProgram = globjects::Program::create();
-  auto g_vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
-  auto g_vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(g_vertexShaderSource.get());
-  auto g_vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), g_vertexShaderTemplate.get());
+  auto vertexProgram = globjects::Program::create();
+  auto vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
+  auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
+  auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
 
   std::cout << "done" << std::endl;
 
   std::cout << "[INFO] Compiling fragment shader...";
 
-  auto g_fragmentProgram = globjects::Program::create();
-  auto g_fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
-  auto g_fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(g_fragmentShaderSource.get());
-  auto g_fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), g_fragmentShaderTemplate.get());
+  auto fragmentProgram = globjects::Program::create();
+  auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
+  auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
+  auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
 
   std::cout << "done" << std::endl;
 
-  auto g_size = glm::ivec2 {600, 800};
+  auto size = glm::ivec2 {600, 800};
 
   std::cout << "[INFO] Linking shader programs...";
 
-  g_vertexProgram->attach(g_vertexShader.get());
-  g_fragmentProgram->attach(g_fragmentShader.get());
+  vertexProgram->attach(vertexShader.get());
+  fragmentProgram->attach(fragmentShader.get());
 
   std::cout << "done" << std::endl;
 
   std::cout << "[INFO] Creating rendering pipeline...";
 
-  auto g_programPipeline = globjects::ProgramPipeline::create();
+  auto programPipeline = globjects::ProgramPipeline::create();
 
-  g_programPipeline->useStages(g_vertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-  g_programPipeline->useStages(g_fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+  programPipeline->useStages(vertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
+  programPipeline->useStages(fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
 
   std::cout << "done" << std::endl;
 
   std::cout << "[INFO] Creating VAO...";
 
-  auto g_planeBuffer = globjects::Buffer::create();
+  auto planeBuffer = globjects::Buffer::create();
 
-  g_planeBuffer->setData(
+  planeBuffer->setData(
     std::array<glm::vec3, 4> {
       { glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 1, 0) }
     },
     static_cast<gl::GLenum>(GL_STATIC_DRAW)
   );
 
-  auto g_vao = globjects::VertexArray::create();
+  auto vao = globjects::VertexArray::create();
 
-  g_vao->binding(0)->setAttribute(0);
-  g_vao->binding(0)->setBuffer(g_planeBuffer.get(), 0, sizeof(glm::vec3));
-  g_vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT));
-  g_vao->enable(0);
+  vao->binding(0)->setAttribute(0);
+  vao->binding(0)->setBuffer(planeBuffer.get(), 0, sizeof(glm::vec3));
+  vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT));
+  vao->enable(0);
 
   std::cout << "done" << std::endl;
 
@@ -189,17 +189,17 @@ int main() {
 
     glm::mat4 model = glm::mat4(1.0f); // identity
 
-    g_vertexProgram->setUniform("model", model);
-    g_vertexProgram->setUniform("view", view);
-    g_vertexProgram->setUniform("projection", projection);
+    vertexProgram->setUniform("model", model);
+    vertexProgram->setUniform("view", view);
+    vertexProgram->setUniform("projection", projection);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glViewport(0, 0, g_size.x, g_size.y);
+    glViewport(0, 0, size.x, size.y);
 
-    g_programPipeline->use();
+    programPipeline->use();
 
-    g_vao->drawArrays(static_cast<gl::GLenum>(GL_TRIANGLE_STRIP), 0, 4);
+    vao->drawArrays(static_cast<gl::GLenum>(GL_TRIANGLE_STRIP), 0, 4);
 
     window.display();
   }

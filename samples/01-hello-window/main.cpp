@@ -13,14 +13,5 @@ int main() {
     }
   }
 
-  // auto program = new Program();
-
-  // program->attach(
-  //   Shader::fromString(GL_VERTEX_SHADER, vertexShaderSource),
-  //   Shader::fromString(GL_FRAGMENT_SHADER, fragmentShaderSource)
-  // );
-
-  // program->setUniform("extent", glm::vec2(1.0f, 0.5f)));
-
   return 0;
 }
