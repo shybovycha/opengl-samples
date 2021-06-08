@@ -125,15 +125,14 @@ int main() {
   const float fov = 45.0f;
 
   const float cameraMoveSpeed = 1.0f;
-  const float cameraRotateSpeed = 100.0f;
+  const float cameraRotateSpeed = 10.0f;
 
   glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
   glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-  glm::vec3 cameraLeft = glm::vec3(1.0f, 0.0f, 0.0f);
+  glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
+  glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 
   sf::Clock clock;
-
-  glm::vec2 previousMousePos = glm::vec2(sf::Mouse::getPosition().x, sf::Mouse::getPosition().y);
 
   while (window.isOpen()) {
     sf::Event event {};
@@ -147,49 +146,45 @@ int main() {
 
     window.setTitle(title.str());
 
-    while (window.pollEvent(event)) {
-      if (event.type == sf::Event::Closed) {
-        window.close();
-        break;
-      }
-
-      if (event.type == sf::Event::MouseMoved) {
-          glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition().x, sf::Mouse::getPosition().y);
-          glm::vec2 mouseDelta = currentMousePos - previousMousePos;
-
-          float horizontalAngle = (mouseDelta.x / static_cast<float>(window.getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
-          float verticalAngle = (mouseDelta.y / static_cast<float>(window.getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
-
-          cameraUp = glm::rotate(cameraUp, verticalAngle, cameraLeft);
-          cameraLeft = glm::rotate(cameraLeft, horizontalAngle, glm::vec3(0, 1, 0));
-
-          previousMousePos = currentMousePos;
-      }
+    while (window.pollEvent(event))
+    {
+        if (event.type == sf::Event::Closed)
+        {
+            window.close();
+            break;
+        }
     }
 
-    glm::vec3 cameraFront = glm::normalize(glm::cross(cameraUp, cameraLeft));
+    glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
+    glm::vec2 mouseDelta = currentMousePos - glm::vec2((window.getSize().x / 2), (window.getSize().y / 2));
+
+    float horizontalAngle = (mouseDelta.x / static_cast<float>(window.getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
+    float verticalAngle = (mouseDelta.y / static_cast<float>(window.getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
+
+    cameraForward = glm::rotate(cameraForward, horizontalAngle, cameraUp);
+    cameraForward = glm::rotate(cameraForward, verticalAngle, cameraRight);
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-      cameraPos += cameraFront * cameraMoveSpeed * deltaTime;
+      cameraPos += cameraForward * cameraMoveSpeed * deltaTime;
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-      cameraPos -= cameraFront * cameraMoveSpeed * deltaTime;
+      cameraPos -= cameraForward * cameraMoveSpeed * deltaTime;
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-      cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraMoveSpeed * deltaTime;
+      cameraPos -= glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-      cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraMoveSpeed * deltaTime;
+      cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
     }
 
     glm::mat4 projection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
 
     glm::mat4 view = glm::lookAt(
             cameraPos,
-            cameraPos + cameraFront,
+            cameraPos + cameraForward,
             cameraUp);
 
     glm::mat4 model = glm::mat4(1.0f); // identity
@@ -215,6 +210,8 @@ int main() {
     vao->unbind();
 
     window.display();
+
+    sf::Mouse::setPosition(sf::Vector2<int>(window.getSize().x / 2, window.getSize().y / 2), window);
   }
 
   return 0;
