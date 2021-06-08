@@ -99,7 +99,7 @@ int main() {
 
   meshVertexBuffer->setData(
     std::array<glm::vec3, 4> {
-      { glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 1, 0) }
+      { glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 1, 0), glm::vec3(1, 0, 0) }
     },
     static_cast<gl::GLenum>(GL_STATIC_DRAW)
   );
@@ -107,10 +107,10 @@ int main() {
   auto meshIndexBuffer = globjects::Buffer::create();
 
   meshIndexBuffer->setData(
-    std::array<unsigned int, 6> {
+    std::array<std::array<GLuint, 3>, 2> {
       {
-        0, 1, 2,
-        2, 3, 0
+        { 0, 1, 2 },
+        { 2, 3, 0 }
       }
     },
     static_cast<gl::GLenum>(GL_STATIC_DRAW)
@@ -209,9 +209,17 @@ int main() {
 
     glViewport(0, 0, window.getSize().x, window.getSize().y);
 
+    vao->bind();
+
     programPipeline->use();
 
-    vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), 2, static_cast<gl::GLenum>(GL_UNSIGNED_SHORT), nullptr);
+    // number of values passed = number of elements * number of vertices per element
+    // in this case: 2 triangles, 3 vertex indexes per triangle
+    vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), 2 * 3, static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr);
+
+    programPipeline->release();
+
+    vao->unbind();
 
     window.display();
   }
