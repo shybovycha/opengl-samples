@@ -169,14 +169,19 @@ int main() {
     return 1;
   }
 
+  textureImage.flipVertically();
+
   auto texture = globjects::Texture::create(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+
+  texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+  texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
 
   texture->image2D(
       0,
-      static_cast<gl::GLenum>(GL_RGB8),
+      static_cast<gl::GLenum>(GL_RGBA8),
       glm::vec2(textureImage.getSize().x, textureImage.getSize().y),
       0,
-      static_cast<gl::GLenum>(GL_RGB),
+      static_cast<gl::GLenum>(GL_RGBA),
       static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
       reinterpret_cast<const gl::GLvoid*>(textureImage.getPixelsPtr())
   );
