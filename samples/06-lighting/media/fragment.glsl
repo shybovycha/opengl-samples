@@ -4,6 +4,10 @@ uniform sampler2D textureSampler;
 
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
+uniform vec3 ambientColor;
+uniform float materialSpecular;
+
+uniform vec3 cameraPosition;
 
 in vec2 vertexUV;
 in vec3 vertexNormal;
@@ -19,5 +23,11 @@ void main()
     float diffuseFactor = max(dot(normal, lightDirection), 0.0);
     vec3 diffuseColor = diffuseFactor * lightColor;
 
-    fragColor = texture(textureSampler, vertexUV) * vec4(diffuseColor, 1.0);
+    vec3 viewerDirection = normalize(cameraPosition - fragmentPosition);
+    vec3 reflectionDirection = reflect(-lightDirection, normal);
+
+    float specularFactor = pow(max(dot(viewerDirection, reflectionDirection), 0.0), 32);
+    vec3 specularColor = materialSpecular * specularFactor * lightColor;
+
+    fragColor = texture(textureSampler, vertexUV) * (vec4(ambientColor, 1.0) + vec4(specularColor, 1.0) + vec4(diffuseColor, 1.0));
 }

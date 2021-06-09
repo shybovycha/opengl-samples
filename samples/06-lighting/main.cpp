@@ -285,6 +285,9 @@ int main() {
 
     fragmentProgram->setUniform("lightPosition", glm::vec3(-2, 2, 2));
     fragmentProgram->setUniform("lightColor", glm::vec3(1, 0.5, 0.5));
+    fragmentProgram->setUniform("ambientColor", glm::vec3(0, 0, 0));
+    fragmentProgram->setUniform("materialSpecular", 12.0f);
+    fragmentProgram->setUniform("cameraPosition", cameraPos);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
