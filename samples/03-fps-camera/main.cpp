@@ -26,6 +26,10 @@
 #include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
 
+#ifdef WIN32
+using namespace gl;
+#endif
+
 int main() {
   sf::ContextSettings settings;
   settings.depthBits = 24;
@@ -56,7 +60,7 @@ int main() {
   auto vertexProgram = globjects::Program::create();
   auto vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
   auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
-  auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(gl::GL_VERTEX_SHADER), vertexShaderTemplate.get());
+  auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
 
   std::cout << "done" << std::endl;
 
@@ -65,7 +69,7 @@ int main() {
   auto fragmentProgram = globjects::Program::create();
   auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
   auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
-  auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(gl::GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
+  auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
 
   std::cout << "done" << std::endl;
 
@@ -93,7 +97,7 @@ int main() {
     std::array<glm::vec3, 4> {
       { glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 1, 0) }
     },
-    static_cast<gl::GLenum>(gl::GL_STATIC_DRAW)
+    static_cast<gl::GLenum>(GL_STATIC_DRAW)
   );
 
   auto vao = globjects::VertexArray::create();
