@@ -39,7 +39,13 @@ int main() {
   settings.minorVersion = 2;
   settings.attributeFlags = sf::ContextSettings::Attribute::Core;
 
-  sf::Window window(sf::VideoMode(800, 600), "Hello OpenGL!", sf::Style::Default, settings);
+#ifdef SYSTEM_DARWIN
+  auto videoMode = sf::VideoMode(2048, 1536);
+#else
+  auto videoMode = sf::VideoMode(1024, 768);
+#endif
+
+  sf::Window window(videoMode, "Hello Camera!", sf::Style::Default, settings);
 
   globjects::init([](const char* name) {
       return sf::Context::getFunction(name);

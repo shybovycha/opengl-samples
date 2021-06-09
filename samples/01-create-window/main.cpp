@@ -1,7 +1,13 @@
 #include <SFML/Window.hpp>
 
 int main() {
-  sf::Window window(sf::VideoMode(800, 600), "Hello SFML Window!");
+#ifdef SYSTEM_DARWIN
+  auto videoMode = sf::VideoMode(2048, 1536);
+#else
+  auto videoMode = sf::VideoMode(1024, 768);
+#endif
+
+  sf::Window window(videoMode, "Hello SFML Window!");
 
   while (window.isOpen()) {
     sf::Event event {};
