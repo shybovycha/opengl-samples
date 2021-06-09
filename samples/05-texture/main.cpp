@@ -31,11 +31,6 @@
 using namespace gl;
 #endif
 
-struct Vertex {
-  glm::vec3 position;
-  glm::vec2 uv;
-};
-
 int main() {
   sf::ContextSettings settings;
   settings.depthBits = 24;
@@ -100,26 +95,13 @@ int main() {
   auto meshVertexBuffer = globjects::Buffer::create();
 
   meshVertexBuffer->setData(
-    std::array<Vertex, 8> {
-      {
-        { glm::vec3(0, 0, 0), glm::vec2(0, 0) }, { glm::vec3(0, 1, 0), glm::vec2(0, 1) }, { glm::vec3(1, 1, 0), glm::vec2(1, 1) }, { glm::vec3(1, 0, 0), glm::vec2(1, 0) },
-        { glm::vec3(0, 0, 1), glm::vec2(0, 0) }, { glm::vec3(0, 1, 1), glm::vec2(0, 1) }, { glm::vec3(1, 1, 1), glm::vec2(1, 1) }, { glm::vec3(1, 0, 1), glm::vec2(1, 0) },
-      }
-    },
-    static_cast<gl::GLenum>(GL_STATIC_DRAW)
-  );
-
-  /*
-  auto meshVertexBuffer = globjects::Buffer::create();
-
-  meshVertexBuffer->setData(
     std::array<glm::vec3, 8> {
       {
         glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 1, 0), glm::vec3(1, 0, 0),
         glm::vec3(0, 0, 1), glm::vec3(0, 1, 1), glm::vec3(1, 1, 1), glm::vec3(1, 0, 1),
       }
     },
-    static_cast<gl::GLenum>(gl::GL_STATIC_DRAW)
+    static_cast<gl::GLenum>(GL_STATIC_DRAW)
   );
 
   auto meshVertexUVsBuffer = globjects::Buffer::create();
@@ -131,9 +113,8 @@ int main() {
         glm::vec2(0, 0), glm::vec2(0, 1), glm::vec2(1, 1), glm::vec2(1, 0),
       }
     },
-    static_cast<gl::GLenum>(gl::GL_STATIC_DRAW)
+    static_cast<gl::GLenum>(GL_STATIC_DRAW)
   );
-  */
 
   auto meshIndexBuffer = globjects::Buffer::create();
 
@@ -158,9 +139,14 @@ int main() {
   vao->bindElementBuffer(meshIndexBuffer.get());
 
   vao->binding(0)->setAttribute(0);
-  vao->binding(0)->setBuffer(meshVertexBuffer.get(), 0, sizeof(Vertex)); // number of elements in buffer, stride, size of buffer element
-  vao->binding(0)->setFormat(5, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+  vao->binding(0)->setBuffer(meshVertexBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+  vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
   vao->enable(0);
+
+  vao->binding(1)->setAttribute(1);
+  vao->binding(1)->setBuffer(meshVertexUVsBuffer.get(), 0, sizeof(glm::vec2)); // number of elements in buffer, stride, size of buffer element
+  vao->binding(1)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+  vao->enable(1);
 
   std::cout << "done" << std::endl;
 
@@ -168,7 +154,7 @@ int main() {
 
   sf::Image textureImage;
 
-  if (!textureImage.loadFromFile("media/texture.png")) {
+  if (!textureImage.loadFromFile("media/texture.jpg")) {
     std::cerr << "[ERROR] Can not load texture" << std::endl;
     return 1;
   }
@@ -204,9 +190,11 @@ int main() {
   glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
 
   while (window.isOpen()) {
+#ifdef WIN32
     if (!window.hasFocus()) {
       continue;
     }
+#endif
 
     sf::Event event {};
 

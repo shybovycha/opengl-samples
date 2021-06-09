@@ -1,12 +1,7 @@
 #version 410
 
-struct TVertex
-{
-    vec3 position;
-    vec2 uv;
-};
-
-layout (location = 0) in TVertex vert;
+layout (location = 0) in vec3 vertexPosition;
+layout (location = 1) in vec2 vertexUV;
 
 out vec2 uv;
 
@@ -21,6 +16,6 @@ uniform mat4 projection;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(vert.position, 1.0);
-    uv = vert.uv;
+    gl_Position = projection * view * model * vec4(vertexPosition, 1.0);
+    uv = vertexUV;
 }
