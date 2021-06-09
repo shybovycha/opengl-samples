@@ -63,6 +63,11 @@ int main() {
   auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
   auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
 
+  if (!vertexShader->compile()) {
+    std::cerr << "[ERROR] Can not compile vertex shader" << std::endl;
+    return 1;
+  }
+
   std::cout << "done" << std::endl;
 
   std::cout << "[INFO] Compiling fragment shader...";
@@ -71,6 +76,11 @@ int main() {
   auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
   auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
   auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
+
+  if (!fragmentShader->compile()) {
+    std::cerr << "[ERROR] Can not compile fragment shader" << std::endl;
+    return 1;
+  }
 
   std::cout << "done" << std::endl;
 
@@ -163,13 +173,15 @@ int main() {
 
   texture->image2D(
       0,
-      static_cast<gl::GLenum>(GL_RGBA8),
+      static_cast<gl::GLenum>(GL_RGB8),
       glm::vec2(textureImage.getSize().x, textureImage.getSize().y),
       0,
-      static_cast<gl::GLenum>(GL_RGBA),
+      static_cast<gl::GLenum>(GL_RGB),
       static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
       reinterpret_cast<const gl::GLvoid*>(textureImage.getPixelsPtr())
   );
+
+  fragmentProgram->setUniform("textureSampler", 0);
 
   std::cout << "done" << std::endl;
 

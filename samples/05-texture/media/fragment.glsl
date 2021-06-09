@@ -2,11 +2,12 @@
 
 uniform sampler2D textureSampler;
 
-in vec2 uv;
+in vec4 outputColor;
+in vec2 outputUV;
 
-out vec4 fragColor;
+layout (location = 0) out vec4 fragColor;
 
 void main()
 {
-    fragColor = texture(textureSampler, uv);
+    fragColor = outputColor + texture(textureSampler, outputUV);
 }
