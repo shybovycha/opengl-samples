@@ -124,9 +124,11 @@ int main() {
   sf::Clock clock;
 
   while (window.isOpen()) {
+#ifdef WIN32
     if (!window.hasFocus()) {
       continue;
     }
+#endif
 
     sf::Event event {};
 

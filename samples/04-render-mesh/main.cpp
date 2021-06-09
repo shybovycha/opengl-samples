@@ -150,9 +150,11 @@ int main() {
   glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
 
   while (window.isOpen()) {
+#ifdef WIN32
     if (!window.hasFocus()) {
       continue;
     }
+#endif
 
     sf::Event event {};
 
