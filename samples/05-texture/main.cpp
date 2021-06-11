@@ -278,8 +278,6 @@ int main() {
 
     vao->bind();
 
-    glActiveTexture(GL_TEXTURE0);
-
     texture->bind();
 
     programPipeline->use();
