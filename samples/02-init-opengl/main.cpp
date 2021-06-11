@@ -1,10 +1,8 @@
 #include <fstream>
 #include <iostream>
 
-#include <SFML/OpenGL.hpp>
-#include <SFML/Window.hpp>
 #include <glbinding/gl/gl.h>
-#include <glm/vec2.hpp>
+
 #include <globjects/Buffer.h>
 #include <globjects/Error.h>
 #include <globjects/Program.h>
@@ -15,6 +13,11 @@
 #include <globjects/base/File.h>
 #include <globjects/base/StaticStringSource.h>
 #include <globjects/globjects.h>
+
+#include <glm/vec2.hpp>
+
+#include <SFML/OpenGL.hpp>
+#include <SFML/Window.hpp>
 
 #ifdef WIN32
 using namespace gl;

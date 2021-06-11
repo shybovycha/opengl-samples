@@ -48,26 +48,26 @@ Cpp11BracedListStyle: false
 DerivePointerAlignment: true
 # EmptyLineAfterAccessModifier: Never
 EmptyLineBeforeAccessModifier: Always
-IncludeBlocks: Regroup
-IncludeCategories:
-  # system
-  - Regex:           '<[[:alnum:].]+>'
-    Priority:        1
-    SortPriority:    1
-  # libraries
-  - Regex:           '^(<|")[[:alnum:]./]+'
-    Priority:        2
-    SortPriority:    2
-    CaseSensitive:   true
-  # local
-  - Regex:           '^"[[:alnum:].]+"'
-    Priority:        3
-    SortPriority:    3
-    CaseSensitive:   true
-  # rest
-  - Regex:           '.*'
-    Priority:        4
-    SortPriority:    0
+# IncludeBlocks: Regroup
+# IncludeCategories:
+#   # system
+#   - Regex:           '<[[:alnum:].]+>'
+#     Priority:        1
+#     SortPriority:    1
+#   # libraries
+#   - Regex:           '^(<|")[[:alnum:]./]+'
+#     Priority:        2
+#     SortPriority:    2
+#     CaseSensitive:   true
+#   # local
+#   - Regex:           '^"[[:alnum:].]+"'
+#     Priority:        3
+#     SortPriority:    3
+#     CaseSensitive:   true
+#   # rest
+#   - Regex:           '.*'
+#     Priority:        4
+#     SortPriority:    0
 # IndentAccessModifiers: false
 IndentCaseBlocks: true
 IndentCaseLabels: true
