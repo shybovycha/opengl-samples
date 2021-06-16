@@ -59,7 +59,8 @@ public:
         m_indexBuffer(indexBuffer),
         m_normalBuffer(normalBuffer),
         m_uvBuffer(uvBuffer)
-    {}
+    {
+    }
 
     ~Mesh()
     {
@@ -210,17 +211,16 @@ public:
         std::cout << "done" << std::endl;
 
         return std::make_shared<Mesh>(
-            vao, 
-            textures, 
-            vertices, 
+            vao,
+            textures,
+            vertices,
             normals,
             uvs,
-            indices, 
-            vertexBuffer, 
-            indexBuffer, 
-            normalBuffer, 
-            uvBuffer
-        );
+            indices,
+            vertexBuffer,
+            indexBuffer,
+            normalBuffer,
+            uvBuffer);
     }
 
     void draw()
@@ -231,8 +231,7 @@ public:
             static_cast<gl::GLenum>(GL_TRIANGLES),
             m_indices.size(),
             static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-            nullptr
-        );
+            nullptr);
     }
 
     void bind()
@@ -257,7 +256,7 @@ public:
 
 private:
     std::shared_ptr<globjects::VertexArray> m_vao;
-    
+
     std::shared_ptr<globjects::Buffer> m_vertexBuffer;
     std::shared_ptr<globjects::Buffer> m_indexBuffer;
     std::shared_ptr<globjects::Buffer> m_normalBuffer;
@@ -274,9 +273,14 @@ private:
 class Model
 {
 public:
-    Model(std::vector<std::shared_ptr<Mesh>> const& meshes) : m_meshes(meshes), m_transformation(1.0f) {}
+    Model(std::vector<std::shared_ptr<Mesh>> const& meshes) :
+        m_meshes(meshes), m_transformation(1.0f)
+    {
+    }
 
-    ~Model() {}
+    ~Model()
+    {
+    }
 
     static std::shared_ptr<Model> fromAiNode(const aiScene* scene, aiNode* node)
     {
@@ -417,10 +421,10 @@ int main()
     Assimp::Importer importer;
 
     auto scene = importer.ReadFile("media/Chicken.3ds",
-                                             aiProcess_CalcTangentSpace
-                                                 | aiProcess_Triangulate
-                                                 | aiProcess_JoinIdenticalVertices
-                                                 | aiProcess_SortByPType);
+                                   aiProcess_CalcTangentSpace
+                                       | aiProcess_Triangulate
+                                       | aiProcess_JoinIdenticalVertices
+                                       | aiProcess_SortByPType);
 
     if (!scene)
     {
