@@ -37,19 +37,35 @@ using namespace gl;
 class Mesh
 {
 public:
-    Mesh() {}
+    Mesh(
+        std::shared_ptr<globjects::VertexArray> vao,
+        const std::vector<std::shared_ptr<globjects::Texture>>& textures,
+        const std::vector<glm::vec3>& vertices,
+        const std::vector<glm::vec3>& normals,
+        const std::vector<glm::vec2>& uvs,
+        const std::vector<unsigned int>& indices,
+        std::shared_ptr<globjects::Buffer> vertexBuffer,
+        std::shared_ptr<globjects::Buffer> indexBuffer,
+        std::shared_ptr<globjects::Buffer> normalBuffer,
+        std::shared_ptr<globjects::Buffer> uvBuffer) :
 
-    Mesh(std::unique_ptr<globjects::VertexArray>& vao, std::vector<std::unique_ptr<globjects::Texture>> textures, unsigned int indices) :
-        m_vao(std::move(vao)),
+        m_vao(vao),
         m_textures(textures),
-        m_indices(indices)
+        m_vertices(vertices),
+        m_indices(indices),
+        m_uvs(uvs),
+        m_normals(normals),
+        m_vertexBuffer(vertexBuffer),
+        m_indexBuffer(indexBuffer),
+        m_normalBuffer(normalBuffer),
+        m_uvBuffer(uvBuffer)
     {}
 
     ~Mesh()
     {
     }
 
-    static std::unique_ptr<Mesh> fromAiMesh(const aiScene* scene, aiMesh* mesh)
+    static std::shared_ptr<Mesh> fromAiMesh(const aiScene* scene, aiMesh* mesh)
     {
         std::cout << "[INFO] Creating buffer objects...";
 
@@ -87,7 +103,7 @@ public:
             }
         }
 
-        std::vector<unsigned int> indices;
+        std::vector<GLuint> indices;
 
         for (auto i = 0; i < mesh->mNumFaces; ++i)
         {
@@ -99,15 +115,15 @@ public:
             }
         }
 
-        auto vertexBuffer = globjects::Buffer::create();
+        auto vertexBuffer = std::make_shared<globjects::Buffer>();
 
         vertexBuffer->setData(vertices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
 
-        auto indexBuffer = globjects::Buffer::create();
+        auto indexBuffer = std::make_shared<globjects::Buffer>();
 
         indexBuffer->setData(indices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
 
-        auto vao = globjects::VertexArray::create();
+        auto vao = std::make_shared<globjects::VertexArray>();
 
         vao->bindElementBuffer(indexBuffer.get());
 
@@ -116,35 +132,39 @@ public:
         vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         vao->enable(0);
 
-        if (!uvs.empty())
-        {
-            auto uvBuffer = globjects::Buffer::create();
-
-            vao->binding(1)->setAttribute(1);
-            vao->binding(1)->setBuffer(uvBuffer.get(), 0, sizeof(glm::vec2)); // number of elements in buffer, stride, size of buffer element
-            vao->binding(1)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-            vao->enable(1);
-
-            // TODO: set uniform flag signalling the uvs are present
-        }
+        auto normalBuffer = std::make_shared<globjects::Buffer>();
 
         if (!normals.empty())
         {
-            auto normalBuffer = globjects::Buffer::create();
+            normalBuffer->setData(normals, static_cast<gl::GLenum>(GL_STATIC_DRAW));
 
-            vao->binding(2)->setAttribute(2);
-            vao->binding(2)->setBuffer(normalBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
-            vao->binding(2)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-            vao->enable(2);
+            vao->binding(1)->setAttribute(1);
+            vao->binding(1)->setBuffer(normalBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+            vao->binding(1)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+            vao->enable(1);
 
             // TODO: set uniform flag signalling the normals are present
+        }
+
+        auto uvBuffer = std::make_shared<globjects::Buffer>();
+
+        if (!uvs.empty())
+        {
+            uvBuffer->setData(uvs, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+            vao->binding(2)->setAttribute(2);
+            vao->binding(2)->setBuffer(uvBuffer.get(), 0, sizeof(glm::vec2)); // number of elements in buffer, stride, size of buffer element
+            vao->binding(2)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+            vao->enable(2);
+
+            // TODO: set uniform flag signalling the uvs are present
         }
 
         std::cout << "done" << std::endl;
 
         std::cout << "[INFO] Loading textures...";
 
-        std::vector<std::unique_ptr<globjects::Texture>> textures;
+        std::vector<std::shared_ptr<globjects::Texture>> textures;
 
         if (mesh->mMaterialIndex >= 0)
         {
@@ -167,7 +187,7 @@ public:
 
                 textureImage.flipVertically();
 
-                auto texture = globjects::Texture::create(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+                auto texture = std::make_shared<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
                 texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
                 texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
@@ -189,7 +209,18 @@ public:
 
         std::cout << "done" << std::endl;
 
-        return std::make_unique<Mesh>(vao, textures, indices.size());
+        return std::make_shared<Mesh>(
+            vao, 
+            textures, 
+            vertices, 
+            normals,
+            uvs,
+            indices, 
+            vertexBuffer, 
+            indexBuffer, 
+            normalBuffer, 
+            uvBuffer
+        );
     }
 
     void draw()
@@ -198,7 +229,7 @@ public:
         // in this case: 2 triangles, 3 vertex indexes per triangle
         m_vao->drawElements(
             static_cast<gl::GLenum>(GL_TRIANGLES),
-            m_indices,
+            m_indices.size(),
             static_cast<gl::GLenum>(GL_UNSIGNED_INT),
             nullptr
         );
@@ -225,32 +256,35 @@ public:
     }
 
 private:
-    std::unique_ptr<globjects::VertexArray> m_vao;
-    std::vector<std::unique_ptr<globjects::Texture>> m_textures;
-    unsigned int m_indices;
+    std::shared_ptr<globjects::VertexArray> m_vao;
+    
+    std::shared_ptr<globjects::Buffer> m_vertexBuffer;
+    std::shared_ptr<globjects::Buffer> m_indexBuffer;
+    std::shared_ptr<globjects::Buffer> m_normalBuffer;
+    std::shared_ptr<globjects::Buffer> m_uvBuffer;
+
+    std::vector<std::shared_ptr<globjects::Texture>> m_textures;
+
+    std::vector<unsigned int> m_indices;
+    std::vector<glm::vec3> m_vertices;
+    std::vector<glm::vec3> m_normals;
+    std::vector<glm::vec2> m_uvs;
 };
 
 class Model
 {
 public:
-    Model() {}
+    Model(std::vector<std::shared_ptr<Mesh>> const& meshes) : m_meshes(meshes), m_transformation(1.0f) {}
 
     ~Model() {}
 
-    static Model* fromAiNode(const aiScene* scene, aiNode* node)
+    static std::shared_ptr<Model> fromAiNode(const aiScene* scene, aiNode* node)
     {
-        std::vector<std::unique_ptr<Mesh>> meshes;
+        std::vector<std::shared_ptr<Mesh>> meshes;
 
-        for (auto i = 0; i < node->mNumChildren; ++i)
-        {
-            auto child = node->mChildren[i];
+        processAiNode(scene, node, meshes);
 
-            for (auto t = 0; t < child->mNumMeshes; ++t)
-            {
-                auto mesh = Mesh::fromAiMesh(scene, scene->mMeshes[child->mMeshes[t]]);
-                meshes.push_back(mesh);
-            }
-        }
+        return std::make_shared<Model>(meshes);
     }
 
     void draw()
@@ -277,8 +311,26 @@ public:
         }
     }
 
+protected:
+    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::shared_ptr<Mesh>>& meshes)
+    {
+        for (auto t = 0; t < node->mNumMeshes; ++t)
+        {
+            auto mesh = Mesh::fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]]);
+            meshes.push_back(mesh);
+        }
+
+        for (auto i = 0; i < node->mNumChildren; ++i)
+        {
+            auto child = node->mChildren[i];
+            // auto childTransformation = parentTransformation + assimpMatrixToGlm(child->mTransformation);
+
+            processAiNode(scene, child, meshes);
+        }
+    }
+
 private:
-    std::vector<std::unique_ptr<Mesh>> m_meshes;
+    std::vector<std::shared_ptr<Mesh>> m_meshes;
     glm::mat4 m_transformation;
 };
 
@@ -298,7 +350,7 @@ int main()
     auto videoMode = sf::VideoMode(1024, 768);
 #endif
 
-    sf::Window window(videoMode, "Hello Lights!", sf::Style::Default, settings);
+    sf::Window window(videoMode, "Hello, Model from file!", sf::Style::Default, settings);
 
     globjects::init([](const char* name) {
         return sf::Context::getFunction(name);
@@ -316,10 +368,10 @@ int main()
 
     std::cout << "[INFO] Compiling vertex shader...";
 
-    auto vertexProgram = globjects::Program::create();
+    auto vertexProgram = std::make_unique<globjects::Program>();
     auto vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
     auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
-    auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
+    auto vertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
 
     if (!vertexShader->compile())
     {
@@ -331,10 +383,10 @@ int main()
 
     std::cout << "[INFO] Compiling fragment shader...";
 
-    auto fragmentProgram = globjects::Program::create();
+    auto fragmentProgram = std::make_unique<globjects::Program>();
     auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
     auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
-    auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
+    auto fragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
 
     if (!fragmentShader->compile())
     {
@@ -353,7 +405,7 @@ int main()
 
     std::cout << "[INFO] Creating rendering pipeline...";
 
-    auto programPipeline = globjects::ProgramPipeline::create();
+    auto programPipeline = std::make_unique<globjects::ProgramPipeline>();
 
     programPipeline->useStages(vertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
     programPipeline->useStages(fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
@@ -473,15 +525,13 @@ int main()
 
         ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
 
-        m_model->bind();
-
         programPipeline->use();
 
+        m_model->bind();
         m_model->draw();
+        m_model->unbind();
 
         programPipeline->release();
-
-        m_model->unbind();
 
         window.display();
 

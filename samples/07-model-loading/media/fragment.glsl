@@ -12,6 +12,7 @@ uniform vec3 cameraPosition;
 in vec2 vertexUV;
 in vec3 vertexNormal;
 in vec3 fragmentPosition;
+in vec4 vertexColor;
 
 layout (location = 0) out vec4 fragColor;
 
@@ -29,5 +30,5 @@ void main()
     float specularFactor = pow(max(dot(viewerDirection, reflectionDirection), 0.0), 32);
     vec3 specularColor = materialSpecular * specularFactor * lightColor;
 
-    fragColor = texture(textureSampler, vertexUV) * (vec4(ambientColor, 1.0) + vec4(specularColor, 1.0) + vec4(diffuseColor, 1.0));
+    fragColor = vertexColor; //texture(textureSampler, vertexUV) * (vec4(ambientColor, 1.0) + vec4(specularColor, 1.0) + vec4(diffuseColor, 1.0));
 }
