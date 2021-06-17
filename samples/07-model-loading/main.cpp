@@ -432,10 +432,15 @@ int main()
     Assimp::Importer importer;
 
     auto scene = importer.ReadFile("media/Chicken.3ds",
-                                   aiProcess_CalcTangentSpace
-                                       | aiProcess_Triangulate
-                                       | aiProcess_JoinIdenticalVertices
-                                       | aiProcess_SortByPType);
+                                   aiProcess_Triangulate
+                                       // | aiProcess_CalcTangentSpace
+                                       // | aiProcess_JoinIdenticalVertices
+                                       // | aiProcess_SortByPType
+                                       | aiProcess_RemoveRedundantMaterials
+                                       | aiProcess_GenUVCoords
+                                       | aiProcess_GenNormals
+                                       | aiProcess_TransformUVCoords
+                                       );
 
     if (!scene)
     {
@@ -548,7 +553,7 @@ int main()
 
         fragmentProgram->setUniform("lightPosition", glm::vec3(-2, 2, 2));
         fragmentProgram->setUniform("lightColor", glm::vec3(1, 0.5, 0.5));
-        fragmentProgram->setUniform("ambientColor", glm::vec3(0, 0, 0));
+        fragmentProgram->setUniform("ambientColor", glm::vec3(1.0f, 1.0f, 1.0f));
         fragmentProgram->setUniform("materialSpecular", 12.0f);
         fragmentProgram->setUniform("cameraPosition", cameraPos);
 

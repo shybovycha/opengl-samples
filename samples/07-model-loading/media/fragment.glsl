@@ -30,5 +30,5 @@ void main()
     float specularFactor = pow(max(dot(viewerDirection, reflectionDirection), 0.0), 32);
     vec3 specularColor = materialSpecular * specularFactor * lightColor;
 
-    fragColor = vertexColor; //texture(textureSampler, vertexUV) * (vec4(ambientColor, 1.0) + vec4(specularColor, 1.0) + vec4(diffuseColor, 1.0));
+    fragColor = texture(textureSampler, vertexUV) * (vec4(ambientColor, 1.0) + vec4(specularColor, 1.0) + vec4(diffuseColor, 1.0));
 }
