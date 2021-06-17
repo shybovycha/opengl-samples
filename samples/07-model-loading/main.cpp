@@ -443,7 +443,7 @@ int main()
         return 1;
     }
 
-    auto m_model = Model::fromAiNode(scene, scene->mRootNode);
+    auto model = Model::fromAiNode(scene, scene->mRootNode);
 
     // INFO: this transformation is hard-coded specifically for Chicken.3ds model
     auto transformation = glm::mat4(1.0f);
@@ -451,7 +451,7 @@ int main()
     transformation = glm::scale(transformation, glm::vec3(0.01f));
     transformation = glm::rotate(transformation, glm::radians(-90.0f), glm::vec3(1.0f, 0, 0));
 
-    m_model->setTransformation(transformation);
+    model->setTransformation(transformation);
 
     std::cout << "done" << std::endl;
 
@@ -542,7 +542,7 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        vertexProgram->setUniform("model", m_model->getTransformation());
+        vertexProgram->setUniform("model", model->getTransformation());
         vertexProgram->setUniform("view", view);
         vertexProgram->setUniform("projection", projection);
 
@@ -558,9 +558,9 @@ int main()
 
         programPipeline->use();
 
-        m_model->bind();
-        m_model->draw();
-        m_model->unbind();
+        model->bind();
+        model->draw();
+        model->unbind();
 
         programPipeline->release();
 
