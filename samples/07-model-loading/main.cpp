@@ -9,6 +9,7 @@
 #include <globjects/ProgramPipeline.h>
 #include <globjects/Shader.h>
 #include <globjects/Texture.h>
+#include <globjects/Uniform.h>
 #include <globjects/VertexArray.h>
 #include <globjects/VertexAttributeBinding.h>
 #include <globjects/base/File.h>
@@ -394,6 +395,10 @@ int main()
         return 1;
     }
 
+    auto modelTransformationUniform = vertexProgram->getUniform<glm::mat4>("model");
+    auto viewTransformationUniform = vertexProgram->getUniform<glm::mat4>("view");
+    auto projectionTransformationUniform = vertexProgram->getUniform<glm::mat4>("projection");
+
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Compiling fragment shader...";
@@ -408,6 +413,12 @@ int main()
         std::cerr << "[ERROR] Can not compile fragment shader" << std::endl;
         return 1;
     }
+
+    auto lightPositionUniform = fragmentProgram->getUniform<glm::vec3>("lightPosition");
+    auto lightColorUniform = fragmentProgram->getUniform<glm::vec3>("lightColor");
+    auto ambientColorUniform = fragmentProgram->getUniform<glm::vec3>("ambientColor");
+    auto materialSpecularUniform = fragmentProgram->getUniform<float>("materialSpecular");
+    auto cameraPositionUniform = fragmentProgram->getUniform<glm::vec3>("cameraPosition");
 
     std::cout << "done" << std::endl;
 
@@ -547,15 +558,15 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        vertexProgram->setUniform("model", model->getTransformation());
-        vertexProgram->setUniform("view", view);
-        vertexProgram->setUniform("projection", projection);
+        modelTransformationUniform->set(model->getTransformation());
+        viewTransformationUniform->set(view);
+        projectionTransformationUniform->set(projection);
 
-        fragmentProgram->setUniform("lightPosition", glm::vec3(-2, 2, 2));
-        fragmentProgram->setUniform("lightColor", glm::vec3(1, 0.5, 0.5));
-        fragmentProgram->setUniform("ambientColor", glm::vec3(1.0f, 1.0f, 1.0f));
-        fragmentProgram->setUniform("materialSpecular", 12.0f);
-        fragmentProgram->setUniform("cameraPosition", cameraPos);
+        lightPositionUniform->set(glm::vec3(-2, 2, 2));
+        lightColorUniform->set(glm::vec3(1, 0.5, 0.5));
+        ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
+        materialSpecularUniform->set(12.0f);
+        cameraPositionUniform->set(cameraPos);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
