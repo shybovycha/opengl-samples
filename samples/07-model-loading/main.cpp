@@ -38,27 +38,27 @@ class Mesh
 {
 public:
     Mesh(
-        std::shared_ptr<globjects::VertexArray> vao,
-        const std::vector<std::shared_ptr<globjects::Texture>>& textures,
-        const std::vector<glm::vec3>& vertices,
-        const std::vector<glm::vec3>& normals,
-        const std::vector<glm::vec2>& uvs,
-        const std::vector<unsigned int>& indices,
-        std::shared_ptr<globjects::Buffer> vertexBuffer,
-        std::shared_ptr<globjects::Buffer> indexBuffer,
-        std::shared_ptr<globjects::Buffer> normalBuffer,
-        std::shared_ptr<globjects::Buffer> uvBuffer) :
+        std::unique_ptr<globjects::VertexArray> vao,
+        std::vector<std::unique_ptr<globjects::Texture>> textures,
+        std::vector<glm::vec3> vertices,
+        std::vector<glm::vec3> normals,
+        std::vector<glm::vec2> uvs,
+        std::vector<unsigned int> indices,
+        std::unique_ptr<globjects::Buffer> vertexBuffer,
+        std::unique_ptr<globjects::Buffer> indexBuffer,
+        std::unique_ptr<globjects::Buffer> normalBuffer,
+        std::unique_ptr<globjects::Buffer> uvBuffer) :
 
-        m_vao(vao),
-        m_textures(textures),
-        m_vertices(vertices),
-        m_indices(indices),
-        m_uvs(uvs),
-        m_normals(normals),
-        m_vertexBuffer(vertexBuffer),
-        m_indexBuffer(indexBuffer),
-        m_normalBuffer(normalBuffer),
-        m_uvBuffer(uvBuffer)
+        m_vao(std::move(vao)),
+        m_textures(std::move(textures)),
+        m_vertices(std::move(vertices)),
+        m_indices(std::move(indices)),
+        m_uvs(std::move(uvs)),
+        m_normals(std::move(normals)),
+        m_vertexBuffer(std::move(vertexBuffer)),
+        m_indexBuffer(std::move(indexBuffer)),
+        m_normalBuffer(std::move(normalBuffer)),
+        m_uvBuffer(std::move(uvBuffer))
     {
     }
 
@@ -66,7 +66,7 @@ public:
     {
     }
 
-    static std::shared_ptr<Mesh> fromAiMesh(const aiScene* scene, aiMesh* mesh)
+    static std::unique_ptr<Mesh> fromAiMesh(const aiScene* scene, aiMesh* mesh)
     {
         std::cout << "[INFO] Creating buffer objects...";
 
@@ -116,15 +116,15 @@ public:
             }
         }
 
-        auto vertexBuffer = std::make_shared<globjects::Buffer>();
+        auto vertexBuffer = std::make_unique<globjects::Buffer>();
 
         vertexBuffer->setData(vertices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
 
-        auto indexBuffer = std::make_shared<globjects::Buffer>();
+        auto indexBuffer = std::make_unique<globjects::Buffer>();
 
         indexBuffer->setData(indices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
 
-        auto vao = std::make_shared<globjects::VertexArray>();
+        auto vao = std::make_unique<globjects::VertexArray>();
 
         vao->bindElementBuffer(indexBuffer.get());
 
@@ -133,7 +133,7 @@ public:
         vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         vao->enable(0);
 
-        auto normalBuffer = std::make_shared<globjects::Buffer>();
+        auto normalBuffer = std::make_unique<globjects::Buffer>();
 
         if (!normals.empty())
         {
@@ -147,7 +147,7 @@ public:
             // TODO: set uniform flag signalling the normals are present
         }
 
-        auto uvBuffer = std::make_shared<globjects::Buffer>();
+        auto uvBuffer = std::make_unique<globjects::Buffer>();
 
         if (!uvs.empty())
         {
@@ -165,7 +165,7 @@ public:
 
         std::cout << "[INFO] Loading textures...";
 
-        std::vector<std::shared_ptr<globjects::Texture>> textures;
+        std::vector<std::unique_ptr<globjects::Texture>> textures;
 
         if (mesh->mMaterialIndex >= 0)
         {
@@ -188,7 +188,7 @@ public:
 
                 textureImage.flipVertically();
 
-                auto texture = std::make_shared<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+                auto texture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
                 texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
                 texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
@@ -202,7 +202,7 @@ public:
                     static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
                     reinterpret_cast<const gl::GLvoid*>(textureImage.getPixelsPtr()));
 
-                textures.push_back(texture);
+                textures.push_back(std::move(texture));
             }
 
             // TODO: also handle aiTextureType_DIFFUSE and aiTextureType_SPECULAR
@@ -210,17 +210,17 @@ public:
 
         std::cout << "done" << std::endl;
 
-        return std::make_shared<Mesh>(
-            vao,
-            textures,
-            vertices,
-            normals,
-            uvs,
-            indices,
-            vertexBuffer,
-            indexBuffer,
-            normalBuffer,
-            uvBuffer);
+        return std::make_unique<Mesh>(
+            std::move(vao),
+            std::move(textures),
+            std::move(vertices),
+            std::move(normals),
+            std::move(uvs),
+            std::move(indices),
+            std::move(vertexBuffer),
+            std::move(indexBuffer),
+            std::move(normalBuffer),
+            std::move(uvBuffer));
     }
 
     void draw()
@@ -255,14 +255,14 @@ public:
     }
 
 private:
-    std::shared_ptr<globjects::VertexArray> m_vao;
+    std::unique_ptr<globjects::VertexArray> m_vao;
 
-    std::shared_ptr<globjects::Buffer> m_vertexBuffer;
-    std::shared_ptr<globjects::Buffer> m_indexBuffer;
-    std::shared_ptr<globjects::Buffer> m_normalBuffer;
-    std::shared_ptr<globjects::Buffer> m_uvBuffer;
+    std::unique_ptr<globjects::Buffer> m_vertexBuffer;
+    std::unique_ptr<globjects::Buffer> m_indexBuffer;
+    std::unique_ptr<globjects::Buffer> m_normalBuffer;
+    std::unique_ptr<globjects::Buffer> m_uvBuffer;
 
-    std::vector<std::shared_ptr<globjects::Texture>> m_textures;
+    std::vector<std::unique_ptr<globjects::Texture>> m_textures;
 
     std::vector<unsigned int> m_indices;
     std::vector<glm::vec3> m_vertices;
@@ -273,8 +273,9 @@ private:
 class Model
 {
 public:
-    Model(std::vector<std::shared_ptr<Mesh>> const& meshes) :
-        m_meshes(meshes), m_transformation(1.0f)
+    Model(std::vector<std::unique_ptr<Mesh>> meshes) :
+        m_meshes(std::move(meshes)),
+        m_transformation(1.0f)
     {
     }
 
@@ -282,13 +283,13 @@ public:
     {
     }
 
-    static std::shared_ptr<Model> fromAiNode(const aiScene* scene, aiNode* node)
+    static std::unique_ptr<Model> fromAiNode(const aiScene* scene, aiNode* node)
     {
-        std::vector<std::shared_ptr<Mesh>> meshes;
+        std::vector<std::unique_ptr<Mesh>> meshes;
 
         processAiNode(scene, node, meshes);
 
-        return std::make_shared<Model>(meshes);
+        return std::make_unique<Model>(std::move(meshes));
     }
 
     void draw()
@@ -316,12 +317,12 @@ public:
     }
 
 protected:
-    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::shared_ptr<Mesh>>& meshes)
+    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::unique_ptr<Mesh>>& meshes)
     {
         for (auto t = 0; t < node->mNumMeshes; ++t)
         {
             auto mesh = Mesh::fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]]);
-            meshes.push_back(mesh);
+            meshes.push_back(std::move(mesh));
         }
 
         for (auto i = 0; i < node->mNumChildren; ++i)
@@ -334,7 +335,7 @@ protected:
     }
 
 private:
-    std::vector<std::shared_ptr<Mesh>> m_meshes;
+    std::vector<std::unique_ptr<Mesh>> m_meshes;
     glm::mat4 m_transformation;
 };
 
@@ -452,6 +453,10 @@ int main()
 
     glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
 
+#ifndef WIN32
+    auto previousMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
+#endif
+
     while (window.isOpen())
     {
 #ifdef WIN32
@@ -476,7 +481,13 @@ int main()
         }
 
         glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
+
+#ifdef WIN32
         glm::vec2 mouseDelta = currentMousePos - glm::vec2((window.getSize().x / 2), (window.getSize().y / 2));
+#else
+        glm::vec2 mouseDelta = currentMousePos - previousMousePos;
+        previousMousePos = currentMousePos;
+#endif
 
         float horizontalAngle = (mouseDelta.x / static_cast<float>(window.getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
         float verticalAngle = (mouseDelta.y / static_cast<float>(window.getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
