@@ -292,6 +292,16 @@ public:
         return std::make_unique<Model>(std::move(meshes));
     }
 
+    void setTransformation(glm::mat4 transformation)
+    {
+        m_transformation = transformation;
+    }
+
+    glm::mat4 getTransformation() const
+    {
+        return m_transformation;
+    }
+
     void draw()
     {
         for (auto& mesh : m_meshes)
@@ -435,6 +445,14 @@ int main()
 
     auto m_model = Model::fromAiNode(scene, scene->mRootNode);
 
+    // INFO: this transformation is hard-coded specifically for Chicken.3ds model
+    auto transformation = glm::mat4(1.0f);
+
+    transformation = glm::scale(transformation, glm::vec3(0.01f));
+    transformation = glm::rotate(transformation, glm::radians(-90.0f), glm::vec3(1.0f, 0, 0));
+
+    m_model->setTransformation(transformation);
+
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Done initializing" << std::endl;
@@ -524,9 +542,7 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        glm::mat4 model = glm::mat4(1.0f); // identity
-
-        vertexProgram->setUniform("model", model);
+        vertexProgram->setUniform("model", m_model->getTransformation());
         vertexProgram->setUniform("view", view);
         vertexProgram->setUniform("projection", projection);
 
