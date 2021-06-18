@@ -428,25 +428,6 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    /*std::cout << "[INFO] Compiling depth fragment shader...";
-
-    auto depthFragmentProgram = std::make_unique<globjects::Program>();
-    auto depthFragmentShaderSource = globjects::Shader::sourceFromFile("media/depth-fragment.glsl");
-    auto depthFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(depthFragmentShaderSource.get());
-    auto depthFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), depthFragmentShaderTemplate.get());
-
-    if (!depthFragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile depth fragment shader" << std::endl;
-        return 1;
-    }
-
-    depthFragmentProgram->attach(depthFragmentShader.get());
-
-    auto depthCameraPositionUniform = depthFragmentProgram->getUniform<glm::vec3>("cameraPosition");
-
-    std::cout << "done" << std::endl;*/
-
     std::cout << "[INFO] Creating rendering pipeline...";
 
     auto programPipeline = std::make_unique<globjects::ProgramPipeline>();
@@ -510,37 +491,6 @@ int main()
 
     std::cout << "[DEBUG] Initializing framebuffers...";
 
-    /*auto depthTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
-
-    depthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
-    depthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
-
-    depthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_EDGE));
-    depthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_EDGE));
-
-    std::cout << "[depthTexture";
-
-    depthTexture->image2D(
-        0,
-        static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
-        glm::vec2(window.getSize().x, window.getSize().y),
-        0,
-        static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
-        static_cast<gl::GLenum>(GL_FLOAT),
-        nullptr
-    );
-
-    std::cout << " - ok]";*/
-
-    /*auto depthFramebuffer = std::make_unique<globjects::Framebuffer>();
-
-    std::cout << "[color]";
-    depthFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), depthColorTexture.get());
-    // std::cout << "[depth]";
-    // depthFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), depthTexture.get());
-
-    depthFramebuffer->setDrawBuffer(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0));*/
-
     auto depthColorTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
     depthColorTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
@@ -572,29 +522,6 @@ int main()
 
     framebuffer->setDrawBuffers({ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), static_cast<gl::GLenum>(GL_NONE) });
     framebuffer->printStatus(true);
-
-    /*unsigned int framebuffer;
-    glGenFramebuffers(1, &framebuffer);
-
-    unsigned int textureColorBuffer;
-    glGenTextures(1, &textureColorBuffer);
-    glBindTexture(GL_TEXTURE_2D, textureColorBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window.getSize().x, window.getSize().y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    unsigned int renderbuffer;
-    glGenRenderbuffers(1, &renderbuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window.getSize().x, window.getSize().y);
-
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorBuffer, 0);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderbuffer);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cerr << "[ERROR] Framebuffer incomplete" << std::endl;
-    }*/
 
     std::cout << "done" << std::endl;
 
@@ -701,23 +628,14 @@ int main()
 
         ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
 
-        /*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
-        glEnable(GL_DEPTH_TEST);
-
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);*/
-
         framebuffer->bind();
 
         framebuffer->clearBuffer(static_cast<gl::GLenum>(GL_COLOR), 0, glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
         framebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
 
         glEnable(GL_DEPTH_TEST);
-        // glDepthFunc(GL_LESS);
 
         programPipeline->use();
-
-        // programPipeline->useStages(fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
 
         model->bind();
         model->draw();
@@ -725,51 +643,23 @@ int main()
 
         framebuffer->unbind();
 
-        /*depthFramebuffer->blit(
-            static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0),
-            std::array<gl::GLint, 4> { { 0, 0, static_cast<gl::GLint>(window.getSize().x), static_cast<gl::GLint>(window.getSize().y) } },
-            globjects::Framebuffer::defaultFBO().get(),
-            static_cast<gl::GLenum>(GL_BACK_LEFT),
-            std::array<gl::GLint, 4> { { 0, 0, static_cast<gl::GLint>(window.getSize().x), static_cast<gl::GLint>(window.getSize().y) } },
-            static_cast<gl::ClearBufferMask>(GL_COLOR_BUFFER_BIT),
-            static_cast<gl::GLenum>(GL_NEAREST)
-        );*/
-
-        // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        // second pass - switch to normal shader and render picture with depth information to the viewport
 
         globjects::Framebuffer::defaultFBO()->bind();
 
         glDisable(GL_DEPTH_TEST);
 
         glClearColor(1.0, 1.0, 1.0, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT); // | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         cubeModel->bind();
 
-        // glBindTexture(GL_TEXTURE_2D, textureColorBuffer);
-
         modelTransformationUniform->set(glm::mat4(1.0f));
-
-        // programPipeline->useStages(fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
 
         depthColorTexture->bind();
         cubeModel->draw();
         depthColorTexture->unbind();
         cubeModel->unbind();
-
-        // glDisable(GL_DEPTH_TEST);
-
-        // second pass - switch to normal shader and render picture with depth information to the viewport
-
-        /*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        programPipeline->useStages(fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
-
-        model->bind();
-        depthColorTexture->bindActive(1);
-        model->draw();
-        depthColorTexture->unbindActive(1);
-        model->unbind();*/
 
         programPipeline->release();
 
