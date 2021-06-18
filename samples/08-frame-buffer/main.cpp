@@ -442,15 +442,14 @@ int main()
     Assimp::Importer importer;
 
     auto scene = importer.ReadFile("media/Chicken.3ds",
-        aiProcess_Triangulate
-        // | aiProcess_CalcTangentSpace
-        // | aiProcess_JoinIdenticalVertices
-        // | aiProcess_SortByPType
-        | aiProcess_RemoveRedundantMaterials
-        | aiProcess_GenUVCoords
-        | aiProcess_GenNormals
-        | aiProcess_TransformUVCoords
-    );
+                                   aiProcess_Triangulate
+                                       // | aiProcess_CalcTangentSpace
+                                       // | aiProcess_JoinIdenticalVertices
+                                       // | aiProcess_SortByPType
+                                       | aiProcess_RemoveRedundantMaterials
+                                       | aiProcess_GenUVCoords
+                                       | aiProcess_GenNormals
+                                       | aiProcess_TransformUVCoords);
 
     if (!scene)
     {
@@ -461,15 +460,14 @@ int main()
     auto model = Model::fromAiNode(scene, scene->mRootNode);
 
     auto scene2 = importer.ReadFile("media/cube.obj",
-        aiProcess_Triangulate
-        // | aiProcess_CalcTangentSpace
-        // | aiProcess_JoinIdenticalVertices
-        // | aiProcess_SortByPType
-        | aiProcess_RemoveRedundantMaterials
-        | aiProcess_GenUVCoords
-        | aiProcess_GenNormals
-        | aiProcess_TransformUVCoords
-    );
+                                    aiProcess_Triangulate
+                                        // | aiProcess_CalcTangentSpace
+                                        // | aiProcess_JoinIdenticalVertices
+                                        // | aiProcess_SortByPType
+                                        | aiProcess_RemoveRedundantMaterials
+                                        | aiProcess_GenUVCoords
+                                        | aiProcess_GenNormals
+                                        | aiProcess_TransformUVCoords);
 
     if (!scene2)
     {
@@ -508,8 +506,7 @@ int main()
         0,
         static_cast<gl::GLenum>(GL_RGB),
         static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-        nullptr
-    );
+        nullptr);
 
     std::cout << " - ok]";
 
@@ -554,7 +551,7 @@ int main()
         }
 #endif
 
-        sf::Event event{};
+        sf::Event event {};
 
         // measure time since last frame, in seconds
         float deltaTime = static_cast<float>(clock.restart().asSeconds());
@@ -605,7 +602,7 @@ int main()
             cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
         }
 
-        glm::mat4 projection = glm::perspective(glm::radians(fov), (float)window.getSize().x / (float)window.getSize().y, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
 
         glm::mat4 view = glm::lookAt(
             cameraPos,
