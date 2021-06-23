@@ -14,8 +14,8 @@ layout (location = 0) out vec4 fragmentColor;
     in vec2 textureCoord;
     in vec4 fragmentPositionInLightSpace;
 
+uniform sampler2D shadowMap;
 uniform sampler2D diffuseTexture;
-// uniform sampler2D shadowMap;
 
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
@@ -24,7 +24,7 @@ uniform vec3 diffuseColor;
 uniform float materialSpecular;
 uniform vec3 cameraPosition;
 
-/*float shadowCalculation(vec4 fragmentPositionInLightSpace, vec3 normal, vec3 lightDirection)
+float shadowCalculation(vec4 fragmentPositionInLightSpace, vec3 normal, vec3 lightDirection)
 {
     // perform perspective divide
     vec3 projectedCoords = fragmentPositionInLightSpace.xyz / fragmentPositionInLightSpace.w;
@@ -39,11 +39,11 @@ uniform vec3 cameraPosition;
     float currentDepth = projectedCoords.z;
 
     // check whether current frag pos is in shadow; add bias to prevent mouray effect
-    // float bias = max(0.05 * (1.0 - dot(normal, lightDirection)), 0.005);
-    // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
+    float bias = max(0.05 * (1.0 - dot(normal, lightDirection)), 0.005);
+    float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
 
-    float bias = 0.005;
-    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+    // float bias = 0.005;
+    // float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
 
     if  (projectedCoords.z > 1.0)
     {
@@ -51,12 +51,12 @@ uniform vec3 cameraPosition;
     }
 
     return shadow;
-}*/
+}
 
 void main()
 {
-    vec4 color = texture(diffuseTexture, textureCoord);
-/*    vec3 normal = normalize(fsIn.normal);
+/*    vec4 color = texture(diffuseTexture, textureCoord);
+    vec3 normal = normalize(fsIn.normal);
 
     // diffuse
     vec3 lightDirection = normalize(lightPosition - fsIn.fragmentPosition);
@@ -75,10 +75,9 @@ void main()
 
     vec3 lighting = (ambientColor + (1.0 - shadow) * (diffuse + specular)) * color;
 
-    // fragmentColor = vec4(lighting, 1.0);*/
-    fragmentColor = vec4(0, 0, 0, 1.0);
+    fragmentColor = vec4(lighting, 1.0);*/
 
-    /*vec3 color = texture(diffuseTexture, textureCoord).rgb;
+    vec3 color = texture(diffuseTexture, textureCoord).rgb;
     vec3 normal = normalize(normal);
 
     // diffuse
@@ -98,5 +97,5 @@ void main()
 
     vec3 lighting = (ambientColor + (1.0 - shadow) * (diffuse + specular)) * color;
 
-    fragmentColor = vec4(lighting, 1.0);*/
+    fragmentColor = vec4(lighting, 1.0);
 }

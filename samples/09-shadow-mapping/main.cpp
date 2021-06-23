@@ -384,7 +384,7 @@ int main()
 
     std::cout << "[INFO] Creating shaders..." << std::endl;
 
-    /*std::cout << "[INFO] Compiling shadow mapping vertex shader...";
+    std::cout << "[INFO] Compiling shadow mapping vertex shader...";
 
     auto shadowMappingVertexProgram = std::make_unique<globjects::Program>();
     auto shadowMappingVertexSource = globjects::Shader::sourceFromFile("media/shadow-mapping-vertex.glsl");
@@ -419,7 +419,7 @@ int main()
 
     shadowMappingFragmentProgram->attach(shadowMappingFragmentShader.get());
 
-    std::cout << "done" << std::endl;*/
+    std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Compiling shadow rendering vertex shader...";
 
@@ -493,14 +493,12 @@ int main()
         return 1;
     }
 
-    auto model = Model::fromAiNode(chickenScene, chickenScene->mRootNode);
+    auto chickenModel = Model::fromAiNode(chickenScene, chickenScene->mRootNode);
 
-    auto quadScene = importer.ReadFile("media/quad.obj",
-                                    aiProcess_Triangulate
-                                        | aiProcess_RemoveRedundantMaterials
-                                        | aiProcess_GenUVCoords
-                                        | aiProcess_GenNormals
-                                        | aiProcess_TransformUVCoords);
+    // INFO: this transformation is hard-coded specifically for Chicken.3ds model
+    chickenModel->setTransformation(glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));
+
+    auto quadScene = importer.ReadFile("media/quad.obj", 0);
 
     if (!quadScene)
     {
@@ -510,13 +508,7 @@ int main()
 
     auto quadModel = Model::fromAiNode(quadScene, quadScene->mRootNode);
 
-    // INFO: this transformation is hard-coded specifically for Chicken.3ds model
-    auto transformation = glm::mat4(1.0f);
-
-    transformation = glm::scale(transformation, glm::vec3(0.01f));
-    transformation = glm::rotate(transformation, glm::radians(-90.0f), glm::vec3(1.0f, 0, 0));
-
-    model->setTransformation(transformation);
+    quadModel->setTransformation(glm::rotate(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-5, 0, 5)), glm::vec3(10.0f, 0, 10.0f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));
 
     sf::Image textureImage;
 
@@ -544,7 +536,7 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    /*std::cout << "[DEBUG] Initializing framebuffers...";
+    std::cout << "[DEBUG] Initializing framebuffers...";
 
     auto shadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
@@ -574,7 +566,7 @@ int main()
 
     framebuffer->printStatus(true);
 
-    std::cout << "done" << std::endl;*/
+    std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Done initializing" << std::endl;
 
@@ -583,7 +575,7 @@ int main()
     const float cameraMoveSpeed = 1.0f;
     const float cameraRotateSpeed = 10.0f;
 
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
@@ -663,13 +655,12 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        glm::vec3 lightPosition = cameraPos + (cameraUp * 2.0f);
+        glm::vec3 lightPosition = cameraPos; // cameraPos + (cameraUp * 2.0f);
 
-        modelTransformationUniform->set(model->getTransformation());
         viewTransformationUniform->set(view);
         projectionTransformationUniform->set(projection);
 
-        lightPositionUniform->set(lightPosition);
+        lightPositionUniform->set(glm::vec3(-2, 2, 2));
         lightColorUniform->set(glm::vec3(1, 0.5, 0.5));
         ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
         materialSpecularUniform->set(12.0f);
@@ -685,34 +676,36 @@ int main()
 
         glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
-        // shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
-        // shadowMappingModelTransformationUniform->set(model->getTransformation());
-
+        shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
         lightSpaceMatrixUniform->set(lightSpaceMatrix);
         
-        // first render pass - shadow mapping
-
         ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
 
-        /*framebuffer->bind();
+        // first render pass - shadow mapping
+
+        framebuffer->bind();
 
         ::glClear(GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
 
         // cull front faces to prevent peter panning the generated shadow map
-        // glCullFace(GL_FRONT);
+        glCullFace(GL_FRONT);
 
         programPipeline->useStages(shadowMappingVertexProgram.get(), GL_VERTEX_SHADER_BIT);
         programPipeline->useStages(shadowMappingFragmentProgram.get(), GL_FRAGMENT_SHADER_BIT);
 
         programPipeline->use();
 
-        model->bind();
-        model->draw();
-        model->unbind();
+        modelTransformationUniform->set(chickenModel->getTransformation());
+        shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
 
-        shadowMappingModelTransformationUniform->set(glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0)));
+        chickenModel->bind();
+        chickenModel->draw();
+        chickenModel->unbind();
+
+        modelTransformationUniform->set(quadModel->getTransformation());
+        shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
 
         quadModel->bind();
         quadModel->draw();
@@ -723,7 +716,7 @@ int main()
         programPipeline->releaseStages(GL_VERTEX_SHADER_BIT);
         programPipeline->releaseStages(GL_FRAGMENT_SHADER_BIT);
 
-        // glCullFace(GL_BACK);
+        glCullFace(GL_BACK);
 
         // second pass - switch to normal shader and render picture with depth information to the viewport
 
@@ -737,37 +730,27 @@ int main()
 
         // draw chicken
 
-        modelTransformationUniform->set(glm::mat4(1.0f));
-        
         shadowMapTexture->bind();
 
-        model->bind();
-        model->draw();
-        model->unbind();*/
+        modelTransformationUniform->set(chickenModel->getTransformation());
+        shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
 
-        // TODO: remove
-        // shadowMapTexture->unbind();
+        chickenModel->bind();
+        chickenModel->draw();
+        chickenModel->unbind();
 
-        // draw floor
+        modelTransformationUniform->set(quadModel->getTransformation());
+        shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
 
-        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // programPipeline->useStages(vertexProgram.get(), GL_VERTEX_SHADER_BIT);
-        // programPipeline->useStages(fragmentProgram.get(), GL_FRAGMENT_SHADER_BIT);
-
-        programPipeline->use();
-
-        // modelTransformationUniform->set(glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0)));
+        defaultTexture->bind();
 
         quadModel->bind();
-        defaultTexture->bind();
         quadModel->draw();
-        defaultTexture->unbind();
         quadModel->unbind();
 
-
-        // shadowMapTexture->unbind();
+        defaultTexture->unbind();
+        
+        shadowMapTexture->unbind();
 
         programPipeline->release();
 
