@@ -384,51 +384,7 @@ int main()
 
     std::cout << "[INFO] Creating shaders..." << std::endl;
 
-    std::cout << "[INFO] Compiling vertex shader...";
-
-    auto vertexProgram = std::make_unique<globjects::Program>();
-    auto vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
-    auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
-    auto vertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
-
-    if (!vertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile vertex shader" << std::endl;
-        return 1;
-    }
-
-    vertexProgram->attach(vertexShader.get());
-
-    auto modelTransformationUniform = vertexProgram->getUniform<glm::mat4>("model");
-    auto viewTransformationUniform = vertexProgram->getUniform<glm::mat4>("view");
-    auto projectionTransformationUniform = vertexProgram->getUniform<glm::mat4>("projection");
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling fragment shader...";
-
-    auto fragmentProgram = std::make_unique<globjects::Program>();
-    auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
-    auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
-    auto fragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
-
-    if (!fragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile fragment shader" << std::endl;
-        return 1;
-    }
-
-    fragmentProgram->attach(fragmentShader.get());
-
-    auto lightPositionUniform = fragmentProgram->getUniform<glm::vec3>("lightPosition");
-    auto lightColorUniform = fragmentProgram->getUniform<glm::vec3>("lightColor");
-    auto ambientColorUniform = fragmentProgram->getUniform<glm::vec3>("ambientColor");
-    auto materialSpecularUniform = fragmentProgram->getUniform<float>("materialSpecular");
-    auto cameraPositionUniform = fragmentProgram->getUniform<glm::vec3>("cameraPosition");
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling shadow mapping vertex shader...";
+    /*std::cout << "[INFO] Compiling shadow mapping vertex shader...";
 
     auto shadowMappingVertexProgram = std::make_unique<globjects::Program>();
     auto shadowMappingVertexSource = globjects::Shader::sourceFromFile("media/shadow-mapping-vertex.glsl");
@@ -462,6 +418,52 @@ int main()
     }
 
     shadowMappingFragmentProgram->attach(shadowMappingFragmentShader.get());
+
+    std::cout << "done" << std::endl;*/
+
+    std::cout << "[INFO] Compiling shadow rendering vertex shader...";
+
+    auto vertexProgram = std::make_unique<globjects::Program>();
+    auto vertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.vert");
+    auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
+    auto vertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
+
+    if (!vertexShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile shadow rendering vertex shader" << std::endl;
+        return 1;
+    }
+
+    vertexProgram->attach(vertexShader.get());
+
+    auto modelTransformationUniform = vertexProgram->getUniform<glm::mat4>("model");
+    auto viewTransformationUniform = vertexProgram->getUniform<glm::mat4>("view");
+    auto projectionTransformationUniform = vertexProgram->getUniform<glm::mat4>("projection");
+    auto lightSpaceMatrixUniform = vertexProgram->getUniform<glm::mat4>("lightSpaceMatrix");
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling shadow rendering fragment shader...";
+
+    auto fragmentProgram = std::make_unique<globjects::Program>();
+    auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.frag");
+    auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
+    auto fragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
+
+    if (!fragmentShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile chicken fragment shader" << std::endl;
+        return 1;
+    }
+
+    fragmentProgram->attach(fragmentShader.get());
+
+    auto lightPositionUniform = fragmentProgram->getUniform<glm::vec3>("lightPosition");
+    auto lightColorUniform = fragmentProgram->getUniform<glm::vec3>("lightColor");
+    auto ambientColorUniform = fragmentProgram->getUniform<glm::vec3>("ambientColor");
+    auto diffuseColorUniform = fragmentProgram->getUniform<glm::vec3>("diffuseColor");
+    auto materialSpecularUniform = fragmentProgram->getUniform<float>("materialSpecular");
+    auto cameraPositionUniform = fragmentProgram->getUniform<glm::vec3>("cameraPosition");
 
     std::cout << "done" << std::endl;
 
@@ -516,21 +518,47 @@ int main()
 
     model->setTransformation(transformation);
 
+    sf::Image textureImage;
+
+    if (!textureImage.loadFromFile("media/texture.jpg"))
+    {
+        std::cerr << "[ERROR] Can not load texture" << std::endl;
+        return 1;
+    }
+
+    textureImage.flipVertically();
+
+    auto defaultTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+
+    defaultTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    defaultTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+    defaultTexture->image2D(
+        0,
+        static_cast<gl::GLenum>(GL_RGBA8),
+        glm::vec2(textureImage.getSize().x, textureImage.getSize().y),
+        0,
+        static_cast<gl::GLenum>(GL_RGBA),
+        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        reinterpret_cast<const gl::GLvoid*>(textureImage.getPixelsPtr()));
+
     std::cout << "done" << std::endl;
 
-    std::cout << "[DEBUG] Initializing framebuffers...";
+    /*std::cout << "[DEBUG] Initializing framebuffers...";
 
-    auto depthTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+    auto shadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
-    depthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
-    depthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
+    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
+    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
 
-    depthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_REPEAT));
-    depthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_REPEAT));
+    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
 
-    std::cout << "[depthTexture";
+    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-    depthTexture->image2D(
+    std::cout << "[shadowMapTexture";
+
+    shadowMapTexture->image2D(
         0,
         static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
         glm::vec2(window.getSize().x, window.getSize().y),
@@ -542,11 +570,11 @@ int main()
     std::cout << " - ok]";
 
     auto framebuffer = std::make_unique<globjects::Framebuffer>();
-    framebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), depthTexture.get());
+    framebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), shadowMapTexture.get());
 
     framebuffer->printStatus(true);
 
-    std::cout << "done" << std::endl;
+    std::cout << "done" << std::endl;*/
 
     std::cout << "[INFO] Done initializing" << std::endl;
 
@@ -647,15 +675,7 @@ int main()
         materialSpecularUniform->set(12.0f);
         cameraPositionUniform->set(cameraPos);
 
-        // first render pass - render depth to texture
-
-        ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
-
-        framebuffer->bind();
-
-        ::glClear(GL_DEPTH_BUFFER_BIT);
-
-        glEnable(GL_DEPTH_TEST);
+        diffuseColorUniform->set(glm::vec4(1.0, 1.0, 1.0, 1.0));
 
         const auto nearPlane = 1.0f;
         const auto farPlane = 7.5f;
@@ -665,8 +685,23 @@ int main()
 
         glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
-        shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
-        shadowMappingModelTransformationUniform->set(model->getTransformation());
+        // shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
+        // shadowMappingModelTransformationUniform->set(model->getTransformation());
+
+        lightSpaceMatrixUniform->set(lightSpaceMatrix);
+        
+        // first render pass - shadow mapping
+
+        ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
+
+        /*framebuffer->bind();
+
+        ::glClear(GL_DEPTH_BUFFER_BIT);
+
+        glEnable(GL_DEPTH_TEST);
+
+        // cull front faces to prevent peter panning the generated shadow map
+        // glCullFace(GL_FRONT);
 
         programPipeline->useStages(shadowMappingVertexProgram.get(), GL_VERTEX_SHADER_BIT);
         programPipeline->useStages(shadowMappingFragmentProgram.get(), GL_FRAGMENT_SHADER_BIT);
@@ -677,29 +712,62 @@ int main()
         model->draw();
         model->unbind();
 
+        shadowMappingModelTransformationUniform->set(glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0)));
+
+        quadModel->bind();
+        quadModel->draw();
+        quadModel->unbind();
+
         framebuffer->unbind();
 
         programPipeline->releaseStages(GL_VERTEX_SHADER_BIT);
         programPipeline->releaseStages(GL_FRAGMENT_SHADER_BIT);
 
+        // glCullFace(GL_BACK);
+
         // second pass - switch to normal shader and render picture with depth information to the viewport
 
-        globjects::Framebuffer::defaultFBO()->bind();
+        // globjects::Framebuffer::defaultFBO()->bind();
 
         ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        quadModel->bind();
-
         programPipeline->useStages(vertexProgram.get(), GL_VERTEX_SHADER_BIT);
         programPipeline->useStages(fragmentProgram.get(), GL_FRAGMENT_SHADER_BIT);
 
-        modelTransformationUniform->set(glm::mat4(1.0f));
+        // draw chicken
 
-        depthTexture->bind();
+        modelTransformationUniform->set(glm::mat4(1.0f));
+        
+        shadowMapTexture->bind();
+
+        model->bind();
+        model->draw();
+        model->unbind();*/
+
+        // TODO: remove
+        // shadowMapTexture->unbind();
+
+        // draw floor
+
+        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // programPipeline->useStages(vertexProgram.get(), GL_VERTEX_SHADER_BIT);
+        // programPipeline->useStages(fragmentProgram.get(), GL_FRAGMENT_SHADER_BIT);
+
+        programPipeline->use();
+
+        // modelTransformationUniform->set(glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0)));
+
+        quadModel->bind();
+        defaultTexture->bind();
         quadModel->draw();
-        depthTexture->unbind();
+        defaultTexture->unbind();
         quadModel->unbind();
+
+
+        // shadowMapTexture->unbind();
 
         programPipeline->release();
 
