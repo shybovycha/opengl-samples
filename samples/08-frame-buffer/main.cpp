@@ -646,7 +646,7 @@ int main()
 
         glDisable(GL_DEPTH_TEST);
 
-        glClearColor(1.0, 1.0, 1.0, 1.0);
+        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT);
 
         cubeModel->bind();
