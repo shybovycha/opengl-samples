@@ -19,41 +19,14 @@ uniform vec3 lightColor;
 // uniform float materialSpecular;
 uniform vec3 cameraPosition;
 
-/*float shadowCalculation(vec4 fragmentPositionInLightSpace, vec3 normal, vec3 lightDirection)
-{
-    // perform perspective divide
-    vec3 projectedCoords = fragmentPositionInLightSpace.xyz / fragmentPositionInLightSpace.w;
-
-    // normalize
-    projectedCoords = projectedCoords * 0.5 + 0.5;
-
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(shadowMap, projectedCoords.xy).r;
-
-    // get depth of current fragment from light's perspective
-    float currentDepth = projectedCoords.z;
-
-    // check whether current frag pos is in shadow; add bias to prevent mouray effect
-    // float bias = max(0.05 * (1.0 - dot(normal, lightDirection)), 0.005);
-    // float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
-
-    // float bias = 0.005;
-    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
-
-    if (projectedCoords.z > 1.0)
-    {
-        shadow = 0.0;
-    }
-
-    return shadow;
-}*/
-
 float shadowCalculation()
 {
-    vec3 position = fsIn.fragmentPositionInLightSpace.xyz * 0.5 + 0.5;
-    float depth = texture(shadowMap, position.xy).r;
+    vec2 uv = fsIn.fragmentPositionInLightSpace.xy * 0.5 + 0.5;
+    float occluderDepth = texture(shadowMap, uv).r;
 
-    return depth < position.z ? 0.0 : 1.0;
+    float thisDepth = fsIn.fragmentPositionInLightSpace.z * 0.5 + 0.5;
+
+    return occluderDepth < thisDepth ? 0.0 : 1.0;
 }
 
 void main()
@@ -76,7 +49,7 @@ void main()
     vec3 specular = spec * lightColor;
 
     // calculate shadow
-    float shadow = shadowCalculation(); //fsIn.fragmentPositionInLightSpace, normal, lightDirection);
+    float shadow = shadowCalculation();
 
     vec3 lighting = ((shadow * (diffuse + specular)) + ambient) * color;
 

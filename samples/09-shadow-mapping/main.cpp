@@ -442,7 +442,7 @@ int main()
     std::cout << "[INFO] Compiling shadow rendering vertex shader...";
 
     auto shadowRenderingVertexProgram = std::make_unique<globjects::Program>();
-    auto shadowRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.vert");
+    auto shadowRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-debug.vert");
     auto shadowRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowRenderingVertexShaderSource.get());
     auto shadowRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowRenderingVertexShaderTemplate.get());
 
@@ -464,7 +464,7 @@ int main()
     std::cout << "[INFO] Compiling shadow rendering fragment shader...";
 
     auto shadowRenderingFragmentProgram = std::make_unique<globjects::Program>();
-    auto shadowRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.frag");
+    auto shadowRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-debug.frag");
     auto shadowRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowRenderingFragmentShaderSource.get());
     auto shadowRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowRenderingFragmentShaderTemplate.get());
 
@@ -602,10 +602,6 @@ int main()
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 
-    const float nearPlane = 0.1f;
-    const float farPlane = 10.0f;
-    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
-
     sf::Clock clock;
 
     glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
@@ -681,7 +677,7 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        glm::vec3 lightPosition = glm::vec3(0.0f, 2.0f, 3.0f); // cameraPos;
+        glm::vec3 lightPosition = cameraPos; //glm::vec3(0.0f, 2.0f, 3.0f); // cameraPos;
 
         // viewTransformationUniform->set(view);
         // projectionTransformationUniform->set(projection);
@@ -694,7 +690,11 @@ int main()
 
         // diffuseColorUniform->set(glm::vec4(1.0, 1.0, 1.0, 1.0));
 
-        glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        const float nearPlane = 0.1f;
+        const float farPlane = 10.0f;
+        glm::mat4 lightProjection = cameraProjection; // glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+
+        glm::mat4 lightView = cameraView; // glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
@@ -740,7 +740,7 @@ int main()
 
         // second pass - switch to normal shader and render picture with depth information to the viewport
 
-        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
+        ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shadowRenderingPipeline->use();
@@ -753,22 +753,23 @@ int main()
 
         shadowMapTexture->bind();
 
-        shadowRenderingModelTransformationUniform->set(chickenModel->getTransformation());
+        /*shadowRenderingModelTransformationUniform->set(chickenModel->getTransformation());
 
         chickenModel->bind();
         chickenModel->draw();
         chickenModel->unbind();
 
-        shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
-        // shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
+        shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());*/
 
-        defaultTexture->bind();
+        shadowRenderingModelTransformationUniform->set(glm::translate(glm::mat4(1.0f), glm::vec3(-0.5, -0.5, 0.75)));
+
+        // defaultTexture->bind();
 
         quadModel->bind();
         quadModel->draw();
         quadModel->unbind();
 
-        defaultTexture->unbind();
+        // defaultTexture->unbind();
 
         shadowMapTexture->unbind();
 
