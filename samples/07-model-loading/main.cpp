@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 
@@ -5,8 +6,10 @@
 
 #include <globjects/Buffer.h>
 #include <globjects/Error.h>
+#include <globjects/Framebuffer.h>
 #include <globjects/Program.h>
 #include <globjects/ProgramPipeline.h>
+#include <globjects/Renderbuffer.h>
 #include <globjects/Shader.h>
 #include <globjects/Texture.h>
 #include <globjects/Uniform.h>
@@ -67,7 +70,7 @@ public:
     {
     }
 
-    static std::unique_ptr<Mesh> fromAiMesh(const aiScene* scene, aiMesh* mesh)
+    static std::unique_ptr<Mesh> fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
         std::cout << "[INFO] Creating buffer objects...";
 
@@ -177,11 +180,28 @@ public:
                 aiString str;
                 material->GetTexture(aiTextureType_DIFFUSE, i, &str);
 
-                std::cout << "[INFO] Loading DIFFUSE texture " << str.C_Str() << "...";
+                std::string imagePath{ str.C_Str() };
+
+                // TODO: extract the "std::string resolveFile(std::string)" helper
+                /* std::vector<std::filesystem::path> lookupPaths = {
+                    imagePath,
+                    std::filesystem::path{ "../" + imagePath }
+                };*/
+
+                for (auto path : materialLookupPaths) {
+                    std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
+
+                    if (std::filesystem::exists(std::filesystem::path(path) / imagePath)) {
+                        imagePath = std::filesystem::path(path) / imagePath;
+                        break;
+                    }
+                }
+
+                std::cout << "[INFO] Loading DIFFUSE texture " << imagePath << "...";
 
                 sf::Image textureImage;
 
-                if (!textureImage.loadFromFile(str.C_Str()))
+                if (!textureImage.loadFromFile(imagePath))
                 {
                     std::cerr << "[ERROR] Can not load texture" << std::endl;
                     continue;
@@ -284,11 +304,11 @@ public:
     {
     }
 
-    static std::unique_ptr<Model> fromAiNode(const aiScene* scene, aiNode* node)
+    static std::unique_ptr<Model> fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
         std::vector<std::unique_ptr<Mesh>> meshes;
 
-        processAiNode(scene, node, meshes);
+        processAiNode(scene, node, materialLookupPaths, meshes);
 
         return std::make_unique<Model>(std::move(meshes));
     }
@@ -328,11 +348,11 @@ public:
     }
 
 protected:
-    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::unique_ptr<Mesh>>& meshes)
+    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<Mesh>>& meshes)
     {
         for (auto t = 0; t < node->mNumMeshes; ++t)
         {
-            auto mesh = Mesh::fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]]);
+            auto mesh = Mesh::fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
             meshes.push_back(std::move(mesh));
         }
 
@@ -341,7 +361,7 @@ protected:
             auto child = node->mChildren[i];
             // auto childTransformation = parentTransformation + assimpMatrixToGlm(child->mTransformation);
 
-            processAiNode(scene, child, meshes);
+            processAiNode(scene, child, materialLookupPaths, meshes);
         }
     }
 
@@ -366,7 +386,7 @@ int main()
     auto videoMode = sf::VideoMode(1024, 768);
 #endif
 
-    sf::Window window(videoMode, "Hello, Model from file!", sf::Style::Default, settings);
+    sf::Window window(videoMode, "Hello, Model loading!", sf::Style::Default, settings);
 
     globjects::init([](const char* name) {
         return sf::Context::getFunction(name);
@@ -382,59 +402,57 @@ int main()
 
     std::cout << "[INFO] Creating shaders..." << std::endl;
 
-    std::cout << "[INFO] Compiling vertex shader...";
+    std::cout << "[INFO] Compiling model rendering vertex shader...";
 
-    auto vertexProgram = std::make_unique<globjects::Program>();
-    auto vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
-    auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
-    auto vertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
+    auto modelRenderingVertexProgram = std::make_unique<globjects::Program>();
+    auto modelRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/model-rendering.vert");
+    auto modelRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(modelRenderingVertexShaderSource.get());
+    auto modelRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), modelRenderingVertexShaderTemplate.get());
 
-    if (!vertexShader->compile())
+    if (!modelRenderingVertexShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile vertex shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile model rendering vertex shader" << std::endl;
         return 1;
     }
 
-    auto modelTransformationUniform = vertexProgram->getUniform<glm::mat4>("model");
-    auto viewTransformationUniform = vertexProgram->getUniform<glm::mat4>("view");
-    auto projectionTransformationUniform = vertexProgram->getUniform<glm::mat4>("projection");
+    modelRenderingVertexProgram->attach(modelRenderingVertexShader.get());
+
+    auto modelTransformationUniform = modelRenderingVertexProgram->getUniform<glm::mat4>("model");
+    auto viewTransformationUniform = modelRenderingVertexProgram->getUniform<glm::mat4>("view");
+    auto projectionTransformationUniform = modelRenderingVertexProgram->getUniform<glm::mat4>("projection");
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling fragment shader...";
+    std::cout << "[INFO] Compiling model rendering fragment shader...";
 
-    auto fragmentProgram = std::make_unique<globjects::Program>();
-    auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
-    auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
-    auto fragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
+    auto modelRenderingFragmentProgram = std::make_unique<globjects::Program>();
+    auto modelRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/model-rendering.frag");
+    auto modelRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(modelRenderingFragmentShaderSource.get());
+    auto modelRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), modelRenderingFragmentShaderTemplate.get());
 
-    if (!fragmentShader->compile())
+    if (!modelRenderingFragmentShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile fragment shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile chicken fragment shader" << std::endl;
         return 1;
     }
 
-    auto lightPositionUniform = fragmentProgram->getUniform<glm::vec3>("lightPosition");
-    auto lightColorUniform = fragmentProgram->getUniform<glm::vec3>("lightColor");
-    auto ambientColorUniform = fragmentProgram->getUniform<glm::vec3>("ambientColor");
-    auto materialSpecularUniform = fragmentProgram->getUniform<float>("materialSpecular");
-    auto cameraPositionUniform = fragmentProgram->getUniform<glm::vec3>("cameraPosition");
+    modelRenderingFragmentProgram->attach(modelRenderingFragmentShader.get());
+
+    auto lightPositionUniform = modelRenderingFragmentProgram->getUniform<glm::vec3>("lightPosition");
+    auto lightColorUniform = modelRenderingFragmentProgram->getUniform<glm::vec3>("lightColor");
+    auto ambientColorUniform = modelRenderingFragmentProgram->getUniform<glm::vec3>("ambientColor");
+    auto diffuseColorUniform = modelRenderingFragmentProgram->getUniform<glm::vec3>("diffuseColor");
+    auto materialSpecularUniform = modelRenderingFragmentProgram->getUniform<float>("materialSpecular");
+    auto cameraPositionUniform = modelRenderingFragmentProgram->getUniform<glm::vec3>("cameraPosition");
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Linking shader programs...";
+    std::cout << "[INFO] Creating model rendering pipeline...";
 
-    vertexProgram->attach(vertexShader.get());
-    fragmentProgram->attach(fragmentShader.get());
+    auto modelRenderingPipeline = std::make_unique<globjects::ProgramPipeline>();
 
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Creating rendering pipeline...";
-
-    auto programPipeline = std::make_unique<globjects::ProgramPipeline>();
-
-    programPipeline->useStages(vertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    programPipeline->useStages(fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+    modelRenderingPipeline->useStages(modelRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
+    modelRenderingPipeline->useStages(modelRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
 
     std::cout << "done" << std::endl;
 
@@ -442,32 +460,18 @@ int main()
 
     Assimp::Importer importer;
 
-    auto scene = importer.ReadFile("media/Chicken.3ds",
-                                   aiProcess_Triangulate
-                                       // | aiProcess_CalcTangentSpace
-                                       // | aiProcess_JoinIdenticalVertices
-                                       // | aiProcess_SortByPType
-                                       | aiProcess_RemoveRedundantMaterials
-                                       | aiProcess_GenUVCoords
-                                       | aiProcess_GenNormals
-                                       | aiProcess_TransformUVCoords
-                                       );
+    auto chickenScene = importer.ReadFile("media/Chicken.3ds", 0);
 
-    if (!scene)
+    if (!chickenScene)
     {
         std::cerr << "failed: " << importer.GetErrorString() << std::endl;
         return 1;
     }
 
-    auto model = Model::fromAiNode(scene, scene->mRootNode);
+    auto chickenModel = Model::fromAiNode(chickenScene, chickenScene->mRootNode, { "media" });
 
     // INFO: this transformation is hard-coded specifically for Chicken.3ds model
-    auto transformation = glm::mat4(1.0f);
-
-    transformation = glm::scale(transformation, glm::vec3(0.01f));
-    transformation = glm::rotate(transformation, glm::radians(-90.0f), glm::vec3(1.0f, 0, 0));
-
-    model->setTransformation(transformation);
+    chickenModel->setTransformation(glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));
 
     std::cout << "done" << std::endl;
 
@@ -478,7 +482,7 @@ int main()
     const float cameraMoveSpeed = 1.0f;
     const float cameraRotateSpeed = 10.0f;
 
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
@@ -558,27 +562,35 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        modelTransformationUniform->set(model->getTransformation());
+        glm::vec3 lightPosition = cameraPos; // cameraPos + (cameraUp * 2.0f);
+
         viewTransformationUniform->set(view);
         projectionTransformationUniform->set(projection);
 
-        lightPositionUniform->set(glm::vec3(-2, 2, 2));
+        lightPositionUniform->set(lightPosition);
         lightColorUniform->set(glm::vec3(1, 0.5, 0.5));
         ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
         materialSpecularUniform->set(12.0f);
         cameraPositionUniform->set(cameraPos);
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        diffuseColorUniform->set(glm::vec4(1.0, 1.0, 1.0, 1.0));
 
         ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
 
-        programPipeline->use();
+        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        model->bind();
-        model->draw();
-        model->unbind();
+        modelRenderingPipeline->use();
 
-        programPipeline->release();
+        // draw chicken
+
+        modelTransformationUniform->set(chickenModel->getTransformation());
+
+        chickenModel->bind();
+        chickenModel->draw();
+        chickenModel->unbind();
+
+        modelRenderingPipeline->release();
 
         window.display();
 
