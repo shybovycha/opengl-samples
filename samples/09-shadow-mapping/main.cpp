@@ -70,7 +70,7 @@ public:
     {
     }
 
-    static std::unique_ptr<Mesh> fromAiMesh(const aiScene* scene, aiMesh* mesh)
+    static std::unique_ptr<Mesh> fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
         std::cout << "[INFO] Creating buffer objects...";
 
@@ -183,21 +183,19 @@ public:
                 std::string imagePath{ str.C_Str() };
 
                 // TODO: extract the "std::string resolveFile(std::string)" helper
-                /*
-                std::vector<std::filesystem::path> lookupPaths = {
+                /* std::vector<std::filesystem::path> lookupPaths = {
                     imagePath,
                     std::filesystem::path{ "../" + imagePath }
-                };
+                };*/
 
-                for (std::filesystem::path path : lookupPaths) {
+                for (auto path : materialLookupPaths) {
                     std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
 
-                    if (std::filesystem::exists(path)) {
-                        imagePath = path;
+                    if (std::filesystem::exists(std::filesystem::path(path) / imagePath)) {
+                        imagePath = std::filesystem::path(path) / imagePath;
                         break;
                     }
                 }
-                */
 
                 std::cout << "[INFO] Loading DIFFUSE texture " << imagePath << "...";
 
@@ -306,11 +304,11 @@ public:
     {
     }
 
-    static std::unique_ptr<Model> fromAiNode(const aiScene* scene, aiNode* node)
+    static std::unique_ptr<Model> fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
         std::vector<std::unique_ptr<Mesh>> meshes;
 
-        processAiNode(scene, node, meshes);
+        processAiNode(scene, node, materialLookupPaths, meshes);
 
         return std::make_unique<Model>(std::move(meshes));
     }
@@ -350,11 +348,11 @@ public:
     }
 
 protected:
-    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::unique_ptr<Mesh>>& meshes)
+    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<Mesh>>& meshes)
     {
         for (auto t = 0; t < node->mNumMeshes; ++t)
         {
-            auto mesh = Mesh::fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]]);
+            auto mesh = Mesh::fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
             meshes.push_back(std::move(mesh));
         }
 
@@ -363,7 +361,7 @@ protected:
             auto child = node->mChildren[i];
             // auto childTransformation = parentTransformation + assimpMatrixToGlm(child->mTransformation);
 
-            processAiNode(scene, child, meshes);
+            processAiNode(scene, child, materialLookupPaths, meshes);
         }
     }
 
@@ -509,12 +507,7 @@ int main()
 
     Assimp::Importer importer;
 
-    auto chickenScene = importer.ReadFile("media/Chicken.3ds",
-                                   aiProcess_Triangulate
-                                       | aiProcess_RemoveRedundantMaterials
-                                       | aiProcess_GenUVCoords
-                                       | aiProcess_GenNormals
-                                       | aiProcess_TransformUVCoords);
+    auto chickenScene = importer.ReadFile("media/Chicken.3ds", 0);
 
     if (!chickenScene)
     {
@@ -522,7 +515,7 @@ int main()
         return 1;
     }
 
-    auto chickenModel = Model::fromAiNode(chickenScene, chickenScene->mRootNode);
+    auto chickenModel = Model::fromAiNode(chickenScene, chickenScene->mRootNode, { "media" });
 
     // INFO: this transformation is hard-coded specifically for Chicken.3ds model
     chickenModel->setTransformation(glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));
@@ -689,7 +682,7 @@ int main()
         viewTransformationUniform->set(view);
         projectionTransformationUniform->set(projection);
 
-        lightPositionUniform->set(glm::vec3(-2, 2, 2));
+        lightPositionUniform->set(lightPosition);
         lightColorUniform->set(glm::vec3(1, 0.5, 0.5));
         ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
         materialSpecularUniform->set(12.0f);
@@ -715,17 +708,14 @@ int main()
         framebuffer->bind();
 
         ::glClear(GL_DEPTH_BUFFER_BIT);
+        framebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
 
         glEnable(GL_DEPTH_TEST);
 
         // cull front faces to prevent peter panning the generated shadow map
         glCullFace(GL_FRONT);
 
-        // std::cout << "[DEBUG] Using shadow mapping shaders" << std::endl;
-
         shadowMappingPipeline->use();
-
-        // std::cout << "[DEBUG] Rendering chicken model for shadow mapping" << std::endl;
 
         modelTransformationUniform->set(chickenModel->getTransformation());
         shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
@@ -733,8 +723,6 @@ int main()
         chickenModel->bind();
         chickenModel->draw();
         chickenModel->unbind();
-
-        // std::cout << "[DEBUG] Rendering floor for shadow mapping" << std::endl;
 
         modelTransformationUniform->set(quadModel->getTransformation());
         shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
@@ -762,8 +750,6 @@ int main()
 
         // draw chicken
 
-        // std::cout << "[DEBUG] Rendering chicken model" << std::endl;
-
         shadowMapTexture->bind();
 
         modelTransformationUniform->set(chickenModel->getTransformation());
@@ -776,13 +762,13 @@ int main()
         modelTransformationUniform->set(quadModel->getTransformation());
         shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
 
-        // defaultTexture->bind();
+        defaultTexture->bind();
 
         quadModel->bind();
         quadModel->draw();
         quadModel->unbind();
 
-        // defaultTexture->unbind();
+        defaultTexture->unbind();
 
         shadowMapTexture->unbind();
 
