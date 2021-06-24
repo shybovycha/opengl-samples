@@ -441,10 +441,64 @@ int main()
 
     std::cout << "done" << std::endl;
 
+    std::cout << "[INFO] Creating shadow mapping pipeline...";
+
+    auto shadowMappingPipeline = std::make_unique<globjects::ProgramPipeline>();
+
+    shadowMappingPipeline->useStages(shadowMappingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
+    shadowMappingPipeline->useStages(shadowMappingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling shadow debugging vertex shader...";
+
+    auto shadowDebuggingVertexProgram = std::make_unique<globjects::Program>();
+    auto shadowDebuggingVertexSource = globjects::Shader::sourceFromFile("media/shadow-debug.vert");
+    auto shadowDebuggingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowDebuggingVertexSource.get());
+    auto shadowDebuggingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowDebuggingVertexShaderTemplate.get());
+
+    if (!shadowDebuggingVertexShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile vertex shader" << std::endl;
+        return 1;
+    }
+
+    shadowDebuggingVertexProgram->attach(shadowDebuggingVertexShader.get());
+
+    auto shadowDebuggingModelTransformationUniform = shadowDebuggingVertexProgram->getUniform<glm::mat4>("modelTransformation");
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling shadow debugging fragment shader...";
+
+    auto shadowDebuggingFragmentProgram = std::make_unique<globjects::Program>();
+    auto shadowDebuggingFragmentSource = globjects::Shader::sourceFromFile("media/shadow-debug.frag");
+    auto shadowDebuggingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowDebuggingFragmentSource.get());
+    auto shadowDebuggingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowDebuggingFragmentShaderTemplate.get());
+
+    if (!shadowDebuggingFragmentShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile fragment shader" << std::endl;
+        return 1;
+    }
+
+    shadowDebuggingFragmentProgram->attach(shadowDebuggingFragmentShader.get());
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Creating shadow debugging pipeline...";
+
+    auto shadowDebuggingPipeline = std::make_unique<globjects::ProgramPipeline>();
+
+    shadowDebuggingPipeline->useStages(shadowDebuggingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
+    shadowDebuggingPipeline->useStages(shadowDebuggingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+
+    std::cout << "done" << std::endl;
+
     std::cout << "[INFO] Compiling shadow rendering vertex shader...";
 
     auto shadowRenderingVertexProgram = std::make_unique<globjects::Program>();
-    auto shadowRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-debug.vert");
+    auto shadowRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.vert");
     auto shadowRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowRenderingVertexShaderSource.get());
     auto shadowRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowRenderingVertexShaderTemplate.get());
 
@@ -466,7 +520,7 @@ int main()
     std::cout << "[INFO] Compiling shadow rendering fragment shader...";
 
     auto shadowRenderingFragmentProgram = std::make_unique<globjects::Program>();
-    auto shadowRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-debug.frag");
+    auto shadowRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.frag");
     auto shadowRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowRenderingFragmentShaderSource.get());
     auto shadowRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowRenderingFragmentShaderTemplate.get());
 
@@ -478,21 +532,12 @@ int main()
 
     shadowRenderingFragmentProgram->attach(shadowRenderingFragmentShader.get());
 
-    auto lightPositionUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("lightPosition");
-    auto lightColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("lightColor");
+    auto shadowRenderingLightPositionUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("lightPosition");
+    auto shadowRenderingLightColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("lightColor");
     // auto ambientColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("ambientColor");
     // auto diffuseColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("diffuseColor");
     // auto materialSpecularUniform = shadowRenderingFragmentProgram->getUniform<float>("materialSpecular");
-    auto cameraPositionUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("cameraPosition");
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Creating shadow mapping pipeline...";
-
-    auto shadowMappingPipeline = std::make_unique<globjects::ProgramPipeline>();
-
-    shadowMappingPipeline->useStages(shadowMappingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    shadowMappingPipeline->useStages(shadowMappingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+    auto shadowRenderingCameraPositionUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("cameraPosition");
 
     std::cout << "done" << std::endl;
 
@@ -562,6 +607,8 @@ int main()
 
     std::cout << "[DEBUG] Initializing framebuffers...";
 
+    std::cout << "[DEBUG] Initializing shadowMapTexture...";
+
     auto shadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
@@ -572,8 +619,6 @@ int main()
 
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-    std::cout << "[shadowMapTexture";
-
     shadowMapTexture->image2D(
         0,
         static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
@@ -583,7 +628,9 @@ int main()
         static_cast<gl::GLenum>(GL_FLOAT),
         nullptr);
 
-    std::cout << " - ok]";
+    std::cout << "done" << std::endl;
+
+    std::cout << "[DEBUG] Initializing frame buffer...";
 
     auto framebuffer = std::make_unique<globjects::Framebuffer>();
     framebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), shadowMapTexture.get());
@@ -681,27 +728,13 @@ int main()
 
         glm::vec3 lightPosition = cameraPos; //glm::vec3(0.0f, 2.0f, 3.0f); // cameraPos;
 
-        // viewTransformationUniform->set(view);
-        // projectionTransformationUniform->set(projection);
-
-        lightPositionUniform->set(lightPosition);
-        lightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
-        // ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
-        // materialSpecularUniform->set(12.0f);
-        cameraPositionUniform->set(cameraPos);
-
-        // diffuseColorUniform->set(glm::vec4(1.0, 1.0, 1.0, 1.0));
-
-        const float nearPlane = 0.1f;
+        const float nearPlane = 1.0f;
         const float farPlane = 10.0f;
-        glm::mat4 lightProjection = cameraProjection; // glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+        glm::mat4 lightProjection = glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, nearPlane, farPlane);
 
-        glm::mat4 lightView = cameraView; // glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-
-        shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
-        // lightSpaceMatrixUniform->set(lightSpaceMatrix);
 
         ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
 
@@ -720,15 +753,14 @@ int main()
 
         shadowMappingPipeline->use();
 
-        // modelTransformationUniform->set(chickenModel->getTransformation());
+        shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
         shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
 
         chickenModel->bind();
         chickenModel->draw();
         chickenModel->unbind();
 
-        // modelTransformationUniform->set(quadModel->getTransformation());
-        // shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
+        shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
 
         quadModel->bind();
         quadModel->draw();
@@ -747,6 +779,12 @@ int main()
 
         shadowRenderingPipeline->use();
 
+        shadowRenderingLightPositionUniform->set(lightPosition);
+        shadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
+        // ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
+        // materialSpecularUniform->set(12.0f);
+        shadowRenderingCameraPositionUniform->set(cameraPos);
+
         shadowRenderingProjectionTransformationUniform->set(cameraProjection);
         shadowRenderingViewTransformationUniform->set(cameraView);
         shadowRenderingLightSpaceMatrixUniform->set(lightSpaceMatrix);
@@ -755,27 +793,43 @@ int main()
 
         shadowMapTexture->bind();
 
-        /*shadowRenderingModelTransformationUniform->set(chickenModel->getTransformation());
+        shadowRenderingModelTransformationUniform->set(chickenModel->getTransformation());
 
         chickenModel->bind();
         chickenModel->draw();
         chickenModel->unbind();
 
-        shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());*/
+        shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
 
-        shadowRenderingModelTransformationUniform->set(glm::translate(glm::mat4(1.0f), glm::vec3(-0.5, -0.5, 0.75)));
-
-        // defaultTexture->bind();
+        defaultTexture->bind();
 
         quadModel->bind();
         quadModel->draw();
         quadModel->unbind();
 
-        // defaultTexture->unbind();
+        defaultTexture->unbind();
 
         shadowMapTexture->unbind();
 
         shadowRenderingPipeline->release();
+
+        // render quad with depth (shadow) map
+
+        shadowDebuggingPipeline->use();
+
+        shadowDebuggingModelTransformationUniform->set(glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.75f)));
+
+        shadowMapTexture->bind();
+
+        quadModel->bind();
+        quadModel->draw();
+        quadModel->unbind();
+
+        shadowMapTexture->unbind();
+
+        shadowDebuggingPipeline->release();
+
+        // done rendering the frame
 
         window.display();
 

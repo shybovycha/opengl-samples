@@ -21,12 +21,12 @@ uniform vec3 cameraPosition;
 
 float shadowCalculation()
 {
-    vec2 uv = fsIn.fragmentPositionInLightSpace.xy * 0.5 + 0.5;
-    float occluderDepth = texture(shadowMap, uv).r;
+    vec2 shadowMapCoord = fsIn.fragmentPositionInLightSpace.xy * 0.5 + 0.5;
+    float occluderDepth = texture(shadowMap, shadowMapCoord).r;
 
     float thisDepth = fsIn.fragmentPositionInLightSpace.z * 0.5 + 0.5;
 
-    return occluderDepth < thisDepth ? 0.0 : 1.0;
+    return occluderDepth < thisDepth ? 1.0 : 0.0;
 }
 
 void main()

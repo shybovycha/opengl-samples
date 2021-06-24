@@ -26,7 +26,7 @@ void main()
     vsOut.fragmentPosition = vec3(model * vec4(vertexPosition, 1.0));
     vsOut.normal = transpose(inverse(mat3(model))) * vertexNormal;
     vsOut.textureCoord = vertexTextureCoord;
-    vsOut.fragmentPositionInLightSpace = lightSpaceMatrix * vec4(vsOut.fragmentPosition, 1.0);
+    vsOut.fragmentPositionInLightSpace = lightSpaceMatrix * model * vec4(vertexPosition, 1.0);
 
-    gl_Position = projection * view * vec4(vsOut.fragmentPosition, 1.0);
+    gl_Position = projection * view * model * vec4(vertexPosition, 1.0);
 }

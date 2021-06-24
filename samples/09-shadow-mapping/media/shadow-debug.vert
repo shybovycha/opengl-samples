@@ -6,28 +6,18 @@ layout (location = 2) in vec2 vertexTextureCoord;
 
 out VS_OUT
 {
-    // vec3 fragmentPosition;
-    // vec3 normal;
     vec2 textureCoord;
-    // vec4 fragmentPositionInLightSpace;
 } vsOut;
 
 out gl_PerVertex {
     vec4 gl_Position;
 };
 
-uniform mat4 projection;
-uniform mat4 view;
-uniform mat4 model;
-uniform mat4 lightSpaceMatrix;
+uniform mat4 modelTransformation;
 
 void main()
 {
-    // vsOut.fragmentPosition = vec3(model * vec4(vertexPosition, 1.0));
-    // vsOut.normal = transpose(inverse(mat3(model))) * vertexNormal;
     vsOut.textureCoord = vertexTextureCoord;
-    // vsOut.fragmentPositionInLightSpace = lightSpaceMatrix * vec4(vsOut.fragmentPosition, 1.0);
 
-    // gl_Position = projection * view * vec4(vsOut.fragmentPosition, 1.0);
-    gl_Position = model * vec4(vertexPosition, 1.0);
+    gl_Position = modelTransformation * vec4(vertexPosition, 1.0);
 }
