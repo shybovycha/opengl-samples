@@ -454,10 +454,10 @@ int main()
 
     shadowRenderingVertexProgram->attach(shadowRenderingVertexShader.get());
 
-    auto modelTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("model");
-    auto viewTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("view");
-    auto projectionTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("projection");
-    auto lightSpaceMatrixUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("lightSpaceMatrix");
+    auto shadowRenderingModelTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("model");
+    auto shadowRenderingViewTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("view");
+    auto shadowRenderingProjectionTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("projection");
+    auto shadowRenderingLightSpaceMatrixUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("lightSpaceMatrix");
 
     std::cout << "done" << std::endl;
 
@@ -478,9 +478,9 @@ int main()
 
     auto lightPositionUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("lightPosition");
     auto lightColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("lightColor");
-    auto ambientColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("ambientColor");
-    auto diffuseColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("diffuseColor");
-    auto materialSpecularUniform = shadowRenderingFragmentProgram->getUniform<float>("materialSpecular");
+    // auto ambientColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("ambientColor");
+    // auto diffuseColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("diffuseColor");
+    // auto materialSpecularUniform = shadowRenderingFragmentProgram->getUniform<float>("materialSpecular");
     auto cameraPositionUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("cameraPosition");
 
     std::cout << "done" << std::endl;
@@ -674,32 +674,32 @@ int main()
             cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
         }
 
-        glm::mat4 projection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
+        glm::mat4 cameraProjection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
 
-        glm::mat4 view = glm::lookAt(
+        glm::mat4 cameraView = glm::lookAt(
             cameraPos,
             cameraPos + cameraForward,
             cameraUp);
 
         glm::vec3 lightPosition = glm::vec3(0.0f, 2.0f, 3.0f); // cameraPos;
 
-        viewTransformationUniform->set(view);
-        projectionTransformationUniform->set(projection);
+        // viewTransformationUniform->set(view);
+        // projectionTransformationUniform->set(projection);
 
         lightPositionUniform->set(lightPosition);
-        lightColorUniform->set(glm::vec3(1, 0.5, 0.5));
-        ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
-        materialSpecularUniform->set(12.0f);
+        lightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
+        // ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
+        // materialSpecularUniform->set(12.0f);
         cameraPositionUniform->set(cameraPos);
 
-        diffuseColorUniform->set(glm::vec4(1.0, 1.0, 1.0, 1.0));
+        // diffuseColorUniform->set(glm::vec4(1.0, 1.0, 1.0, 1.0));
 
         glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
         shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
-        lightSpaceMatrixUniform->set(lightSpaceMatrix);
+        // lightSpaceMatrixUniform->set(lightSpaceMatrix);
 
         ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
 
@@ -718,15 +718,15 @@ int main()
 
         shadowMappingPipeline->use();
 
-        modelTransformationUniform->set(chickenModel->getTransformation());
+        // modelTransformationUniform->set(chickenModel->getTransformation());
         shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
 
         chickenModel->bind();
         chickenModel->draw();
         chickenModel->unbind();
 
-        modelTransformationUniform->set(quadModel->getTransformation());
-        shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
+        // modelTransformationUniform->set(quadModel->getTransformation());
+        // shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
 
         quadModel->bind();
         quadModel->draw();
@@ -745,19 +745,22 @@ int main()
 
         shadowRenderingPipeline->use();
 
+        shadowRenderingProjectionTransformationUniform->set(cameraProjection);
+        shadowRenderingViewTransformationUniform->set(cameraView);
+        shadowRenderingLightSpaceMatrixUniform->set(lightSpaceMatrix);
+
         // draw chicken
 
         shadowMapTexture->bind();
 
-        modelTransformationUniform->set(chickenModel->getTransformation());
-        shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
+        shadowRenderingModelTransformationUniform->set(chickenModel->getTransformation());
 
         chickenModel->bind();
         chickenModel->draw();
         chickenModel->unbind();
 
-        modelTransformationUniform->set(quadModel->getTransformation());
-        shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
+        shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
+        // shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
 
         defaultTexture->bind();
 

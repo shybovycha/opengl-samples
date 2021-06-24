@@ -14,12 +14,12 @@ uniform sampler2D diffuseTexture;
 
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
-uniform vec3 ambientColor;
-uniform vec3 diffuseColor;
-uniform float materialSpecular;
+// uniform vec3 ambientColor;
+// uniform vec3 diffuseColor;
+// uniform float materialSpecular;
 uniform vec3 cameraPosition;
 
-float shadowCalculation(vec4 fragmentPositionInLightSpace, vec3 normal, vec3 lightDirection)
+/*float shadowCalculation(vec4 fragmentPositionInLightSpace, vec3 normal, vec3 lightDirection)
 {
     // perform perspective divide
     vec3 projectedCoords = fragmentPositionInLightSpace.xyz / fragmentPositionInLightSpace.w;
@@ -46,12 +46,23 @@ float shadowCalculation(vec4 fragmentPositionInLightSpace, vec3 normal, vec3 lig
     }
 
     return shadow;
+}*/
+
+float shadowCalculation()
+{
+    vec3 position = fsIn.fragmentPositionInLightSpace.xyz * 0.5 + 0.5;
+    float depth = texture(shadowMap, position.xy).r;
+
+    return depth < position.z ? 0.0 : 1.0;
 }
 
 void main()
 {
     vec3 color = texture(diffuseTexture, fsIn.textureCoord).rgb;
     vec3 normal = normalize(fsIn.normal);
+
+    // ambient
+    vec3 ambient = 0.3 * color;
 
     // diffuse
     vec3 lightDirection = normalize(lightPosition - fsIn.fragmentPosition);
@@ -60,15 +71,14 @@ void main()
 
     // specular
     vec3 viewDirection = normalize(cameraPosition - fsIn.fragmentPosition);
-    float spec = materialSpecular;
     vec3 halfwayDirection = normalize(lightDirection + viewDirection);
-    spec = pow(max(dot(normal, halfwayDirection), 0.0), 64.0);
+    float spec = pow(max(dot(normal, halfwayDirection), 0.0), 64.0);
     vec3 specular = spec * lightColor;
 
     // calculate shadow
-    float shadow = shadowCalculation(fsIn.fragmentPositionInLightSpace, normal, lightDirection);
+    float shadow = shadowCalculation(); //fsIn.fragmentPositionInLightSpace, normal, lightDirection);
 
-    vec3 lighting = (ambientColor + ((1.0 - shadow))) * color;
+    vec3 lighting = ((shadow * (diffuse + specular)) + ambient) * color;
 
     fragmentColor = vec4(lighting, 1.0);
 }

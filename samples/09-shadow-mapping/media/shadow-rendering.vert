@@ -24,7 +24,7 @@ uniform mat4 lightSpaceMatrix;
 void main()
 {
     vsOut.fragmentPosition = vec3(model * vec4(vertexPosition, 1.0));
-    vsOut.normal = vertexNormal;
+    vsOut.normal = transpose(inverse(mat3(model))) * vertexNormal;
     vsOut.textureCoord = vertexTextureCoord;
     vsOut.fragmentPositionInLightSpace = lightSpaceMatrix * vec4(vsOut.fragmentPosition, 1.0);
 
