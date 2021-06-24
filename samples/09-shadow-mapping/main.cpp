@@ -191,8 +191,10 @@ public:
                 for (auto path : materialLookupPaths) {
                     std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
 
-                    if (std::filesystem::exists(std::filesystem::path(path) / imagePath)) {
-                        imagePath = std::filesystem::path(path) / imagePath;
+                    const auto filePath = std::filesystem::path(path).append(imagePath);
+
+                    if (std::filesystem::exists(filePath)) {
+                        imagePath = filePath.string();
                         break;
                     }
                 }
