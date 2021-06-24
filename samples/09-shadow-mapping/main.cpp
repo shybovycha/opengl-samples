@@ -602,6 +602,10 @@ int main()
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 
+    const float nearPlane = 0.1f;
+    const float farPlane = 10.0f;
+    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+
     sf::Clock clock;
 
     glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
@@ -677,7 +681,7 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        glm::vec3 lightPosition = cameraPos; // cameraPos + (cameraUp * 2.0f);
+        glm::vec3 lightPosition = glm::vec3(0.0f, 2.0f, 3.0f); // cameraPos;
 
         viewTransformationUniform->set(view);
         projectionTransformationUniform->set(projection);
@@ -689,10 +693,6 @@ int main()
         cameraPositionUniform->set(cameraPos);
 
         diffuseColorUniform->set(glm::vec4(1.0, 1.0, 1.0, 1.0));
-
-        const auto nearPlane = 1.0f;
-        const auto farPlane = 10.0f;
-        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
 
         glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -707,6 +707,7 @@ int main()
 
         framebuffer->bind();
 
+        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
         ::glClear(GL_DEPTH_BUFFER_BIT);
         framebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
 
@@ -739,12 +740,8 @@ int main()
 
         // second pass - switch to normal shader and render picture with depth information to the viewport
 
-        // globjects::Framebuffer::defaultFBO()->bind();
-
         ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // std::cout << "[DEBUG] Switching to shadow rendering shaders" << std::endl;
 
         shadowRenderingPipeline->use();
 
