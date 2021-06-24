@@ -4,14 +4,15 @@ layout (location = 0) in vec3 vertexPosition;
 layout (location = 1) in vec3 vertexNormal;
 layout (location = 2) in vec2 vertexTextureCoord;
 
-    out vec3 fragmentPosition;
-    out vec3 normal;
-    out vec2 textureCoord;
-    out vec4 fragmentPositionInLightSpace;
+out vec3 fragmentPosition;
+out vec3 normal;
+out vec2 textureCoord;
+out vec4 fragmentPositionInLightSpace;
 
-out gl_PerVertex {
+out gl_PerVertex
+{
     vec4 gl_Position;
-} vsOut;
+};
 
 uniform mat4 projection;
 uniform mat4 view;

@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 
@@ -179,11 +180,30 @@ public:
                 aiString str;
                 material->GetTexture(aiTextureType_DIFFUSE, i, &str);
 
-                std::cout << "[INFO] Loading DIFFUSE texture " << str.C_Str() << "...";
+                std::string imagePath{ str.C_Str() };
+
+                // TODO: extract the "std::string resolveFile(std::string)" helper
+                /*
+                std::vector<std::filesystem::path> lookupPaths = {
+                    imagePath,
+                    std::filesystem::path{ "../" + imagePath }
+                };
+
+                for (std::filesystem::path path : lookupPaths) {
+                    std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
+
+                    if (std::filesystem::exists(path)) {
+                        imagePath = path;
+                        break;
+                    }
+                }
+                */
+
+                std::cout << "[INFO] Loading DIFFUSE texture " << imagePath << "...";
 
                 sf::Image textureImage;
 
-                if (!textureImage.loadFromFile(str.C_Str()))
+                if (!textureImage.loadFromFile(imagePath))
                 {
                     std::cerr << "[ERROR] Can not load texture" << std::endl;
                     continue;
@@ -387,7 +407,7 @@ int main()
     std::cout << "[INFO] Compiling shadow mapping vertex shader...";
 
     auto shadowMappingVertexProgram = std::make_unique<globjects::Program>();
-    auto shadowMappingVertexSource = globjects::Shader::sourceFromFile("media/shadow-mapping-vertex.glsl");
+    auto shadowMappingVertexSource = globjects::Shader::sourceFromFile("media/shadow-mapping.vert");
     auto shadowMappingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowMappingVertexSource.get());
     auto shadowMappingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowMappingVertexShaderTemplate.get());
 
@@ -404,12 +424,12 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling shadow mapping vertex shader...";
+    std::cout << "[INFO] Compiling shadow mapping fragment shader...";
 
     auto shadowMappingFragmentProgram = std::make_unique<globjects::Program>();
-    auto shadowMappingFragmentSource = globjects::Shader::sourceFromFile("media/shadow-mapping-fragment.glsl");
+    auto shadowMappingFragmentSource = globjects::Shader::sourceFromFile("media/shadow-mapping.frag");
     auto shadowMappingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowMappingFragmentSource.get());
-    auto shadowMappingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowMappingFragmentShaderTemplate.get());
+    auto shadowMappingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowMappingFragmentShaderTemplate.get());
 
     if (!shadowMappingFragmentShader->compile())
     {
@@ -423,56 +443,65 @@ int main()
 
     std::cout << "[INFO] Compiling shadow rendering vertex shader...";
 
-    auto vertexProgram = std::make_unique<globjects::Program>();
-    auto vertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.vert");
-    auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
-    auto vertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
+    auto shadowRenderingVertexProgram = std::make_unique<globjects::Program>();
+    auto shadowRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.vert");
+    auto shadowRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowRenderingVertexShaderSource.get());
+    auto shadowRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowRenderingVertexShaderTemplate.get());
 
-    if (!vertexShader->compile())
+    if (!shadowRenderingVertexShader->compile())
     {
         std::cerr << "[ERROR] Can not compile shadow rendering vertex shader" << std::endl;
         return 1;
     }
 
-    vertexProgram->attach(vertexShader.get());
+    shadowRenderingVertexProgram->attach(shadowRenderingVertexShader.get());
 
-    auto modelTransformationUniform = vertexProgram->getUniform<glm::mat4>("model");
-    auto viewTransformationUniform = vertexProgram->getUniform<glm::mat4>("view");
-    auto projectionTransformationUniform = vertexProgram->getUniform<glm::mat4>("projection");
-    auto lightSpaceMatrixUniform = vertexProgram->getUniform<glm::mat4>("lightSpaceMatrix");
+    auto modelTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("model");
+    auto viewTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("view");
+    auto projectionTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("projection");
+    auto lightSpaceMatrixUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("lightSpaceMatrix");
 
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Compiling shadow rendering fragment shader...";
 
-    auto fragmentProgram = std::make_unique<globjects::Program>();
-    auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.frag");
-    auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
-    auto fragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
+    auto shadowRenderingFragmentProgram = std::make_unique<globjects::Program>();
+    auto shadowRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.frag");
+    auto shadowRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowRenderingFragmentShaderSource.get());
+    auto shadowRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowRenderingFragmentShaderTemplate.get());
 
-    if (!fragmentShader->compile())
+    if (!shadowRenderingFragmentShader->compile())
     {
         std::cerr << "[ERROR] Can not compile chicken fragment shader" << std::endl;
         return 1;
     }
 
-    fragmentProgram->attach(fragmentShader.get());
+    shadowRenderingFragmentProgram->attach(shadowRenderingFragmentShader.get());
 
-    auto lightPositionUniform = fragmentProgram->getUniform<glm::vec3>("lightPosition");
-    auto lightColorUniform = fragmentProgram->getUniform<glm::vec3>("lightColor");
-    auto ambientColorUniform = fragmentProgram->getUniform<glm::vec3>("ambientColor");
-    auto diffuseColorUniform = fragmentProgram->getUniform<glm::vec3>("diffuseColor");
-    auto materialSpecularUniform = fragmentProgram->getUniform<float>("materialSpecular");
-    auto cameraPositionUniform = fragmentProgram->getUniform<glm::vec3>("cameraPosition");
+    auto lightPositionUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("lightPosition");
+    auto lightColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("lightColor");
+    auto ambientColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("ambientColor");
+    auto diffuseColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("diffuseColor");
+    auto materialSpecularUniform = shadowRenderingFragmentProgram->getUniform<float>("materialSpecular");
+    auto cameraPositionUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("cameraPosition");
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Creating rendering pipeline...";
+    std::cout << "[INFO] Creating shadow mapping pipeline...";
 
-    auto programPipeline = std::make_unique<globjects::ProgramPipeline>();
+    auto shadowMappingPipeline = std::make_unique<globjects::ProgramPipeline>();
 
-    programPipeline->useStages(vertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    programPipeline->useStages(fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+    shadowMappingPipeline->useStages(shadowMappingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
+    shadowMappingPipeline->useStages(shadowMappingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Creating shadow rendering pipeline...";
+
+    auto shadowRenderingPipeline = std::make_unique<globjects::ProgramPipeline>();
+
+    shadowRenderingPipeline->useStages(shadowRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
+    shadowRenderingPipeline->useStages(shadowRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
 
     std::cout << "done" << std::endl;
 
@@ -669,7 +698,7 @@ int main()
         diffuseColorUniform->set(glm::vec4(1.0, 1.0, 1.0, 1.0));
 
         const auto nearPlane = 1.0f;
-        const auto farPlane = 7.5f;
+        const auto farPlane = 10.0f;
         glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
 
         glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -678,7 +707,7 @@ int main()
 
         shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
         lightSpaceMatrixUniform->set(lightSpaceMatrix);
-        
+
         ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
 
         // first render pass - shadow mapping
@@ -692,10 +721,11 @@ int main()
         // cull front faces to prevent peter panning the generated shadow map
         glCullFace(GL_FRONT);
 
-        programPipeline->useStages(shadowMappingVertexProgram.get(), GL_VERTEX_SHADER_BIT);
-        programPipeline->useStages(shadowMappingFragmentProgram.get(), GL_FRAGMENT_SHADER_BIT);
+        // std::cout << "[DEBUG] Using shadow mapping shaders" << std::endl;
 
-        programPipeline->use();
+        shadowMappingPipeline->use();
+
+        // std::cout << "[DEBUG] Rendering chicken model for shadow mapping" << std::endl;
 
         modelTransformationUniform->set(chickenModel->getTransformation());
         shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
@@ -703,6 +733,8 @@ int main()
         chickenModel->bind();
         chickenModel->draw();
         chickenModel->unbind();
+
+        // std::cout << "[DEBUG] Rendering floor for shadow mapping" << std::endl;
 
         modelTransformationUniform->set(quadModel->getTransformation());
         shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
@@ -713,8 +745,7 @@ int main()
 
         framebuffer->unbind();
 
-        programPipeline->releaseStages(GL_VERTEX_SHADER_BIT);
-        programPipeline->releaseStages(GL_FRAGMENT_SHADER_BIT);
+        shadowMappingPipeline->release();
 
         glCullFace(GL_BACK);
 
@@ -725,10 +756,13 @@ int main()
         ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        programPipeline->useStages(vertexProgram.get(), GL_VERTEX_SHADER_BIT);
-        programPipeline->useStages(fragmentProgram.get(), GL_FRAGMENT_SHADER_BIT);
+        // std::cout << "[DEBUG] Switching to shadow rendering shaders" << std::endl;
+
+        shadowRenderingPipeline->use();
 
         // draw chicken
+
+        // std::cout << "[DEBUG] Rendering chicken model" << std::endl;
 
         shadowMapTexture->bind();
 
@@ -742,17 +776,17 @@ int main()
         modelTransformationUniform->set(quadModel->getTransformation());
         shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
 
-        defaultTexture->bind();
+        // defaultTexture->bind();
 
         quadModel->bind();
         quadModel->draw();
         quadModel->unbind();
 
-        defaultTexture->unbind();
-        
+        // defaultTexture->unbind();
+
         shadowMapTexture->unbind();
 
-        programPipeline->release();
+        shadowRenderingPipeline->release();
 
         window.display();
 
