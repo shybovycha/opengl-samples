@@ -726,9 +726,9 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        glm::vec3 lightPosition = cameraPos; //glm::vec3(0.0f, 2.0f, 3.0f); // cameraPos;
+        glm::vec3 lightPosition = glm::vec3(0.0f, 3.0f, 4.0f); // cameraPos;
 
-        const float nearPlane = 1.0f;
+        const float nearPlane = 0.1f;
         const float farPlane = 10.0f;
         glm::mat4 lightProjection = glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, nearPlane, farPlane);
 
@@ -747,6 +747,7 @@ int main()
         framebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
 
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
 
         // cull front faces to prevent peter panning the generated shadow map
         glCullFace(GL_FRONT);
@@ -754,11 +755,15 @@ int main()
         shadowMappingPipeline->use();
 
         shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
+
         shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
 
         chickenModel->bind();
         chickenModel->draw();
         chickenModel->unbind();
+
+        // the ground plane will get culled, we don't want that
+        glDisable(GL_CULL_FACE);
 
         shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
 
@@ -770,6 +775,7 @@ int main()
 
         shadowMappingPipeline->release();
 
+        glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 
         // second pass - switch to normal shader and render picture with depth information to the viewport
@@ -801,13 +807,13 @@ int main()
 
         shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
 
-        defaultTexture->bind();
+        // defaultTexture->bind();
 
         quadModel->bind();
         quadModel->draw();
         quadModel->unbind();
 
-        defaultTexture->unbind();
+        // defaultTexture->unbind();
 
         shadowMapTexture->unbind();
 

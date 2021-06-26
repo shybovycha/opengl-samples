@@ -10,7 +10,7 @@ in VS_OUT {
 } fsIn;
 
 uniform sampler2D shadowMap;
-uniform sampler2D diffuseTexture;
+// uniform sampler2D diffuseTexture;
 
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
@@ -21,17 +21,16 @@ uniform vec3 cameraPosition;
 
 float shadowCalculation()
 {
-    vec2 shadowMapCoord = fsIn.fragmentPositionInLightSpace.xy * 0.5 + 0.5;
-    float occluderDepth = texture(shadowMap, shadowMapCoord).r;
-
-    float thisDepth = fsIn.fragmentPositionInLightSpace.z * 0.5 + 0.5;
+    vec3 shadowMapCoord = (fsIn.fragmentPositionInLightSpace.xyz / fsIn.fragmentPositionInLightSpace.w) * 0.5 + 0.5;
+    float occluderDepth = texture(shadowMap, shadowMapCoord.xy).r;
+    float thisDepth = shadowMapCoord.z;
 
     return occluderDepth < thisDepth ? 1.0 : 0.0;
 }
 
 void main()
 {
-    vec3 color = texture(diffuseTexture, fsIn.textureCoord).rgb;
+    vec3 color = fsIn.fragmentPosition; // texture(diffuseTexture, fsIn.textureCoord).rgb;
     vec3 normal = normalize(fsIn.normal);
 
     // ambient

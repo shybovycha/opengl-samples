@@ -2,7 +2,7 @@
 BasedOnStyle: WebKit
 AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: None
+AlignConsecutiveAssignments: false
 AlignOperands: DontAlign
 AlignTrailingComments: false
 AllowAllArgumentsOnNextLine: false
@@ -47,7 +47,7 @@ ContinuationIndentWidth: 4
 Cpp11BracedListStyle: false
 DerivePointerAlignment: true
 # EmptyLineAfterAccessModifier: Never
-EmptyLineBeforeAccessModifier: Always
+# EmptyLineBeforeAccessModifier: Always
 # IncludeBlocks: Regroup
 # IncludeCategories:
 #   # system
