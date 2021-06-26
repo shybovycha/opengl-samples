@@ -263,7 +263,7 @@ public:
 
         for (auto& texture : m_textures)
         {
-            // texture->bind();
+            texture->bindActive(1);
         }
     }
 
@@ -271,7 +271,7 @@ public:
     {
         for (auto& texture : m_textures)
         {
-            // texture->unbind();
+            texture->unbindActive(1);
         }
 
         m_vao->unbind();
@@ -801,6 +801,7 @@ int main()
         shadowMapTexture->bindActive(0);
 
         shadowRenderingFragmentProgram->setUniform("shadowMap", 0);
+        shadowRenderingFragmentProgram->setUniform("diffuseTexture", 1);
 
         shadowRenderingModelTransformationUniform->set(chickenModel->getTransformation());
 
@@ -810,25 +811,25 @@ int main()
 
         shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
 
-        // defaultTexture->bindActive(1);
+        defaultTexture->bindActive(1);
 
         quadModel->bind();
         quadModel->draw();
         quadModel->unbind();
 
-        // defaultTexture->unbind();
+        defaultTexture->unbindActive(1);
 
-        shadowMapTexture->unbind();
+        shadowMapTexture->unbindActive(0);
 
         shadowRenderingPipeline->release();
 
         // render quad with depth (shadow) map
 
-        shadowDebuggingPipeline->use();
+        /*shadowDebuggingPipeline->use();
 
         shadowDebuggingModelTransformationUniform->set(glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.75f)));
 
-        shadowMapTexture->bind();
+        shadowMapTexture->bindActive(0);
 
         quadModel->bind();
         quadModel->draw();
@@ -836,7 +837,7 @@ int main()
 
         shadowMapTexture->unbind();
 
-        shadowDebuggingPipeline->release();
+        shadowDebuggingPipeline->release();*/
 
         // done rendering the frame
 

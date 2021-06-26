@@ -50,7 +50,7 @@ void main()
     // calculate shadow
     float shadow = shadowCalculation();
 
-    vec3 lighting = (shadow + ambient) * color; // ((shadow * (diffuse + specular)) + ambient) * color;
+    vec3 lighting = ((shadow * (diffuse + specular)) + ambient) * color;
 
     fragmentColor = vec4(lighting, 1.0);
 }
