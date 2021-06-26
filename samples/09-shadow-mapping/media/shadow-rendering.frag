@@ -10,7 +10,7 @@ in VS_OUT {
 } fsIn;
 
 uniform sampler2D shadowMap;
-// uniform sampler2D diffuseTexture;
+uniform sampler2D diffuseTexture;
 
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
@@ -25,12 +25,12 @@ float shadowCalculation()
     float occluderDepth = texture(shadowMap, shadowMapCoord.xy).r;
     float thisDepth = shadowMapCoord.z;
 
-    return occluderDepth < thisDepth ? 1.0 : 0.0;
+    return occluderDepth < thisDepth ? 0.0 : 1.0;
 }
 
 void main()
 {
-    vec3 color = fsIn.fragmentPosition; // texture(diffuseTexture, fsIn.textureCoord).rgb;
+    vec3 color = texture(diffuseTexture, fsIn.textureCoord).rgb;
     vec3 normal = normalize(fsIn.normal);
 
     // ambient
@@ -50,7 +50,7 @@ void main()
     // calculate shadow
     float shadow = shadowCalculation();
 
-    vec3 lighting = ((shadow * (diffuse + specular)) + ambient) * color;
+    vec3 lighting = (shadow + ambient) * color; // ((shadow * (diffuse + specular)) + ambient) * color;
 
     fragmentColor = vec4(lighting, 1.0);
 }

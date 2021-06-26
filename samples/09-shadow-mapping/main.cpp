@@ -263,7 +263,7 @@ public:
 
         for (auto& texture : m_textures)
         {
-            texture->bind();
+            // texture->bind();
         }
     }
 
@@ -271,7 +271,7 @@ public:
     {
         for (auto& texture : m_textures)
         {
-            texture->unbind();
+            // texture->unbind();
         }
 
         m_vao->unbind();
@@ -614,15 +614,15 @@ int main()
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
 
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+    // shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+    // shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
 
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    // shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     shadowMapTexture->image2D(
         0,
         static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
-        glm::vec2(window.getSize().x, window.getSize().y),
+        glm::vec2(2048, 2048),
         0,
         static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
         static_cast<gl::GLenum>(GL_FLOAT),
@@ -730,13 +730,13 @@ int main()
 
         const float nearPlane = 0.1f;
         const float farPlane = 10.0f;
-        glm::mat4 lightProjection = glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, nearPlane, farPlane);
+        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
 
         glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
-        ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
+        ::glViewport(0, 0, 2048, 2048);
 
         // first render pass - shadow mapping
 
@@ -747,7 +747,7 @@ int main()
         framebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
 
         glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
+        // glEnable(GL_CULL_FACE);
 
         // cull front faces to prevent peter panning the generated shadow map
         glCullFace(GL_FRONT);
@@ -780,6 +780,7 @@ int main()
 
         // second pass - switch to normal shader and render picture with depth information to the viewport
 
+        ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
         ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -797,7 +798,9 @@ int main()
 
         // draw chicken
 
-        shadowMapTexture->bind();
+        shadowMapTexture->bindActive(0);
+
+        shadowRenderingFragmentProgram->setUniform("shadowMap", 0);
 
         shadowRenderingModelTransformationUniform->set(chickenModel->getTransformation());
 
@@ -807,7 +810,7 @@ int main()
 
         shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
 
-        // defaultTexture->bind();
+        // defaultTexture->bindActive(1);
 
         quadModel->bind();
         quadModel->draw();
