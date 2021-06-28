@@ -1,0 +1,23 @@
+def loadResources() {
+    File.addLookupPath("media");
+
+    ResourceManager.createModel("chicken", Assimp.loadScene(File.read("chicken.3ds")).root);
+    ResourceManager.createModel("quad", Assimp.loadScene(File.read("quad.obj")).root);
+
+    ResourceManager.createShaderProgram("shadow-mapping")
+        .vertex(File.read("shadow-mapping.vert"))
+        .fragment(File.read("shadow-mapping.frag"))
+        .compile();
+
+    ResourceManager.createShaderProgram("shadow-rendering")
+        .vertex(File.read("shadow-rendering.vert"))
+        .fragment(File.read("shadow-rendering.frag"))
+        .compile();
+
+    ResourceManager.createTexture("cronbopulous-michael")
+        .data(File.read("texture.jpg"));
+}
+
+def main() {
+    loadResources();
+}
