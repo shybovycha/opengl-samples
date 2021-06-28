@@ -686,6 +686,7 @@ int main()
 
 #ifdef WIN32
         glm::vec2 mouseDelta = currentMousePos - glm::vec2((window.getSize().x / 2), (window.getSize().y / 2));
+        sf::Mouse::setPosition(sf::Vector2<int>(window.getSize().x / 2, window.getSize().y / 2), window);
 #else
         glm::vec2 mouseDelta = currentMousePos - previousMousePos;
         previousMousePos = currentMousePos;
@@ -842,10 +843,6 @@ int main()
         // done rendering the frame
 
         window.display();
-
-#ifdef WIN32
-        sf::Mouse::setPosition(sf::Vector2<int>(window.getSize().x / 2, window.getSize().y / 2), window);
-#endif
     }
 
     return 0;
