@@ -19,13 +19,20 @@ uniform vec3 lightColor;
 // uniform float materialSpecular;
 uniform vec3 cameraPosition;
 
-float shadowCalculation()
+float shadowCalculation(vec3 normal, vec3 lightDirection)
 {
     vec3 shadowMapCoord = (fsIn.fragmentPositionInLightSpace.xyz / fsIn.fragmentPositionInLightSpace.w) * 0.5 + 0.5;
     float occluderDepth = texture(shadowMap, shadowMapCoord.xy).r;
     float thisDepth = shadowMapCoord.z;
 
-    return occluderDepth < thisDepth ? 0.0 : 1.0;
+    if (thisDepth > 1.0)
+    {
+        return 0.0;
+    }
+
+    float bias = max(0.05 * (1.0 - dot(normal, lightDirection)), 0.005);
+
+    return occluderDepth < thisDepth - bias ? 0.0 : 1.0;
 }
 
 void main()
@@ -48,7 +55,7 @@ void main()
     vec3 specular = spec * lightColor;
 
     // calculate shadow
-    float shadow = shadowCalculation();
+    float shadow = shadowCalculation(normal, lightDirection);
 
     vec3 lighting = ((shadow * (diffuse + specular)) + ambient) * color;
 
