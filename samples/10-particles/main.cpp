@@ -390,6 +390,16 @@ public:
         return m_lifetime;
     }
 
+    float getScale() const
+    {
+        return m_scale;
+    }
+
+    glm::vec3 getPosition() const
+    {
+        return m_position;
+    }
+
     bool isAlive() const
     {
         return m_lifetime > 0;
@@ -533,7 +543,7 @@ public:
             modelMatrix[2][1] = viewMatrix[1][2];
             modelMatrix[2][2] = viewMatrix[2][2];
 
-            m_transformationMatrixUniform->set(viewMatrix * modelMatrix);
+            m_transformationMatrixUniform->set(viewMatrix * modelMatrix * glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(particle->getScale())), particle->getPosition()));
             m_lifetimeUniform->set(particle->getLifetime());
 
             // TODO: add material
@@ -809,7 +819,7 @@ int main()
     auto particleModel = Model::fromAiNode(quadScene, quadScene->mRootNode);
 
     auto particleEmitter = std::make_unique<ParticleEmitter>(
-        glm::vec3(0.0f, 0.25f, 0.0f),
+        glm::vec3(0.0f, 2.0f, 0.0f),
         glm::vec3(1.0f, 1.0f, 0.0f),
         0.15f,
         0.1f,
