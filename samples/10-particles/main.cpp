@@ -480,8 +480,8 @@ public:
 
         std::cout << "[INFO] Creating particle rendering pipeline...";
 
-        m_transformationMatrixUniform = std::make_unique<globjects::Uniform<glm::mat4>>(m_particleRenderingVertexProgram.get(), "transformationMatrix");
-        m_lifetimeUniform = std::make_unique<globjects::Uniform<float>>(m_particleRenderingVertexProgram.get(), "lifetime");
+        m_transformationMatrixUniform = m_particleRenderingVertexProgram->getUniform<glm::mat4>("transformationMatrix");
+        m_lifetimeUniform = m_particleRenderingVertexProgram->getUniform<float>("lifetime");
 
         m_particlePipeline = std::make_unique<globjects::ProgramPipeline>();
 
@@ -552,8 +552,8 @@ public:
 
 private:
     std::unique_ptr<globjects::ProgramPipeline> m_particlePipeline;
-    std::unique_ptr<globjects::Uniform<glm::mat4>> m_transformationMatrixUniform;
-    std::unique_ptr<globjects::Uniform<float>> m_lifetimeUniform;
+    globjects::Uniform<glm::mat4>* m_transformationMatrixUniform;
+    globjects::Uniform<float>* m_lifetimeUniform;
 
     std::unique_ptr<globjects::Program> m_particleRenderingVertexProgram;
     std::unique_ptr<globjects::Program> m_particleRenderingFragmentProgram;
