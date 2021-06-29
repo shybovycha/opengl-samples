@@ -7,7 +7,7 @@ layout (location = 2) in vec2 vertexTextureCoord;
 out VS_OUT
 {
     vec2 textureCoord;
-    vec3 vertexPosition;
+    vec4 vertexColor;
 } vsOut;
 
 out gl_PerVertex {
@@ -15,11 +15,14 @@ out gl_PerVertex {
 };
 
 uniform mat4 transformationMatrix;
+uniform float lifetime;
 
 void main()
 {
+    float alpha = max(min(lifetime, 1.0), 0.0);
+
     vsOut.textureCoord = vertexTextureCoord;
-    vsOut.vertexPosition = vertexPosition;
+    vsOut.vertexColor = vec4(1.0, 1.0, 1.0, alpha);
 
     gl_Position = transformationMatrix * vec4(vertexPosition, 1.0);
 }

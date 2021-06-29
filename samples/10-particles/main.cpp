@@ -385,6 +385,11 @@ public:
 
     const glm::vec3 GRAVITY{ 0.0f, -9.8f, 0.0f };
 
+    float getLifetime() const
+    {
+        return m_lifetime;
+    }
+
     bool isAlive() const
     {
         return m_lifetime > 0;
@@ -428,8 +433,6 @@ public:
         float maxScale,
         float maxLifetime,
         unsigned int amount,
-        std::unique_ptr<globjects::ProgramPipeline> pipeline,
-        std::unique_ptr<globjects::Uniform<glm::mat4>> transformationMatrixUniform,
         std::unique_ptr<Model> model) :
 
         m_origin(origin),
@@ -438,10 +441,59 @@ public:
         m_maxScale(maxScale),
         m_maxLifetime(maxLifetime),
         m_amount(amount),
-        m_particleModel(std::move(model)),
-        m_particlePipeline(std::move(pipeline)),
-        m_transformationMatrixUniform(std::move(transformationMatrixUniform))
-    {}
+        m_particleModel(std::move(model))
+    {
+        std::cout << "[INFO] Compiling particle rendering vertex shader...";
+
+        m_particleRenderingVertexProgram = std::make_unique<globjects::Program>();
+        auto particleRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/particle.vert");
+        auto particleRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(particleRenderingVertexShaderSource.get());
+        m_particleRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), particleRenderingVertexShaderTemplate.get());
+
+        if (!m_particleRenderingVertexShader->compile())
+        {
+            std::cerr << "[ERROR] Can not compile particle rendering vertex shader" << std::endl;
+            // return 1;
+        }
+
+        m_particleRenderingVertexProgram->attach(m_particleRenderingVertexShader.get());
+
+        std::cout << "done" << std::endl;
+
+        std::cout << "[INFO] Compiling particle rendering fragment shader...";
+
+        m_particleRenderingFragmentProgram = std::make_unique<globjects::Program>();
+        auto particleRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/particle.frag");
+        auto particleRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(particleRenderingFragmentShaderSource.get());
+        m_particleRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), particleRenderingFragmentShaderTemplate.get());
+
+        if (!m_particleRenderingFragmentShader->compile())
+        {
+            std::cerr << "[ERROR] Can not compile particle fragment shader" << std::endl;
+            // return 1;
+        }
+
+        m_particleRenderingFragmentProgram->attach(m_particleRenderingFragmentShader.get());
+
+        std::cout << "done" << std::endl;
+
+        std::cout << "[INFO] Creating particle rendering pipeline...";
+
+        m_transformationMatrixUniform = std::make_unique<globjects::Uniform<glm::mat4>>(m_particleRenderingVertexProgram.get(), "transformationMatrix");
+        m_lifetimeUniform = std::make_unique<globjects::Uniform<float>>(m_particleRenderingVertexProgram.get(), "lifetime");
+
+        m_particlePipeline = std::make_unique<globjects::ProgramPipeline>();
+
+        m_particlePipeline->useStages(m_particleRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
+        m_particlePipeline->useStages(m_particleRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+
+        std::cout << "done" << std::endl;
+    }
+
+    ~ParticleEmitter()
+    {
+        m_particlePipeline->release();
+    }
 
     void draw(glm::mat4 viewMatrix, float deltaTime)
     {
@@ -481,6 +533,7 @@ public:
             modelMatrix[2][2] = viewMatrix[2][2];
 
             m_transformationMatrixUniform->set(viewMatrix * modelMatrix);
+            m_lifetimeUniform->set(particle->getLifetime());
 
             // TODO: add material
             m_particleModel->bind();
@@ -499,6 +552,12 @@ public:
 private:
     std::unique_ptr<globjects::ProgramPipeline> m_particlePipeline;
     std::unique_ptr<globjects::Uniform<glm::mat4>> m_transformationMatrixUniform;
+    std::unique_ptr<globjects::Uniform<float>> m_lifetimeUniform;
+
+    std::unique_ptr<globjects::Program> m_particleRenderingVertexProgram;
+    std::unique_ptr<globjects::Program> m_particleRenderingFragmentProgram;
+    std::unique_ptr<globjects::Shader> m_particleRenderingVertexShader;
+    std::unique_ptr<globjects::Shader> m_particleRenderingFragmentShader;
 
     std::vector<std::unique_ptr<Particle>> m_particles;
     std::unique_ptr<Model> m_particleModel;
@@ -689,51 +748,6 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling particle rendering vertex shader...";
-
-    auto particleRenderingVertexProgram = std::make_unique<globjects::Program>();
-    auto particleRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/particle.vert");
-    auto particleRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(particleRenderingVertexShaderSource.get());
-    auto particleRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), particleRenderingVertexShaderTemplate.get());
-
-    if (!particleRenderingVertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile particle rendering vertex shader" << std::endl;
-        return 1;
-    }
-
-    particleRenderingVertexProgram->attach(particleRenderingVertexShader.get());
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling particle rendering fragment shader...";
-
-    auto particleRenderingFragmentProgram = std::make_unique<globjects::Program>();
-    auto particleRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/particle.frag");
-    auto particleRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(particleRenderingFragmentShaderSource.get());
-    auto particleRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), particleRenderingFragmentShaderTemplate.get());
-
-    if (!particleRenderingFragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile particle fragment shader" << std::endl;
-        return 1;
-    }
-
-    particleRenderingFragmentProgram->attach(particleRenderingFragmentShader.get());
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Creating shadow rendering pipeline...";
-
-    auto particleTransformationMatrixUniform = std::make_unique<globjects::Uniform<glm::mat4>>(particleRenderingVertexProgram.get(), "transformationMatrix");
-
-    auto particleRenderingPipeline = std::make_unique<globjects::ProgramPipeline>();
-
-    particleRenderingPipeline->useStages(particleRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    particleRenderingPipeline->useStages(particleRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
-
-    std::cout << "done" << std::endl;
-
     std::cout << "[INFO] Loading 3D model...";
 
     Assimp::Importer importer;
@@ -796,12 +810,10 @@ int main()
     auto particleEmitter = std::make_unique<ParticleEmitter>(
         glm::vec3(0.0f, 0.25f, 0.0f),
         glm::vec3(1.0f, 1.0f, 0.0f),
-        0.25f,
-        5.0f,
+        0.15f,
+        0.1f,
         5.0f,
         100,
-        std::move(particleRenderingPipeline),
-        std::move(particleTransformationMatrixUniform),
         std::move(particleModel));
 
     std::cout << "done" << std::endl;
