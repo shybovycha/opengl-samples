@@ -450,6 +450,23 @@ private:
     float m_elapsedLifetime;
 };
 
+class ParticleEmitter
+{
+public:
+    ParticleEmitter() {}
+
+    void draw()
+    {
+        ::glEnable(GL_BLEND);
+        ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        ::glDepthMask(false);
+    }
+
+private:
+    std::vector<std::unique_ptr<Particle>> m_particles;
+    std::unique_ptr<Model> m_particleModel;
+};
+
 int main()
 {
     sf::ContextSettings settings;
@@ -625,6 +642,61 @@ int main()
 
     shadowRenderingPipeline->useStages(shadowRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
     shadowRenderingPipeline->useStages(shadowRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling particle rendering vertex shader...";
+
+    auto particleRenderingVertexProgram = std::make_unique<globjects::Program>();
+    auto particleRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/particle-rendering.vert");
+    auto particleRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(particleRenderingVertexShaderSource.get());
+    auto particleRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), particleRenderingVertexShaderTemplate.get());
+
+    if (!particleRenderingVertexShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile particle rendering vertex shader" << std::endl;
+        return 1;
+    }
+
+    particleRenderingVertexProgram->attach(particleRenderingVertexShader.get());
+
+    auto particleRenderingModelTransformationUniform = particleRenderingVertexProgram->getUniform<glm::mat4>("model");
+    auto particleRenderingViewTransformationUniform = particleRenderingVertexProgram->getUniform<glm::mat4>("view");
+    auto particleRenderingProjectionTransformationUniform = particleRenderingVertexProgram->getUniform<glm::mat4>("projection");
+    auto particleRenderingLightSpaceMatrixUniform = particleRenderingVertexProgram->getUniform<glm::mat4>("lightSpaceMatrix");
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling particle rendering fragment shader...";
+
+    auto particleRenderingFragmentProgram = std::make_unique<globjects::Program>();
+    auto particleRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/particle-rendering.frag");
+    auto particleRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(particleRenderingFragmentShaderSource.get());
+    auto particleRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), particleRenderingFragmentShaderTemplate.get());
+
+    if (!particleRenderingFragmentShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile particle fragment shader" << std::endl;
+        return 1;
+    }
+
+    particleRenderingFragmentProgram->attach(particleRenderingFragmentShader.get());
+
+    auto particleRenderingLightPositionUniform = particleRenderingFragmentProgram->getUniform<glm::vec3>("lightPosition");
+    auto particleRenderingLightColorUniform = particleRenderingFragmentProgram->getUniform<glm::vec3>("lightColor");
+    // auto ambientColorUniform = particleRenderingFragmentProgram->getUniform<glm::vec3>("ambientColor");
+    // auto diffuseColorUniform = particleRenderingFragmentProgram->getUniform<glm::vec3>("diffuseColor");
+    // auto materialSpecularUniform = particleRenderingFragmentProgram->getUniform<float>("materialSpecular");
+    auto particleRenderingCameraPositionUniform = particleRenderingFragmentProgram->getUniform<glm::vec3>("cameraPosition");
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Creating particle rendering pipeline...";
+
+    auto particleRenderingPipeline = std::make_unique<globjects::ProgramPipeline>();
+
+    particleRenderingPipeline->useStages(particleRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
+    particleRenderingPipeline->useStages(particleRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
 
     std::cout << "done" << std::endl;
 
