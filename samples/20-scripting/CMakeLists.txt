@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-project(10-scripting VERSION 1.0.2 LANGUAGES CXX)
+project(20-scripting VERSION 1.0.2 LANGUAGES CXX)
 
-set(EXECUTABLE_NAME 10-scripting)
+set(EXECUTABLE_NAME 20-scripting)
 set(SOURCES "main.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})

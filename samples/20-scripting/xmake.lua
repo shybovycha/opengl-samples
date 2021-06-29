@@ -5,7 +5,7 @@ add_requires("vcpkg::glbinding", { alias = "glbinding" })
 add_requires("vcpkg::assimp", { alias = "assimp" })
 add_requires("vcpkg::chaiscript", { alias = "chaiscript" })
 
-target("10-scripting")
+target("20-scripting")
   set_kind("binary")
 
   add_packages("sfml", "glm", "globjects", "glbinding", "assimp", "chaiscript")
