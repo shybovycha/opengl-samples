@@ -392,8 +392,7 @@ public:
 
     void update(float deltaTime)
     {
-        m_velocity += GRAVITY * m_mass * deltaTime;
-        m_position += m_velocity;
+        m_position += (m_velocity + GRAVITY * m_mass) * deltaTime;
         m_lifetime -= deltaTime;
     }
 
@@ -429,8 +428,8 @@ public:
         float maxScale,
         float maxLifetime,
         unsigned int amount,
-        std::unique_ptr<globjects::Program> vertexProgram,
-        std::unique_ptr<globjects::Program> fragmentProgram,
+        std::unique_ptr<globjects::ProgramPipeline> pipeline,
+        std::unique_ptr<globjects::Uniform<glm::mat4>> transformationMatrixUniform,
         std::unique_ptr<Model> model) :
 
         m_origin(origin),
@@ -439,9 +438,9 @@ public:
         m_maxScale(maxScale),
         m_maxLifetime(maxLifetime),
         m_amount(amount),
-        m_vertexProgram(std::move(vertexProgram)),
-        m_fragmentProgram(std::move(fragmentProgram)),
-        m_particleModel(std::move(model))
+        m_particleModel(std::move(model)),
+        m_particlePipeline(std::move(pipeline)),
+        m_transformationMatrixUniform(std::move(transformationMatrixUniform))
     {}
 
     void draw(glm::mat4 viewMatrix, float deltaTime)
@@ -450,8 +449,7 @@ public:
         ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         ::glDepthMask(false);
 
-        m_vertexProgram->use();
-        m_fragmentProgram->use();
+        m_particlePipeline->use();
 
         while (m_particles.size() < m_amount)
         {
@@ -463,10 +461,10 @@ public:
             if (!particle->isAlive())
             {
                 float rotation = static_cast<float>(std::rand() % 360);
-                float scale = static_cast<float>(std::rand() % 10) / 100.0f;
+                float scale = (static_cast<float>(std::rand() % 100) / 100.f) * m_maxScale;
                 // TODO: technically, all of these params could be randomized in some range (min_x, max_x)
                 // TODO: all these params could be interpolated between (start_x, end_x) using some easing function (ease-in, ease-out, ease-in-out, Bezier curve, etc.)
-                particle->respawn(m_origin, m_initialVelocity, m_mass, rotation, scale, m_maxLifetime);
+                particle->respawn(m_origin, m_initialVelocity, m_mass, rotation, m_maxScale, m_maxLifetime);
             }
 
             glm::mat4 modelMatrix = particle->getModelMatrix();
@@ -482,7 +480,7 @@ public:
             modelMatrix[2][1] = viewMatrix[1][2];
             modelMatrix[2][2] = viewMatrix[2][2];
 
-            m_vertexProgram->setUniform("transformationMatrix", viewMatrix * modelMatrix);
+            m_transformationMatrixUniform->set(viewMatrix * modelMatrix);
 
             // TODO: add material
             m_particleModel->bind();
@@ -492,16 +490,15 @@ public:
             particle->update(deltaTime);
         }
 
-        m_vertexProgram->release();
-        m_fragmentProgram->release();
+        m_particlePipeline->release();
 
         ::glDisable(GL_BLEND);
         ::glDepthMask(true);
     }
 
 private:
-    std::unique_ptr<globjects::Program> m_vertexProgram;
-    std::unique_ptr<globjects::Program> m_fragmentProgram;
+    std::unique_ptr<globjects::ProgramPipeline> m_particlePipeline;
+    std::unique_ptr<globjects::Uniform<glm::mat4>> m_transformationMatrixUniform;
 
     std::vector<std::unique_ptr<Particle>> m_particles;
     std::unique_ptr<Model> m_particleModel;
@@ -726,6 +723,17 @@ int main()
 
     std::cout << "done" << std::endl;
 
+    std::cout << "[INFO] Creating shadow rendering pipeline...";
+
+    auto particleTransformationMatrixUniform = std::make_unique<globjects::Uniform<glm::mat4>>(particleRenderingVertexProgram.get(), "transformationMatrix");
+
+    auto particleRenderingPipeline = std::make_unique<globjects::ProgramPipeline>();
+
+    particleRenderingPipeline->useStages(particleRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
+    particleRenderingPipeline->useStages(particleRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+
+    std::cout << "done" << std::endl;
+
     std::cout << "[INFO] Loading 3D model...";
 
     Assimp::Importer importer;
@@ -786,14 +794,14 @@ int main()
     auto particleModel = Model::fromAiNode(quadScene, quadScene->mRootNode);
 
     auto particleEmitter = std::make_unique<ParticleEmitter>(
-        glm::vec3(0.0f, 1.5f, 0.0f),
+        glm::vec3(0.0f, 0.25f, 0.0f),
         glm::vec3(1.0f, 1.0f, 0.0f),
-        1.0f,
-        1.0f,
-        10000.0f,
+        0.25f,
+        5.0f,
+        5.0f,
         100,
-        std::move(particleRenderingVertexProgram),
-        std::move(particleRenderingFragmentProgram),
+        std::move(particleRenderingPipeline),
+        std::move(particleTransformationMatrixUniform),
         std::move(particleModel));
 
     std::cout << "done" << std::endl;
@@ -1017,7 +1025,7 @@ int main()
 
         shadowRenderingPipeline->release();
 
-        particleEmitter->draw(cameraView * cameraProjection, deltaTime);
+        particleEmitter->draw(cameraProjection * cameraView, deltaTime);
 
         // render quad with depth (shadow) map
 
