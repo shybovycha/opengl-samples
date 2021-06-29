@@ -1,23 +1,40 @@
-def loadResources() {
-    File.addLookupPath("media");
+def onLoad() {
+    loadModel("chicken", "chicken.3ds");
 
-    ResourceManager.createModel("chicken", Assimp.loadScene(File.read("chicken.3ds")).root);
-    ResourceManager.createModel("quad", Assimp.loadScene(File.read("quad.obj")).root);
+    loadModel("quad", "quad.obj");
 
-    ResourceManager.createShaderProgram("shadow-mapping")
-        .vertex(File.read("shadow-mapping.vert"))
-        .fragment(File.read("shadow-mapping.frag"))
+    createShader("shadow-mapping")
+        .vertex("shadow-mapping.vert")
+        .fragment("shadow-mapping.frag")
         .compile();
 
-    ResourceManager.createShaderProgram("shadow-rendering")
-        .vertex(File.read("shadow-rendering.vert"))
-        .fragment(File.read("shadow-rendering.frag"))
+    createShader("shadow-rendering")
+        .vertex("shadow-rendering.vert")
+        .fragment("shadow-rendering.frag")
         .compile();
 
-    ResourceManager.createTexture("cronbopulous-michael")
-        .data(File.read("texture.jpg"));
+    loadTexture("cronbopulous-michael", "texture.jpg");
+
+    instantiateModel("chicken", "chicken-1")
+        .scale(0.01, 0.01, 0.01)
+        .rotate(radians(-90), vector3(1, 0, 0));
+
+    instantiateModel("quad", "ground-quad-1")
+        .scale(10, 0, 10)
+        .rotate(radians(-90), vector3(1, 0, 0))
+        .translate(-5, 0, -5);
 }
 
-def main() {
-    loadResources();
+def onRender() {
+    useShader("shadow-mapping", fun (vertex, fragment) {
+        getModel("chicken-1").draw();
+        getModel("ground-quad-1").draw();
+    });
+
+    useShader("shadow-rendering", fun (vertex, fragment) {
+        getModel("chicken-1").draw();
+
+        // fragment.param("diffuseTexture", "cronbopulous-michael");
+        getModel("ground-quad-1").draw();
+    });
 }
