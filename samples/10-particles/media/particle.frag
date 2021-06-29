@@ -6,11 +6,9 @@ in VS_OUT {
     vec2 textureCoord;
 } fsIn;
 
-uniform sampler2D shadowMap;
+uniform sampler2D particleTexture;
 
 void main()
 {
-    float depth = texture(shadowMap, fsIn.textureCoord).r;
-
-    fragmentColor = vec4(vec3(depth), 1.0);
+    fragmentColor = vec4(1.0); // texture(particleTexture, fsIn.textureCoord)
 }

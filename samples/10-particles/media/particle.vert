@@ -13,11 +13,11 @@ out gl_PerVertex {
     vec4 gl_Position;
 };
 
-uniform mat4 modelTransformation;
+uniform mat4 transformationMatrix;
 
 void main()
 {
     vsOut.textureCoord = vertexTextureCoord;
 
-    gl_Position = modelTransformation * vec4(vertexPosition, 1.0);
+    gl_Position = transformationMatrix * vec4(vertexPosition, 1.0);
 }
