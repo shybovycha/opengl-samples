@@ -397,7 +397,8 @@ public:
 
     void update(float deltaTime)
     {
-        m_position += (m_velocity + GRAVITY * m_mass) * deltaTime;
+        m_velocity += GRAVITY * m_mass * deltaTime;
+        m_position += m_velocity * deltaTime;
         m_lifetime -= deltaTime;
     }
 
