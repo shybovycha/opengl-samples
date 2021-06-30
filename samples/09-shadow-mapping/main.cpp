@@ -793,22 +793,50 @@ int main()
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
         {
-            cameraPos += cameraForward * cameraMoveSpeed * deltaTime;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+            {
+                cameraPos += cameraForward * cameraMoveSpeed * 10.0f * deltaTime;
+            }
+            else
+            {
+                cameraPos += cameraForward * cameraMoveSpeed * deltaTime;
+            }
         }
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
         {
-            cameraPos -= cameraForward * cameraMoveSpeed * deltaTime;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+            {
+                cameraPos -= cameraForward * cameraMoveSpeed * 10.0f * deltaTime;
+            }
+            else
+            {
+                cameraPos -= cameraForward * cameraMoveSpeed * deltaTime;
+            }
         }
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
         {
-            cameraPos -= glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+            {
+                cameraPos -= glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * 10.0f * deltaTime;
+            }
+            else
+            {
+                cameraPos -= glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
+            }
         }
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
         {
-            cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+            {
+                cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * 10.0f * deltaTime;
+            }
+            else
+            {
+                cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
+            }
         }
 
         glm::mat4 cameraProjection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
@@ -919,7 +947,7 @@ int main()
 
         // render cascade shadows' frustums
         // 0.05x, 0.2x, 0.5x, 1x deep
-        // first attempt: render the entire frustum as white
+        // first stage: render the entire frustum as white
         {
             const float _nearPlane = 0.1f;
             const float _farPlane = 10.0f;
@@ -932,31 +960,162 @@ int main()
                 }
             };
 
-            std::vector<glm::vec3> projectedVertices;
+            const auto proj = glm::inverse(projection * lightView);
 
-            auto proj = glm::inverse(projection * lightView);
+            std::array<glm::vec3, 8> _entireFrustumVertices;
 
-            for (auto p : _vertices)
+            std::transform(
+                _vertices.begin(),
+                _vertices.end(),
+                _entireFrustumVertices.begin(),
+                [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
+            );
+
+            /*{
+                primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
+                primitiveRenderingColorUniform->set(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+                frustumVertexBuffer->setData(_entireFrustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                frustumVAO->bind();
+
+                // number of values passed = number of elements * number of vertices per element
+                // in this case: 2 triangles, 3 vertex indexes per triangle
+                frustumVAO->drawElements(
+                    static_cast<gl::GLenum>(GL_LINES),
+                    2 * 12, // frustumIndices.size(),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                    nullptr);
+
+                frustumVAO->unbind();
+            }*/
+
             {
-                auto p0 = proj * glm::vec4(p, 1.0f);
-                projectedVertices.push_back(p0);
+                std::array<glm::vec3, 8> _firstPart {
+                    {
+                        _entireFrustumVertices[0],
+                        _entireFrustumVertices[1],
+                        _entireFrustumVertices[2],
+                        _entireFrustumVertices[3],
+
+                        _entireFrustumVertices[0] + ((_entireFrustumVertices[4] - _entireFrustumVertices[0]) * 0.05f),
+                        _entireFrustumVertices[1] + ((_entireFrustumVertices[5] - _entireFrustumVertices[1]) * 0.05f),
+                        _entireFrustumVertices[2] + ((_entireFrustumVertices[6] - _entireFrustumVertices[2]) * 0.05f),
+                        _entireFrustumVertices[3] + ((_entireFrustumVertices[7] - _entireFrustumVertices[3]) * 0.05f),
+                    }
+                };
+
+                primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
+                primitiveRenderingColorUniform->set(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+                frustumVertexBuffer->setData(_firstPart, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                frustumVAO->bind();
+
+                // number of values passed = number of elements * number of vertices per element
+                // in this case: 2 triangles, 3 vertex indexes per triangle
+                frustumVAO->drawElements(
+                    static_cast<gl::GLenum>(GL_LINES),
+                    2 * 12, // frustumIndices.size(),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                    nullptr);
+
+                frustumVAO->unbind();
             }
 
-            primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
-            primitiveRenderingColorUniform->set(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-            frustumVertexBuffer->setData(projectedVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+            {
+                std::array<glm::vec3, 8> _firstPart{
+                    {
+                        _entireFrustumVertices[0] + ((_entireFrustumVertices[4] - _entireFrustumVertices[0]) * 0.05f),
+                        _entireFrustumVertices[1] + ((_entireFrustumVertices[5] - _entireFrustumVertices[1]) * 0.05f),
+                        _entireFrustumVertices[2] + ((_entireFrustumVertices[6] - _entireFrustumVertices[2]) * 0.05f),
+                        _entireFrustumVertices[3] + ((_entireFrustumVertices[7] - _entireFrustumVertices[3]) * 0.05f),
 
-            frustumVAO->bind();
+                        _entireFrustumVertices[0] + ((_entireFrustumVertices[4] - _entireFrustumVertices[0]) * 0.2f),
+                        _entireFrustumVertices[1] + ((_entireFrustumVertices[5] - _entireFrustumVertices[1]) * 0.2f),
+                        _entireFrustumVertices[2] + ((_entireFrustumVertices[6] - _entireFrustumVertices[2]) * 0.2f),
+                        _entireFrustumVertices[3] + ((_entireFrustumVertices[7] - _entireFrustumVertices[3]) * 0.2f),
+                    }
+                };
 
-            // number of values passed = number of elements * number of vertices per element
-            // in this case: 2 triangles, 3 vertex indexes per triangle
-            frustumVAO->drawElements(
-                static_cast<gl::GLenum>(GL_LINES),
-                2 * 12, // frustumIndices.size(),
-                static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-                nullptr);
+                primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
+                primitiveRenderingColorUniform->set(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+                frustumVertexBuffer->setData(_firstPart, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
 
-            frustumVAO->unbind();
+                frustumVAO->bind();
+
+                // number of values passed = number of elements * number of vertices per element
+                // in this case: 2 triangles, 3 vertex indexes per triangle
+                frustumVAO->drawElements(
+                    static_cast<gl::GLenum>(GL_LINES),
+                    2 * 12, // frustumIndices.size(),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                    nullptr);
+
+                frustumVAO->unbind();
+            }
+
+            {
+                std::array<glm::vec3, 8> _firstPart{
+                    {
+                        _entireFrustumVertices[0] + ((_entireFrustumVertices[4] - _entireFrustumVertices[0]) * 0.2f),
+                        _entireFrustumVertices[1] + ((_entireFrustumVertices[5] - _entireFrustumVertices[1]) * 0.2f),
+                        _entireFrustumVertices[2] + ((_entireFrustumVertices[6] - _entireFrustumVertices[2]) * 0.2f),
+                        _entireFrustumVertices[3] + ((_entireFrustumVertices[7] - _entireFrustumVertices[3]) * 0.2f),
+
+                        _entireFrustumVertices[0] + ((_entireFrustumVertices[4] - _entireFrustumVertices[0]) * 0.5f),
+                        _entireFrustumVertices[1] + ((_entireFrustumVertices[5] - _entireFrustumVertices[1]) * 0.5f),
+                        _entireFrustumVertices[2] + ((_entireFrustumVertices[6] - _entireFrustumVertices[2]) * 0.5f),
+                        _entireFrustumVertices[3] + ((_entireFrustumVertices[7] - _entireFrustumVertices[3]) * 0.5f),
+                    }
+                };
+
+                primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
+                primitiveRenderingColorUniform->set(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+                frustumVertexBuffer->setData(_firstPart, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                frustumVAO->bind();
+
+                // number of values passed = number of elements * number of vertices per element
+                // in this case: 2 triangles, 3 vertex indexes per triangle
+                frustumVAO->drawElements(
+                    static_cast<gl::GLenum>(GL_LINES),
+                    2 * 12, // frustumIndices.size(),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                    nullptr);
+
+                frustumVAO->unbind();
+            }
+
+            {
+                std::array<glm::vec3, 8> _firstPart{
+                    {
+                        _entireFrustumVertices[0] + ((_entireFrustumVertices[4] - _entireFrustumVertices[0]) * 0.5f),
+                        _entireFrustumVertices[1] + ((_entireFrustumVertices[5] - _entireFrustumVertices[1]) * 0.5f),
+                        _entireFrustumVertices[2] + ((_entireFrustumVertices[6] - _entireFrustumVertices[2]) * 0.5f),
+                        _entireFrustumVertices[3] + ((_entireFrustumVertices[7] - _entireFrustumVertices[3]) * 0.5f),
+
+                        _entireFrustumVertices[4],
+                        _entireFrustumVertices[5],
+                        _entireFrustumVertices[6],
+                        _entireFrustumVertices[7],
+                    }
+                };
+
+                primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
+                primitiveRenderingColorUniform->set(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+                frustumVertexBuffer->setData(_firstPart, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                frustumVAO->bind();
+
+                // number of values passed = number of elements * number of vertices per element
+                // in this case: 2 triangles, 3 vertex indexes per triangle
+                frustumVAO->drawElements(
+                    static_cast<gl::GLenum>(GL_LINES),
+                    2 * 12, // frustumIndices.size(),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                    nullptr);
+
+                frustumVAO->unbind();
+            }
         }
 
         primitiveRenderingPipeline->release();
