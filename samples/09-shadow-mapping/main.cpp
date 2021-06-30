@@ -919,7 +919,7 @@ int main()
 
         // render cascade shadows' frustums
         // 0.05x, 0.2x, 0.5x, 1x deep
-        // first attempt: render the entire frustum as green
+        // first attempt: render the entire frustum as white
         {
             const float _nearPlane = 0.1f;
             const float _farPlane = 10.0f;
@@ -934,21 +934,16 @@ int main()
 
             std::vector<glm::vec3> projectedVertices;
 
-            auto proj = glm::inverse(projection) * glm::inverse(lightView);
-
-            std::cout << "frustum: {" << std::endl;
+            auto proj = glm::inverse(projection * lightView);
 
             for (auto p : _vertices)
             {
                 auto p0 = proj * glm::vec4(p, 1.0f);
                 projectedVertices.push_back(p0);
-                std::cout << "    (" << p0.x << ", " << p0.y << ", " << p0.z << ")," << std::endl;
             }
 
-            std::cout << "}" << std::endl;
-
             primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
-            primitiveRenderingColorUniform->set(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+            primitiveRenderingColorUniform->set(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
             frustumVertexBuffer->setData(projectedVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
 
             frustumVAO->bind();
