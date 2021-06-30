@@ -406,7 +406,6 @@ int main()
 
     std::cout << "[INFO] Compiling shadow mapping vertex shader...";
 
-    auto shadowMappingVertexProgram = std::make_unique<globjects::Program>();
     auto shadowMappingVertexSource = globjects::Shader::sourceFromFile("media/shadow-mapping.vert");
     auto shadowMappingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowMappingVertexSource.get());
     auto shadowMappingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowMappingVertexShaderTemplate.get());
@@ -417,16 +416,24 @@ int main()
         return 1;
     }
 
-    shadowMappingVertexProgram->attach(shadowMappingVertexShader.get());
+    std::cout << "done" << std::endl;
 
-    auto shadowMappingLightSpaceUniform = shadowMappingVertexProgram->getUniform<glm::mat4>("lightSpaceMatrix");
-    auto shadowMappingModelTransformationUniform = shadowMappingVertexProgram->getUniform<glm::mat4>("modelTransformation");
+    std::cout << "[INFO] Compiling shadow mapping geometry shader...";
+
+    auto shadowMappingGeometrySource = globjects::Shader::sourceFromFile("media/shadow-mapping.geom");
+    auto shadowMappingGeometryShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowMappingGeometrySource.get());
+    auto shadowMappingGeometryShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_GEOMETRY_SHADER), shadowMappingGeometryShaderTemplate.get());
+
+    if (!shadowMappingGeometryShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile geometry shader" << std::endl;
+        return 1;
+    }
 
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Compiling shadow mapping fragment shader...";
 
-    auto shadowMappingFragmentProgram = std::make_unique<globjects::Program>();
     auto shadowMappingFragmentSource = globjects::Shader::sourceFromFile("media/shadow-mapping.frag");
     auto shadowMappingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowMappingFragmentSource.get());
     auto shadowMappingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowMappingFragmentShaderTemplate.get());
@@ -437,22 +444,22 @@ int main()
         return 1;
     }
 
-    shadowMappingFragmentProgram->attach(shadowMappingFragmentShader.get());
-
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Creating shadow mapping pipeline...";
+    std::cout << "[INFO] Creating shadow mapping program...";
 
-    auto shadowMappingPipeline = std::make_unique<globjects::ProgramPipeline>();
+    auto shadowMappingProgram = std::make_unique<globjects::Program>();
 
-    shadowMappingPipeline->useStages(shadowMappingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    shadowMappingPipeline->useStages(shadowMappingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+    shadowMappingProgram->attach(shadowMappingVertexShader.get(), shadowMappingGeometryShader.get(), shadowMappingFragmentShader.get());
+
+    auto shadowMappingModelTransformationUniform = shadowMappingProgram->getUniform<glm::mat4>("modelTransformation");
+    auto shadowMappingLightViewProjectionMatrices = shadowMappingProgram->getUniform<std::vector<glm::mat4>>("lightViewProjectionMatrix");
+    auto lightViewProjectionMatricesUniform = shadowMappingProgram->getUniform<std::vector<glm::mat4>>("lightViewProjectionMatrix");
 
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Compiling shadow debugging vertex shader...";
 
-    auto shadowDebuggingVertexProgram = std::make_unique<globjects::Program>();
     auto shadowDebuggingVertexSource = globjects::Shader::sourceFromFile("media/shadow-debug.vert");
     auto shadowDebuggingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowDebuggingVertexSource.get());
     auto shadowDebuggingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowDebuggingVertexShaderTemplate.get());
@@ -463,15 +470,10 @@ int main()
         return 1;
     }
 
-    shadowDebuggingVertexProgram->attach(shadowDebuggingVertexShader.get());
-
-    auto shadowDebuggingModelTransformationUniform = shadowDebuggingVertexProgram->getUniform<glm::mat4>("modelTransformation");
-
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Compiling shadow debugging fragment shader...";
 
-    auto shadowDebuggingFragmentProgram = std::make_unique<globjects::Program>();
     auto shadowDebuggingFragmentSource = globjects::Shader::sourceFromFile("media/shadow-debug.frag");
     auto shadowDebuggingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowDebuggingFragmentSource.get());
     auto shadowDebuggingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowDebuggingFragmentShaderTemplate.get());
@@ -482,69 +484,19 @@ int main()
         return 1;
     }
 
-    shadowDebuggingFragmentProgram->attach(shadowDebuggingFragmentShader.get());
-
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Creating shadow debugging pipeline...";
+    std::cout << "[INFO] Creating shadow debugging program...";
 
-    auto shadowDebuggingPipeline = std::make_unique<globjects::ProgramPipeline>();
+    auto shadowDebuggingProgram = std::make_unique<globjects::Program>();
+    shadowDebuggingProgram->attach(shadowDebuggingVertexShader.get(), shadowDebuggingFragmentShader.get());
 
-    shadowDebuggingPipeline->useStages(shadowDebuggingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    shadowDebuggingPipeline->useStages(shadowDebuggingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling primitive rendering vertex shader...";
-
-    auto primitiveRenderingVertexProgram = std::make_unique<globjects::Program>();
-    auto primitiveRenderingVertexSource = globjects::Shader::sourceFromFile("media/primitive-rendering.vert");
-    auto primitiveRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(primitiveRenderingVertexSource.get());
-    auto primitiveRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), primitiveRenderingVertexShaderTemplate.get());
-
-    if (!primitiveRenderingVertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile vertex shader" << std::endl;
-        return 1;
-    }
-
-    primitiveRenderingVertexProgram->attach(primitiveRenderingVertexShader.get());
-
-    auto primitiveRenderingTransformationUniform = primitiveRenderingVertexProgram->getUniform<glm::mat4>("transformation");
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling primitive rendering fragment shader...";
-
-    auto primitiveRenderingFragmentProgram = std::make_unique<globjects::Program>();
-    auto primitiveRenderingFragmentSource = globjects::Shader::sourceFromFile("media/primitive-rendering.frag");
-    auto primitiveRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(primitiveRenderingFragmentSource.get());
-    auto primitiveRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), primitiveRenderingFragmentShaderTemplate.get());
-
-    if (!primitiveRenderingFragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile fragment shader" << std::endl;
-        return 1;
-    }
-
-    primitiveRenderingFragmentProgram->attach(primitiveRenderingFragmentShader.get());
-
-    auto primitiveRenderingColorUniform = primitiveRenderingFragmentProgram->getUniform<glm::vec4>("color");
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Creating primitive rendering pipeline...";
-
-    auto primitiveRenderingPipeline = std::make_unique<globjects::ProgramPipeline>();
-
-    primitiveRenderingPipeline->useStages(primitiveRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    primitiveRenderingPipeline->useStages(primitiveRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+    auto shadowDebuggingModelTransformationUniform = shadowDebuggingProgram->getUniform<glm::mat4>("modelTransformation");
 
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Compiling shadow rendering vertex shader...";
 
-    auto shadowRenderingVertexProgram = std::make_unique<globjects::Program>();
     auto shadowRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.vert");
     auto shadowRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowRenderingVertexShaderSource.get());
     auto shadowRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowRenderingVertexShaderTemplate.get());
@@ -555,18 +507,10 @@ int main()
         return 1;
     }
 
-    shadowRenderingVertexProgram->attach(shadowRenderingVertexShader.get());
-
-    auto shadowRenderingModelTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("model");
-    auto shadowRenderingViewTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("view");
-    auto shadowRenderingProjectionTransformationUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("projection");
-    auto shadowRenderingLightSpaceMatrixUniform = shadowRenderingVertexProgram->getUniform<glm::mat4>("lightSpaceMatrix");
-
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Compiling shadow rendering fragment shader...";
 
-    auto shadowRenderingFragmentProgram = std::make_unique<globjects::Program>();
     auto shadowRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.frag");
     auto shadowRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowRenderingFragmentShaderSource.get());
     auto shadowRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowRenderingFragmentShaderTemplate.get());
@@ -577,23 +521,23 @@ int main()
         return 1;
     }
 
-    shadowRenderingFragmentProgram->attach(shadowRenderingFragmentShader.get());
-
-    auto shadowRenderingLightPositionUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("lightPosition");
-    auto shadowRenderingLightColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("lightColor");
-    // auto ambientColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("ambientColor");
-    // auto diffuseColorUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("diffuseColor");
-    // auto materialSpecularUniform = shadowRenderingFragmentProgram->getUniform<float>("materialSpecular");
-    auto shadowRenderingCameraPositionUniform = shadowRenderingFragmentProgram->getUniform<glm::vec3>("cameraPosition");
-
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Creating shadow rendering pipeline...";
+    std::cout << "[INFO] Creating shadow rendering program...";
 
-    auto shadowRenderingPipeline = std::make_unique<globjects::ProgramPipeline>();
+    auto shadowRenderingProgram = std::make_unique<globjects::Program>();
+    shadowRenderingProgram->attach(shadowRenderingVertexShader.get(), shadowRenderingFragmentShader.get());
 
-    shadowRenderingPipeline->useStages(shadowRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    shadowRenderingPipeline->useStages(shadowRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+    auto shadowRenderingModelTransformationUniform = shadowRenderingProgram->getUniform<glm::mat4>("model");
+    auto shadowRenderingViewTransformationUniform = shadowRenderingProgram->getUniform<glm::mat4>("view");
+    auto shadowRenderingProjectionTransformationUniform = shadowRenderingProgram->getUniform<glm::mat4>("projection");
+
+    auto shadowRenderingLightPositionUniform = shadowRenderingProgram->getUniform<glm::vec3>("lightPosition");
+    auto shadowRenderingLightColorUniform = shadowRenderingProgram->getUniform<glm::vec3>("lightColor");
+    auto shadowRenderingCameraPositionUniform = shadowRenderingProgram->getUniform<glm::vec3>("cameraPosition");
+
+    auto shadowRenderingLightViewProjectionsUniform = shadowRenderingProgram->getUniform<std::vector<glm::mat4>>("lightViewProjections");
+    auto shadowRenderingSplitsUniform = shadowRenderingProgram->getUniform<std::vector<float>>("splits"); // distance from camera to zFar, e.g. (far - cameraPosition.z) * splitFraction
 
     std::cout << "done" << std::endl;
 
@@ -656,7 +600,7 @@ int main()
 
     std::cout << "[DEBUG] Initializing shadowMapTexture...";
 
-    auto shadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+    auto shadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY));
 
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
@@ -666,14 +610,11 @@ int main()
 
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-    shadowMapTexture->image2D(
-        0,
+    shadowMapTexture->storage3D(
+        4,
         static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
-        glm::vec2(2048, 2048),
-        0,
-        static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
-        static_cast<gl::GLenum>(GL_FLOAT),
-        nullptr);
+        glm::vec3(2048, 2048, 4) // this last `4` is the number of layers of a 3D texture; must be equal to the number of frustum splits we are making
+    );
 
     std::cout << "done" << std::endl;
 
@@ -698,16 +639,6 @@ int main()
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 
-    const float nearPlane = 0.1f;
-    const float farPlane = 10.0f;
-
-    std::array<glm::vec3, 8> frustumVertices {
-        {
-            { -1.0f, -1.0f, nearPlane }, { 1.0f, -1.0f, nearPlane }, { 1.0f, 1.0f, nearPlane }, { -1.0f, 1.0f, nearPlane },
-            { -1.0f, -1.0f, farPlane }, { 1.0f, -1.0f, farPlane }, { 1.0f, 1.0f, farPlane }, { -1.0f, 1.0f, farPlane },
-        }
-    };
-
     std::array<GLuint, 12 * 2> frustumIndices {
         {
             0, 1,
@@ -726,21 +657,6 @@ int main()
             3, 7
         }
     };
-
-    auto frustumVertexBuffer = std::make_unique<globjects::Buffer>();
-    frustumVertexBuffer->setData(frustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-    auto frustumIndexBuffer = std::make_unique<globjects::Buffer>();
-    frustumIndexBuffer->setData(frustumIndices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
-
-    auto frustumVAO = std::make_unique<globjects::VertexArray>();
-
-    frustumVAO->bindElementBuffer(frustumIndexBuffer.get());
-
-    frustumVAO->binding(0)->setAttribute(0);
-    frustumVAO->binding(0)->setBuffer(frustumVertexBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
-    frustumVAO->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-    frustumVAO->enable(0);
 
     sf::Clock clock;
 
@@ -854,7 +770,129 @@ int main()
 
         glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+        // project shadows onto cascades, aka frustum splits
+        // 0.05x, 0.2x, 0.5x, 1x of the entire view frustum
+
+        std::vector<glm::mat4> lightViewProjectionMatrices;
+
+        {
+            const float _nearPlane = 0.1f;
+            const float _farPlane = 10.0f;
+            glm::mat4 projection = cameraProjection;
+            glm::mat4 view = cameraView;
+
+            // these vertices define view frustum in screen space coordinates
+            std::array<glm::vec3, 8> _vertices{
+                {
+                    { -1.0f, -1.0f, _nearPlane }, { 1.0f, -1.0f, _nearPlane }, { 1.0f, 1.0f, _nearPlane }, { -1.0f, 1.0f, _nearPlane },
+                    { -1.0f, -1.0f, _farPlane }, { 1.0f, -1.0f, _farPlane }, { 1.0f, 1.0f, _farPlane }, { -1.0f, 1.0f, _farPlane },
+                }
+            };
+
+            // this matrix will be used to transform the vertex position from screen space into world space position
+            const auto proj = glm::inverse(projection * view);
+
+            std::array<glm::vec3, 8> _entireFrustumVertices;
+
+            // transformation; same as mapping a list in _any other language_
+            std::transform(
+                _vertices.begin(),
+                _vertices.end(),
+                _entireFrustumVertices.begin(),
+                [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
+            );
+
+            /*{
+                // the code below renders the light frustum
+                const auto _lightProjection = glm::inverse(lightProjection * lightView);
+                std::vector<glm::vec3> _lightFrustumVertices;
+
+                std::transform(
+                    _vertices.begin(),
+                    _vertices.end(),
+                    _lightFrustumVertices.begin(),
+                    [proj](glm::vec3 p) { return glm::vec3(_lightProjection * glm::vec4(p, 1.0f)); }
+                );
+
+                primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
+                primitiveRenderingColorUniform->set(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+                frustumVertexBuffer->setData(_lightFrustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                frustumVAO->bind();
+
+                frustumVAO->drawElements(
+                    static_cast<gl::GLenum>(GL_LINES),
+                    2 * 12, // frustumIndices.size(),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                    nullptr);
+
+                frustumVAO->unbind();
+            }*/
+
+            std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
+
+            /*std::vector<glm::vec4> splitColors{
+                { 0.0f, 1.0f, 0.0f, 1.0f },
+                { 0.0f, 0.0f, 1.0f, 1.0f },
+                { 1.0f, 1.0f, 0.0f, 1.0f },
+                { 1.0f, 0.0f, 0.0f, 1.0f },
+            };*/
+
+            for (auto i = 1; i < splits.size(); ++i)
+            {
+                std::vector<glm::vec3> _frustumSliceVertices;
+
+                float minX, minY, minZ;
+                float maxX, maxY, maxZ;
+
+                for (auto t = 0; t < 4; ++t)
+                {
+                    auto projectedFrustumVertex = glm::vec3(lightView * glm::vec4(_entireFrustumVertices[t] + ((_entireFrustumVertices[4] - _entireFrustumVertices[t]) * splits[i - 1]), 1.0f));
+
+                    if (t == 0)
+                    {
+                        minX = maxX = projectedFrustumVertex.x;
+                        minY = maxY = projectedFrustumVertex.y;
+                        minZ = maxZ = projectedFrustumVertex.z;
+                    }
+                    else
+                    {
+                        minX = std::fmin(minX, projectedFrustumVertex.x);
+                        maxX = std::fmax(maxX, projectedFrustumVertex.x);
+
+                        minY = std::fmin(minY, projectedFrustumVertex.y);
+                        maxY = std::fmax(maxY, projectedFrustumVertex.y);
+
+                        minZ = std::fmin(minZ, projectedFrustumVertex.z);
+                        maxZ = std::fmax(maxZ, projectedFrustumVertex.z);
+                    }
+                }
+
+                auto frustumSplitProjectionMatrix = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
+
+                lightViewProjectionMatrices.push_back(frustumSplitProjectionMatrix);
+
+                /*primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
+                primitiveRenderingColorUniform->set(splitColors[i - 1]);
+                frustumVertexBuffer->setData(_frustumSliceVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                frustumVAO->bind();
+
+                frustumVAO->drawElements(
+                    static_cast<gl::GLenum>(GL_LINES),
+                    2 * 12, // frustumIndices.size(),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                    nullptr);
+
+                frustumVAO->unbind();*/
+            }
+
+            std::vector<float> splitDepths{ 0.05f * (farPlane - nearPlane), 0.2f * (farPlane - nearPlane), 0.5f * (farPlane - nearPlane), (farPlane - nearPlane) };
+
+            shadowMappingLightViewProjectionMatrices->set(lightViewProjectionMatrices);
+            shadowRenderingLightViewProjectionsUniform->set(lightViewProjectionMatrices);
+            shadowRenderingSplitsUniform->set(splitDepths);
+        }
 
         ::glViewport(0, 0, 2048, 2048);
 
@@ -872,9 +910,7 @@ int main()
         // cull front faces to prevent peter panning the generated shadow map
         glCullFace(GL_FRONT);
 
-        shadowMappingPipeline->use();
-
-        shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
+        shadowMappingProgram->use();
 
         shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
 
@@ -893,7 +929,7 @@ int main()
 
         framebuffer->unbind();
 
-        shadowMappingPipeline->release();
+        shadowMappingProgram->release();
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
@@ -904,7 +940,7 @@ int main()
         ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shadowRenderingPipeline->use();
+        shadowRenderingProgram->use();
 
         shadowRenderingLightPositionUniform->set(lightPosition);
         shadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
@@ -914,14 +950,14 @@ int main()
 
         shadowRenderingProjectionTransformationUniform->set(cameraProjection);
         shadowRenderingViewTransformationUniform->set(cameraView);
-        shadowRenderingLightSpaceMatrixUniform->set(lightSpaceMatrix);
+        // shadowRenderingLightSpaceMatrixUniform->set(lightSpaceMatrix);
 
         // draw chicken
 
         shadowMapTexture->bindActive(0);
 
-        shadowRenderingFragmentProgram->setUniform("shadowMap", 0);
-        shadowRenderingFragmentProgram->setUniform("diffuseTexture", 1);
+        shadowRenderingProgram->setUniform("shadowMaps", 0);
+        shadowRenderingProgram->setUniform("diffuseTexture", 1);
 
         shadowRenderingModelTransformationUniform->set(chickenModel->getTransformation());
 
@@ -941,91 +977,7 @@ int main()
 
         shadowMapTexture->unbindActive(0);
 
-        shadowRenderingPipeline->release();
-
-        primitiveRenderingPipeline->use();
-
-        // render cascade shadows' frustums
-        // 0.05x, 0.2x, 0.5x, 1x deep
-        // first stage: render the entire frustum as white
-        {
-            const float _nearPlane = 0.1f;
-            const float _farPlane = 10.0f;
-            glm::mat4 projection = cameraProjection; // lightProjection; // glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, _nearPlane, _farPlane);
-            glm::mat4 view = cameraView; // lightView;
-
-            std::array<glm::vec3, 8> _vertices {
-                {
-                    { -1.0f, -1.0f, _nearPlane }, { 1.0f, -1.0f, _nearPlane }, { 1.0f, 1.0f, _nearPlane }, { -1.0f, 1.0f, _nearPlane },
-                    { -1.0f, -1.0f, _farPlane }, { 1.0f, -1.0f, _farPlane }, { 1.0f, 1.0f, _farPlane }, { -1.0f, 1.0f, _farPlane },
-                }
-            };
-
-            const auto proj = glm::inverse(projection * view);
-
-            std::array<glm::vec3, 8> _entireFrustumVertices;
-
-            std::transform(
-                _vertices.begin(),
-                _vertices.end(),
-                _entireFrustumVertices.begin(),
-                [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
-            );
-
-            /*{
-                primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
-                primitiveRenderingColorUniform->set(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-                frustumVertexBuffer->setData(_entireFrustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-                frustumVAO->bind();
-
-                // number of values passed = number of elements * number of vertices per element
-                // in this case: 2 triangles, 3 vertex indexes per triangle
-                frustumVAO->drawElements(
-                    static_cast<gl::GLenum>(GL_LINES),
-                    2 * 12, // frustumIndices.size(),
-                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-                    nullptr);
-
-                frustumVAO->unbind();
-            }*/
-
-            std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
-            std::vector<glm::vec4> splitColors{ { {0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} } };
-
-            for (auto i = 1; i < splits.size(); ++i)
-            {
-                std::vector<glm::vec3> _frustumSliceVertices;
-
-                for (auto t = 0; t < 4; ++t)
-                {
-                    _frustumSliceVertices.push_back(_entireFrustumVertices[t] + ((_entireFrustumVertices[4 + t] - _entireFrustumVertices[t]) * splits[i - 1]));
-                }
-
-                for (auto t = 0; t < 4; ++t)
-                {
-                    _frustumSliceVertices.push_back(_entireFrustumVertices[t] + ((_entireFrustumVertices[4 + t] - _entireFrustumVertices[t]) * splits[i]));
-                }
-
-                primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
-                primitiveRenderingColorUniform->set(splitColors[i - 1]);
-                frustumVertexBuffer->setData(_frustumSliceVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-                frustumVAO->bind();
-
-                // number of values passed = number of elements * number of vertices per element
-                // in this case: 2 triangles, 3 vertex indexes per triangle
-                frustumVAO->drawElements(
-                    static_cast<gl::GLenum>(GL_LINES),
-                    2 * 12, // frustumIndices.size(),
-                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-                    nullptr);
-
-                frustumVAO->unbind();
-            }
-        }
-
-        primitiveRenderingPipeline->release();
+        shadowRenderingProgram->release();
 
         // render quad with depth (shadow) map
 

@@ -3,52 +3,45 @@
 layout (location = 0) out vec4 fragmentColor;
 
 in VS_OUT {
+    vec3 viewPosition;
     vec3 fragmentPosition;
     vec3 normal;
     vec2 textureCoord;
-    vec4 fragmentPositionInLightSpace;
 } fsIn;
 
-uniform sampler2D shadowMap;
+uniform mat4 lightViewProjections[4];
+uniform float splits[4];
+
+uniform sampler2DArray shadowMaps;
 uniform sampler2D diffuseTexture;
 
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
-// uniform vec3 ambientColor;
-// uniform vec3 diffuseColor;
-// uniform float materialSpecular;
 uniform vec3 cameraPosition;
 
 float shadowCalculation(vec3 normal, vec3 lightDirection)
 {
-    vec3 shadowMapCoord = (fsIn.fragmentPositionInLightSpace.xyz / fsIn.fragmentPositionInLightSpace.w) * 0.5 + 0.5;
-    float occluderDepth = texture(shadowMap, shadowMapCoord.xy).r;
-    float thisDepth = shadowMapCoord.z;
+    float cameraViewDepth = fsIn.viewPosition.z;
 
-    if (thisDepth > 1.0)
+    for (int i = 0; i < 4; ++i)
     {
-        return 0.0;
-    }
-
-    float bias = max(0.05 * (1.0 - dot(normal, lightDirection)), 0.005);
-
-    // PCF
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-
-    for (int x = -1; x <= 1; ++x)
-    {
-        for (int y = -1; y <= 1; ++y)
+        if (cameraViewDepth < splits[i])
         {
-            float pcfDepth = texture(shadowMap, shadowMapCoord.xy + vec2(x, y) * texelSize).r;
+            vec4 fragmentPositionInLightSpace = lightViewProjections[i] * vec4(fsIn.fragmentPosition, 1.0);
+            vec3 shadowMapCoord = (fragmentPositionInLightSpace.xyz / fragmentPositionInLightSpace.w) * 0.5 + 0.5;
+            float occluderDepth = texture(shadowMaps, vec3(shadowMapCoord.xy, i)).r;
+            float thisDepth = shadowMapCoord.z;
 
-            shadow += thisDepth - bias < pcfDepth  ? 1.0 : 0.0;
+            if (thisDepth > 1.0)
+            {
+                return 0.0;
+            }
+
+            return thisDepth > occluderDepth ? 0.25 : 1.0;
         }
     }
 
-    shadow /= 9.0;
-
-    return shadow;
+    return 0.0;
 }
 
 void main()
