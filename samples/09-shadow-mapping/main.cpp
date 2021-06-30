@@ -495,6 +495,53 @@ int main()
 
     std::cout << "done" << std::endl;
 
+    std::cout << "[INFO] Compiling primitive rendering vertex shader...";
+
+    auto primitiveRenderingVertexProgram = std::make_unique<globjects::Program>();
+    auto primitiveRenderingVertexSource = globjects::Shader::sourceFromFile("media/primitive-rendering.vert");
+    auto primitiveRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(primitiveRenderingVertexSource.get());
+    auto primitiveRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), primitiveRenderingVertexShaderTemplate.get());
+
+    if (!primitiveRenderingVertexShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile vertex shader" << std::endl;
+        return 1;
+    }
+
+    primitiveRenderingVertexProgram->attach(primitiveRenderingVertexShader.get());
+
+    auto primitiveRenderingTransformationUniform = primitiveRenderingVertexProgram->getUniform<glm::mat4>("transformation");
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling primitive rendering fragment shader...";
+
+    auto primitiveRenderingFragmentProgram = std::make_unique<globjects::Program>();
+    auto primitiveRenderingFragmentSource = globjects::Shader::sourceFromFile("media/primitive-rendering.frag");
+    auto primitiveRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(primitiveRenderingFragmentSource.get());
+    auto primitiveRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), primitiveRenderingFragmentShaderTemplate.get());
+
+    if (!primitiveRenderingFragmentShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile fragment shader" << std::endl;
+        return 1;
+    }
+
+    primitiveRenderingFragmentProgram->attach(primitiveRenderingFragmentShader.get());
+
+    auto primitiveRenderingColorUniform = primitiveRenderingFragmentProgram->getUniform<glm::vec4>("color");
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Creating primitive rendering pipeline...";
+
+    auto primitiveRenderingPipeline = std::make_unique<globjects::ProgramPipeline>();
+
+    primitiveRenderingPipeline->useStages(primitiveRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
+    primitiveRenderingPipeline->useStages(primitiveRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+
+    std::cout << "done" << std::endl;
+
     std::cout << "[INFO] Compiling shadow rendering vertex shader...";
 
     auto shadowRenderingVertexProgram = std::make_unique<globjects::Program>();
@@ -650,6 +697,50 @@ int main()
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
+
+    const float nearPlane = 0.1f;
+    const float farPlane = 10.0f;
+
+    std::array<glm::vec3, 8> frustumVertices {
+        {
+            { -1.0f, -1.0f, nearPlane }, { 1.0f, -1.0f, nearPlane }, { 1.0f, 1.0f, nearPlane }, { -1.0f, 1.0f, nearPlane },
+            { -1.0f, -1.0f, farPlane }, { 1.0f, -1.0f, farPlane }, { 1.0f, 1.0f, farPlane }, { -1.0f, 1.0f, farPlane },
+        }
+    };
+
+    std::array<GLuint, 12 * 2> frustumIndices {
+        {
+            0, 1,
+            1, 2,
+            2, 3,
+            3, 0,
+
+            4, 5,
+            5, 6,
+            6, 7,
+            7, 4,
+
+            0, 4,
+            1, 5,
+            2, 6,
+            3, 7
+        }
+    };
+
+    auto frustumVertexBuffer = std::make_unique<globjects::Buffer>();
+    frustumVertexBuffer->setData(frustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+    auto frustumIndexBuffer = std::make_unique<globjects::Buffer>();
+    frustumIndexBuffer->setData(frustumIndices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+    auto frustumVAO = std::make_unique<globjects::VertexArray>();
+
+    frustumVAO->bindElementBuffer(frustumIndexBuffer.get());
+
+    frustumVAO->binding(0)->setAttribute(0);
+    frustumVAO->binding(0)->setBuffer(frustumVertexBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+    frustumVAO->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+    frustumVAO->enable(0);
 
     sf::Clock clock;
 
@@ -823,6 +914,57 @@ int main()
         shadowMapTexture->unbindActive(0);
 
         shadowRenderingPipeline->release();
+
+        primitiveRenderingPipeline->use();
+
+        // render cascade shadows' frustums
+        // 0.05x, 0.2x, 0.5x, 1x deep
+        // first attempt: render the entire frustum as green
+        {
+            const float _nearPlane = 0.1f;
+            const float _farPlane = 10.0f;
+            glm::mat4 projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, _nearPlane, _farPlane);
+
+            std::array<glm::vec3, 8> _vertices {
+                {
+                    { -1.0f, -1.0f, _nearPlane }, { 1.0f, -1.0f, _nearPlane }, { 1.0f, 1.0f, _nearPlane }, { -1.0f, 1.0f, _nearPlane },
+                    { -1.0f, -1.0f, _farPlane }, { 1.0f, -1.0f, _farPlane }, { 1.0f, 1.0f, _farPlane }, { -1.0f, 1.0f, _farPlane },
+                }
+            };
+
+            std::vector<glm::vec3> projectedVertices;
+
+            auto proj = glm::inverse(projection) * glm::inverse(lightView);
+
+            std::cout << "frustum: {" << std::endl;
+
+            for (auto p : _vertices)
+            {
+                auto p0 = proj * glm::vec4(p, 1.0f);
+                projectedVertices.push_back(p0);
+                std::cout << "    (" << p0.x << ", " << p0.y << ", " << p0.z << ")," << std::endl;
+            }
+
+            std::cout << "}" << std::endl;
+
+            primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
+            primitiveRenderingColorUniform->set(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+            frustumVertexBuffer->setData(projectedVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+            frustumVAO->bind();
+
+            // number of values passed = number of elements * number of vertices per element
+            // in this case: 2 triangles, 3 vertex indexes per triangle
+            frustumVAO->drawElements(
+                static_cast<gl::GLenum>(GL_LINES),
+                2 * 12, // frustumIndices.size(),
+                static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                nullptr);
+
+            frustumVAO->unbind();
+        }
+
+        primitiveRenderingPipeline->release();
 
         // render quad with depth (shadow) map
 
