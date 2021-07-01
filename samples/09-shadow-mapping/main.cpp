@@ -720,15 +720,15 @@ int main()
         }
     };
 
-    /*
     std::array<glm::vec3, 8> _cameraFrustumCornerVertices{
         {
-            cameraPos, cameraPos, cameraPos, cameraPos,
-            { -1.0f, -1.0f, farPlane }, { 1.0f, -1.0f, farPlane }, { 1.0f, 1.0f, farPlane }, { -1.0f, 1.0f, farPlane },
+            // cameraPos, cameraPos, cameraPos, cameraPos,
+            { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
+            { -1.0f, -1.0f, -farPlane }, { 1.0f, -1.0f, -farPlane }, { 1.0f, 1.0f, -farPlane }, { -1.0f, 1.0f, -farPlane },
         }
     };
-    */
 
+    /*
     std::array<glm::vec3, 8> _cameraFrustumCornerVertices{
         {
             cameraPos, cameraPos, cameraPos, cameraPos,
@@ -739,6 +739,7 @@ int main()
             glm::vec3(glm::inverse(initialCameraProjection) * glm::inverse(initialCameraView) * glm::vec4(-1.0f, 1.0f, farPlane, 1.0f)),
         }
     };
+    */
 
     auto _frustumVAO = std::make_unique<globjects::VertexArray>();
 
@@ -1029,15 +1030,21 @@ int main()
 
         {
             // the code below renders the camera frustum
-            // const auto proj = glm::inverse(initialCameraProjection * initialCameraView);
-            // std::array<glm::vec3, 8> _frustumVertices;
+            // const auto proj = glm::inverse(initialCameraView) * glm::inverse(initialCameraProjection);
+            const auto proj = glm::inverse(initialCameraProjection * initialCameraView);
+            std::array<glm::vec3, 8> _frustumVertices;
 
-            // std::transform(
-            //     _cameraFrustumCornerVertices.begin(),
-            //     _cameraFrustumCornerVertices.end(),
-            //     _frustumVertices.begin(),
-            //     [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
-            // );
+            std::transform(
+                _cameraFrustumCornerVertices.begin(),
+                _cameraFrustumCornerVertices.end(),
+                _frustumVertices.begin(),
+                [&](glm::vec3 p) {
+                    auto v = proj * glm::vec4(p.x * p.z, p.y * p.z, p.z, p.z);
+                    // auto e = proj * glm::vec4(p.x * p.z, p.y * p.z, p.z, p.z);
+                    // return cameraPos - (cameraForward * e.z) + (cameraRight * e.x) + (cameraUp * e.y);
+                    return glm::vec3(v) / v.w;
+                }
+            );
 
             primitiveRenderingProgram->use();
 
@@ -1061,14 +1068,17 @@ int main()
 
         {
             // the code below renders the light frustum
-            const auto proj = glm::inverse(lightProjection * lightView);
+            const auto proj = glm::inverse(lightView) * glm::inverse(lightProjection);
             std::array<glm::vec3, 8> _frustumVertices2;
 
             std::transform(
                 _frustumCornerVertices.begin(),
                 _frustumCornerVertices.end(),
                 _frustumVertices2.begin(),
-                [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
+                [proj](glm::vec3 p) {
+                    auto v = proj * glm::vec4(p, 1.0f);
+                    return glm::vec3(v) / v.w;
+                }
             );
 
             primitiveRenderingProgram->use();
@@ -1107,7 +1117,10 @@ int main()
                 _frustumCornerVertices.begin(),
                 _frustumCornerVertices.end(),
                 _frustumSliceVertices.begin(),
-                [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
+                [proj](glm::vec3 p) {
+                    auto v = proj * glm::vec4(p, 1.0f);
+                    return glm::vec3(v) / v.w;
+                }
             );
 
             // std::cout << "Frustum slice #" << i << " {" << std::endl;
