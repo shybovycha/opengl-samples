@@ -768,73 +768,12 @@ int main()
 
     std::cout << "[DEBUG] Done" << std::endl;
 
-        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
 
-        glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        // project shadows onto cascades, aka frustum splits
-        // 0.05x, 0.2x, 0.5x, 1x of the entire view frustum
-
-        std::vector<glm::mat4> lightViewProjectionMatrices;
-
-        {
-            glm::mat4 projection = initialCameraProjection; //cameraProjection;
-            glm::mat4 view = initialCameraView; //cameraView;
-
-            // this matrix will be used to transform the vertex position from screen space into world space position
-            const auto proj = glm::inverse(projection * view);
-
-            std::array<glm::vec3, 8> _entireFrustumVertices;
-
-            // transformation; same as mapping a list in _any other language_
-            std::transform(
-                _frustumCornerVertices.begin(),
-                _frustumCornerVertices.end(),
-                _entireFrustumVertices.begin(),
-                [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
-            );
-
-            std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
-
-            for (auto i = 1; i < splits.size(); ++i)
-            {
-                float minX, minY, minZ;
-                float maxX, maxY, maxZ;
-
-                for (auto t = 0; t < 4; ++t)
-                {
-                    auto projectedFrustumVertex = glm::vec3(lightView * glm::vec4(_entireFrustumVertices[t] + ((_entireFrustumVertices[4] - _entireFrustumVertices[t]) * splits[i - 1]), 1.0f));
-
-                    if (t == 0)
-                    {
-                        minX = maxX = projectedFrustumVertex.x;
-                        minY = maxY = projectedFrustumVertex.y;
-                        minZ = maxZ = projectedFrustumVertex.z;
-                    }
-                    else
-                    {
-                        minX = std::fmin(minX, projectedFrustumVertex.x);
-                        maxX = std::fmax(maxX, projectedFrustumVertex.x);
-
-                        minY = std::fmin(minY, projectedFrustumVertex.y);
-                        maxY = std::fmax(maxY, projectedFrustumVertex.y);
-
-                        minZ = std::fmin(minZ, projectedFrustumVertex.z);
-                        maxZ = std::fmax(maxZ, projectedFrustumVertex.z);
-                    }
-                }
-
-                auto frustumSplitProjectionMatrix = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
-
-                lightViewProjectionMatrices.push_back(frustumSplitProjectionMatrix);
-            }
-
-            std::vector<float> splitDepths{ 0.05f * (farPlane - nearPlane), 0.2f * (farPlane - nearPlane), 0.5f * (farPlane - nearPlane), (farPlane - nearPlane) };
-
-            shadowMappingLightViewProjectionMatrices->set(lightViewProjectionMatrices);
-            shadowRenderingLightViewProjectionsUniform->set(lightViewProjectionMatrices);
-            shadowRenderingSplitsUniform->set(splitDepths);
-        }
+    // project shadows onto cascades, aka frustum splits
+    // 0.05x, 0.2x, 0.5x, 1x of the entire view frustum
 
     sf::Clock clock;
 
@@ -1025,47 +964,11 @@ int main()
 
         shadowRenderingProgram->release();
 
-        // render frustums
-
-        /*{
-            // the code below renders the camera frustum
-            const auto proj = glm::inverse(initialCameraView) * glm::inverse(initialCameraProjection);
-
-            std::array<glm::vec3, 8> _frustumVertices;
-
-            std::transform(
-                _cameraFrustumCornerVertices.begin(),
-                _cameraFrustumCornerVertices.end(),
-                _frustumVertices.begin(),
-                [&](glm::vec3 p) {
-                    auto v = proj * glm::vec4(p, 1.0f);
-                    return glm::vec3(v) / v.w;
-                }
-            );
-
-            primitiveRenderingProgram->use();
-
-            primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
-            primitiveRenderingProgram->setUniform("color", glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-
-            _frustumVertexBuffer->setData(_frustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-            _frustumVAO->bind();
-
-            _frustumVAO->drawElements(
-                static_cast<gl::GLenum>(GL_LINES),
-                2 * 12, // frustumIndices.size(),
-                static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-                nullptr);
-
-            _frustumVAO->unbind();
-
-            primitiveRenderingProgram->release();
-        }*/
+        std::vector<glm::mat4> lightViewProjectionMatrices;
 
         {
             // the code below renders the camera frustum
-            auto proj = glm::inverse(initialCameraView) * glm::inverse(initialCameraProjection);
+            auto proj = glm::inverse(cameraView) * glm::inverse(cameraProjection);
 
             std::array<glm::vec3, 8> _frustumVertices;
 
@@ -1092,9 +995,9 @@ int main()
                     _cameraFrustumSliceCornerVertices.end(),
                     _frustumVertices.begin(),
                     [&](glm::vec3 p) {
-                        auto v = proj * glm::vec4(p, 1.0f);
-                        return glm::vec3(v) / v.w;
-                    }
+                    auto v = proj * glm::vec4(p, 1.0f);
+                    return glm::vec3(v) / v.w;
+                }
                 );
 
                 // calculate frustum slice' AABB
@@ -1124,143 +1027,19 @@ int main()
                     }
                 }
 
-                auto _sliceProjection = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
+                auto frustumSplitProjectionMatrix = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
 
-                /*proj = glm::inverse(_sliceProjection) * glm::inverse(initialCameraView);
-
-                std::vector<glm::vec3> aabbVertices;
-
-                std::transform(
-                    _cameraFrustumSliceCornerVertices.begin(),
-                    _cameraFrustumSliceCornerVertices.end(),
-                    _frustumVertices.begin(),
-                    [&](glm::vec3 p) {
-                        auto v = proj * glm::vec4(p, 1.0f);
-                        return glm::vec3(v) / v.w;
-                    }
-                );*/
-
-                std::vector<glm::vec3> _aabbVertices{
-                    {
-                        { minX, minY, minZ }, { minX, maxY, minZ }, { maxX, maxY, minZ }, { maxX, minY, minZ },
-                        { minX, minY, maxZ }, { minX, maxY, maxZ }, { maxX, maxY, maxZ }, { maxX, minY, maxZ },
-                    }
-                };
-
-                primitiveRenderingProgram->use();
-
-                primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
-                primitiveRenderingProgram->setUniform("color", splitColors[i]);
-
-                _frustumVertexBuffer->setData(_aabbVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-                _frustumVAO->bind();
-
-                _frustumVAO->drawElements(
-                    static_cast<gl::GLenum>(GL_LINES),
-                    2 * 12, // frustumIndices.size(),
-                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-                    nullptr);
-
-                _frustumVAO->unbind();
-
-                primitiveRenderingProgram->release();
+                lightViewProjectionMatrices.push_back(frustumSplitProjectionMatrix);
             }
+
+            std::vector<float> splitDepths{ 0.05f * (farPlane - nearPlane), 0.2f * (farPlane - nearPlane), 0.5f * (farPlane - nearPlane), (farPlane - nearPlane) };
+
+            shadowMappingLightViewProjectionMatrices->set(lightViewProjectionMatrices);
+            shadowRenderingLightViewProjectionsUniform->set(lightViewProjectionMatrices);
+            shadowRenderingSplitsUniform->set(splitDepths);
         }
 
-        /*{
-            // the code below renders the light frustum
-            const auto proj = glm::inverse(lightView) * glm::inverse(lightProjection);
-            std::array<glm::vec3, 8> _frustumVertices2;
-
-            std::transform(
-                _frustumCornerVertices.begin(),
-                _frustumCornerVertices.end(),
-                _frustumVertices2.begin(),
-                [proj](glm::vec3 p) {
-                    auto v = proj * glm::vec4(p, 1.0f);
-                    return glm::vec3(v) / v.w;
-                }
-            );
-
-            primitiveRenderingProgram->use();
-
-            primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
-            primitiveRenderingProgram->setUniform("color", glm::vec4(0.5f, 0.5f, 0.2f, 1.0f));
-
-            _frustumVertexBuffer->setData(_frustumVertices2, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-            _frustumVAO->bind();
-
-            _frustumVAO->drawElements(
-                static_cast<gl::GLenum>(GL_LINES),
-                2 * 12, // frustumIndices.size(),
-                static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-                nullptr);
-
-            _frustumVAO->unbind();
-
-            primitiveRenderingProgram->release();
-        }*/
-
-        /*for (auto i = 0; i < 4; ++i)
-        {
-            auto frustumSplitProjectionMatrix = lightViewProjectionMatrices[i];
-
-            // std::cout << "[DEBUG] Debugging projection frustum..." << std::endl;
-
-            auto proj = glm::inverse(frustumSplitProjectionMatrix);
-
-            // std::cout << "[DEBUG] Projectig the frustum corners..." << std::endl;
-
-            std::array<glm::vec3, 8> _frustumSliceVertices;
-
-            std::transform(
-                _frustumCornerVertices.begin(),
-                _frustumCornerVertices.end(),
-                _frustumSliceVertices.begin(),
-                [proj](glm::vec3 p) {
-                    auto v = proj * glm::vec4(p, 1.0f);
-                    return glm::vec3(v) / v.w;
-                }
-            );
-
-            // std::cout << "Frustum slice #" << i << " {" << std::endl;
-            // for (auto p : _frustumSliceVertices)
-            // {
-            //     std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
-            // }
-            // std::cout << "}" << std::endl;
-
-            // render projection
-            // std::cout << "[DEBUG] Rendering projection frustum...";
-
-            primitiveRenderingProgram->use();
-
-            primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
-            primitiveRenderingProgram->setUniform("color", _splitColors[i - 1]);
-
-            _frustumVertexBuffer->setData(_frustumSliceVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-            _frustumVAO->bind();
-
-            _frustumVAO->drawElements(
-                static_cast<gl::GLenum>(GL_LINES),
-                frustumIndices.size(),
-                static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-                nullptr);
-
-            _frustumVAO->unbind();
-
-            // std::cout << "done" << std::endl;
-
-            primitiveRenderingProgram->release();
-        }*/
-
         // render quad with depth (shadow) map
-/*
-        ::glDepthMask(false);
-
         shadowDebuggingProgram->use();
 
         shadowMapTexture->bindActive(0);
@@ -1279,8 +1058,6 @@ int main()
 
         shadowDebuggingProgram->release();
 
-        ::glDepthMask(true);
-*/
         // done rendering the frame
 
         window.display();
