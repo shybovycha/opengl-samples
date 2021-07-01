@@ -995,10 +995,14 @@ int main()
                     _cameraFrustumSliceCornerVertices.end(),
                     _frustumVertices.begin(),
                     [&](glm::vec3 p) {
-                    auto v = proj * glm::vec4(p, 1.0f);
-                    return glm::vec3(v) / v.w;
-                }
+                        auto v = proj * glm::vec4(p, 1.0f);
+                        // auto v1 = glm::vec3(v) / v.w; // v, frustum split' corner vertex, in world space // why divide by `w` component if we could just continue multiplying by matrix
+                        auto u = lightView * v; // glm::vec4(v1, 1.0f); // v1 in light view space
+                        return glm::vec3(u) / u.w;
+                    }
                 );
+
+                // at this stage, _frustumVertices are the vertices of camera frustum split, in light view space
 
                 // calculate frustum slice' AABB
                 float minX = 0.0f, maxX = 0.0f;
@@ -1027,9 +1031,9 @@ int main()
                     }
                 }
 
-                auto frustumSplitProjectionMatrix = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
+                auto frustumSplitProjectionMatrix = glm::ortho(minX, maxX, minY, maxY, maxZ, minZ);
 
-                lightViewProjectionMatrices.push_back(frustumSplitProjectionMatrix * lightView);
+                lightViewProjectionMatrices.push_back(frustumSplitProjectionMatrix);
             }
 
             std::vector<float> splitDepths{ 0.05f * (farPlane - nearPlane), 0.2f * (farPlane - nearPlane), 0.5f * (farPlane - nearPlane), (farPlane - nearPlane) };
