@@ -1065,7 +1065,7 @@ int main()
 
         {
             // the code below renders the camera frustum
-            const auto proj = glm::inverse(initialCameraView) * glm::inverse(initialCameraProjection);
+            auto proj = glm::inverse(initialCameraView) * glm::inverse(initialCameraProjection);
 
             std::array<glm::vec3, 8> _frustumVertices;
 
@@ -1097,12 +1097,62 @@ int main()
                     }
                 );
 
+                // calculate frustum slice' AABB
+                float minX = 0.0f, maxX = 0.0f;
+                float minY = 0.0f, maxY = 0.0f;
+                float minZ = 0.0f, maxZ = 0.0f;
+
+                for (auto i = 0; i < _frustumVertices.size(); ++i)
+                {
+                    auto p = _frustumVertices[i];
+
+                    if (i == 0)
+                    {
+                        minX = maxX = p.x;
+                        minY = maxY = p.y;
+                        minZ = maxZ = p.z;
+                    }
+                    else
+                    {
+                        minX = std::fmin(minX, p.x);
+                        minY = std::fmin(minY, p.y);
+                        minZ = std::fmin(minZ, p.z);
+
+                        maxX = std::fmax(maxX, p.x);
+                        maxY = std::fmax(maxY, p.y);
+                        maxZ = std::fmax(maxZ, p.z);
+                    }
+                }
+
+                auto _sliceProjection = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
+
+                /*proj = glm::inverse(_sliceProjection) * glm::inverse(initialCameraView);
+
+                std::vector<glm::vec3> aabbVertices;
+
+                std::transform(
+                    _cameraFrustumSliceCornerVertices.begin(),
+                    _cameraFrustumSliceCornerVertices.end(),
+                    _frustumVertices.begin(),
+                    [&](glm::vec3 p) {
+                        auto v = proj * glm::vec4(p, 1.0f);
+                        return glm::vec3(v) / v.w;
+                    }
+                );*/
+
+                std::vector<glm::vec3> _aabbVertices{
+                    {
+                        { minX, minY, minZ }, { minX, maxY, minZ }, { maxX, maxY, minZ }, { maxX, minY, minZ },
+                        { minX, minY, maxZ }, { minX, maxY, maxZ }, { maxX, maxY, maxZ }, { maxX, minY, maxZ },
+                    }
+                };
+
                 primitiveRenderingProgram->use();
 
                 primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
                 primitiveRenderingProgram->setUniform("color", splitColors[i]);
 
-                _frustumVertexBuffer->setData(_frustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+                _frustumVertexBuffer->setData(_aabbVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
 
                 _frustumVAO->bind();
 
