@@ -422,7 +422,7 @@ int main()
 
     auto shadowMappingGeometrySource = globjects::Shader::sourceFromFile("media/shadow-mapping.geom");
     auto shadowMappingGeometryShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowMappingGeometrySource.get());
-    auto shadowMappingGeometryShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_GEOMETRY_SHADER), shadowMappingGeometryShaderTemplate.get());
+    auto shadowMappingGeometryShader = std::make_unique<globjects::Shader>(gl::GL_GEOMETRY_SHADER, shadowMappingGeometryShaderTemplate.get());
 
     if (!shadowMappingGeometryShader->compile())
     {
@@ -600,7 +600,7 @@ int main()
 
     std::cout << "[DEBUG] Initializing shadowMapTexture...";
 
-    auto shadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY));
+    auto shadowMapTexture = std::make_unique<globjects::Texture>(gl::GL_TEXTURE_2D_ARRAY);
 
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
@@ -612,7 +612,7 @@ int main()
 
     shadowMapTexture->storage3D(
         4,
-        static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
+        static_cast<gl::GLenum>(GL_DEPTH_COMPONENT32F),
         glm::vec3(2048, 2048, 4) // this last `4` is the number of layers of a 3D texture; must be equal to the number of frustum splits we are making
     );
 
