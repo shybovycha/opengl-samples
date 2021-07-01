@@ -1029,7 +1029,7 @@ int main()
 
                 auto frustumSplitProjectionMatrix = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
 
-                lightViewProjectionMatrices.push_back(frustumSplitProjectionMatrix);
+                lightViewProjectionMatrices.push_back(frustumSplitProjectionMatrix * lightView);
             }
 
             std::vector<float> splitDepths{ 0.05f * (farPlane - nearPlane), 0.2f * (farPlane - nearPlane), 0.5f * (farPlane - nearPlane), (farPlane - nearPlane) };
