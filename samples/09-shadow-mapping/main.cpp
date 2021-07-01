@@ -1027,22 +1027,9 @@ int main()
 
         // render frustums
 
-        {
+        /*{
             // the code below renders the camera frustum
             const auto proj = glm::inverse(initialCameraView) * glm::inverse(initialCameraProjection);
-
-            /*float e = 1.0f / (glm::tan(fov / 2.0f));
-            float aspect = static_cast<float>(window.getSize().x / window.getSize().y);
-
-            // matrices in glm are column-major
-            glm::mat4 P{
-                e / aspect, 0.0f, 0.0f, 0.0f,
-                0.0f, e, 0.0f, 0.0f,
-                0.0f, 0.0f, (farPlane + nearPlane) / (nearPlane - farPlane), -1.0f,
-                0.0f, 0.0f, (2.0f * farPlane * nearPlane) / (nearPlane - farPlane), 0.0f,
-            };
-
-            const auto proj = glm::inverse(P);*/
 
             std::array<glm::vec3, 8> _frustumVertices;
 
@@ -1051,9 +1038,7 @@ int main()
                 _cameraFrustumCornerVertices.end(),
                 _frustumVertices.begin(),
                 [&](glm::vec3 p) {
-                    auto v = proj * glm::vec4(p, 1.0f); // glm::vec4(p.x * p.z, p.y * p.z, p.z, p.z);
-                    // auto e = proj * glm::vec4(p.x * p.z, p.y * p.z, p.z, p.z);
-                    // return cameraPos - (cameraForward * e.z) + (cameraRight * e.x) + (cameraUp * e.y);
+                    auto v = proj * glm::vec4(p, 1.0f);
                     return glm::vec3(v) / v.w;
                 }
             );
@@ -1076,6 +1061,61 @@ int main()
             _frustumVAO->unbind();
 
             primitiveRenderingProgram->release();
+        }*/
+
+        {
+            // the code below renders the camera frustum
+            const auto proj = glm::inverse(initialCameraView) * glm::inverse(initialCameraProjection);
+
+            std::array<glm::vec3, 8> _frustumVertices;
+
+            std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
+            std::vector<glm::vec4> splitColors{ { { 0.2f, 0.2f, 0.2f, 1.0f }, { 1.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } } };
+
+            float _nearPlane = 1.0f;
+            float _farPlane = 1.0f; // _nearPlane - (0.02 * (farPlane - nearPlane))
+
+            for (auto i = 1; i < splits.size(); ++i)
+            {
+                _nearPlane = _farPlane;
+                _farPlane = 1.0f - (2.0f * splits[i]);
+
+                std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
+                    {
+                        { -1.0f, -1.0f, _nearPlane }, { 1.0f, -1.0f, _nearPlane }, { 1.0f, 1.0f, _nearPlane }, { -1.0f, 1.0f, _nearPlane },
+                        { -1.0f, -1.0f, _farPlane }, { 1.0f, -1.0f, _farPlane }, { 1.0f, 1.0f, _farPlane }, { -1.0f, 1.0f, _farPlane },
+                    }
+                };
+
+                std::transform(
+                    _cameraFrustumSliceCornerVertices.begin(),
+                    _cameraFrustumSliceCornerVertices.end(),
+                    _frustumVertices.begin(),
+                    [&](glm::vec3 p) {
+                        auto v = proj * glm::vec4(p, 1.0f);
+                        return glm::vec3(v) / v.w;
+                    }
+                );
+
+                primitiveRenderingProgram->use();
+
+                primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
+                primitiveRenderingProgram->setUniform("color", splitColors[i]);
+
+                _frustumVertexBuffer->setData(_frustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                _frustumVAO->bind();
+
+                _frustumVAO->drawElements(
+                    static_cast<gl::GLenum>(GL_LINES),
+                    2 * 12, // frustumIndices.size(),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                    nullptr);
+
+                _frustumVAO->unbind();
+
+                primitiveRenderingProgram->release();
+            }
         }
 
         /*{
