@@ -16,7 +16,7 @@ out gl_PerVertex
   vec4 gl_Position;
 };
 
-out int gl_Layer;
+// out int gl_Layer;
 
 uniform mat4 lightViewProjectionMatrix[4]; // as per 4 frustum splits
 
