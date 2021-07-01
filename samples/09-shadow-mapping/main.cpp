@@ -667,7 +667,12 @@ int main()
     const float fov = 45.0f;
 
     const float cameraMoveSpeed = 1.0f;
+
+#ifdef WIN32
     const float cameraRotateSpeed = 10.0f;
+#else
+    const float cameraRotateSpeed = 20.0f;
+#endif
 
     glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -702,10 +707,16 @@ int main()
 
     std::cout << "[DEBUG] Preparing frustum debugging VAO..." << std::endl;
 
-    std::array<glm::vec3, 8> _vertices{
+    glm::vec3 lightPosition = glm::vec3(0.0f, 3.0f, 4.0f); // cameraPos;
+
+    const float nearPlane = 0.1f;
+    const float farPlane = 10.0f;
+
+    // these vertices define view frustum in screen space coordinates
+    std::array<glm::vec3, 8> _frustumCornerVertices{
         {
-            { -1.0f, -1.0f, 0.01f }, { 1.0f, -1.0f, 0.01f }, { 1.0f, 1.0f, 0.01f }, { -1.0f, 1.0f, 0.01f },
-            { -1.0f, -1.0f, 10.0f }, { 1.0f, -1.0f, 10.0f }, { 1.0f, 1.0f, 10.0f }, { -1.0f, 1.0f, 10.0f },
+            { -1.0f, -1.0f, nearPlane }, { 1.0f, -1.0f, nearPlane }, { 1.0f, 1.0f, nearPlane }, { -1.0f, 1.0f, nearPlane },
+            { -1.0f, -1.0f, farPlane }, { 1.0f, -1.0f, farPlane }, { 1.0f, 1.0f, farPlane }, { -1.0f, 1.0f, farPlane },
         }
     };
 
@@ -715,7 +726,7 @@ int main()
     auto _frustumVertexBuffer = std::make_unique<globjects::Buffer>();
 
     _frustumIndexBuffer->setData(frustumIndices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
-    _frustumVertexBuffer->setData(_vertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+    _frustumVertexBuffer->setData(_frustumCornerVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
 
     std::cout << "[DEBUG] Binding element buffer..." << std::endl;
 
@@ -729,18 +740,14 @@ int main()
     _frustumVAO->enable(0);
 
     std::vector<glm::vec4> _splitColors{
-        { 0.0f, 1.0f, 0.0f, 1.0f },
-        { 0.0f, 0.0f, 1.0f, 1.0f },
-        { 1.0f, 1.0f, 0.0f, 1.0f },
-        { 1.0f, 0.0f, 0.0f, 1.0f },
+        { 0.0f, 1.0f, 0.0f, 0.5f },
+        { 0.0f, 0.0f, 1.0f, 0.5f },
+        { 1.0f, 1.0f, 0.0f, 0.5f },
+        { 1.0f, 0.0f, 0.0f, 0.5f },
     };
 
     std::cout << "[DEBUG] Done" << std::endl;
 
-        glm::vec3 lightPosition = glm::vec3(0.0f, 3.0f, 4.0f); // cameraPos;
-
-        const float nearPlane = 0.1f;
-        const float farPlane = 10.0f;
         glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
 
         glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -751,18 +758,8 @@ int main()
         std::vector<glm::mat4> lightViewProjectionMatrices;
 
         {
-            const float _nearPlane = 0.1f;
-            const float _farPlane = 10.0f;
             glm::mat4 projection = initialCameraProjection; //cameraProjection;
             glm::mat4 view = initialCameraView; //cameraView;
-
-            // these vertices define view frustum in screen space coordinates
-            std::array<glm::vec3, 8> _frustumCornerVertices{
-                {
-                    { -1.0f, -1.0f, _nearPlane }, { 1.0f, -1.0f, _nearPlane }, { 1.0f, 1.0f, _nearPlane }, { -1.0f, 1.0f, _nearPlane },
-                    { -1.0f, -1.0f, _farPlane }, { 1.0f, -1.0f, _farPlane }, { 1.0f, 1.0f, _farPlane }, { -1.0f, 1.0f, _farPlane },
-                }
-            };
 
             // this matrix will be used to transform the vertex position from screen space into world space position
             const auto proj = glm::inverse(projection * view);
@@ -1050,8 +1047,8 @@ int main()
             std::array<glm::vec3, 8> _frustumSliceVertices;
 
             std::transform(
-                _vertices.begin(),
-                _vertices.end(),
+                _frustumCornerVertices.begin(),
+                _frustumCornerVertices.end(),
                 _frustumSliceVertices.begin(),
                 [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
             );
