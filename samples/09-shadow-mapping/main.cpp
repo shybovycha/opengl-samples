@@ -720,6 +720,26 @@ int main()
         }
     };
 
+    /*
+    std::array<glm::vec3, 8> _cameraFrustumCornerVertices{
+        {
+            cameraPos, cameraPos, cameraPos, cameraPos,
+            { -1.0f, -1.0f, farPlane }, { 1.0f, -1.0f, farPlane }, { 1.0f, 1.0f, farPlane }, { -1.0f, 1.0f, farPlane },
+        }
+    };
+    */
+
+    std::array<glm::vec3, 8> _cameraFrustumCornerVertices{
+        {
+            cameraPos, cameraPos, cameraPos, cameraPos,
+
+            glm::vec3(glm::inverse(initialCameraProjection) * glm::inverse(initialCameraView) * glm::vec4(-1.0f, -1.0f, farPlane, 1.0f)),
+            glm::vec3(glm::inverse(initialCameraProjection) * glm::inverse(initialCameraView) * glm::vec4(1.0f, -1.0f, farPlane, 1.0f)),
+            glm::vec3(glm::inverse(initialCameraProjection) * glm::inverse(initialCameraView) * glm::vec4(1.0f, 1.0f, farPlane, 1.0f)),
+            glm::vec3(glm::inverse(initialCameraProjection) * glm::inverse(initialCameraView) * glm::vec4(-1.0f, 1.0f, farPlane, 1.0f)),
+        }
+    };
+
     auto _frustumVAO = std::make_unique<globjects::VertexArray>();
 
     auto _frustumIndexBuffer = std::make_unique<globjects::Buffer>();
@@ -773,33 +793,6 @@ int main()
                 _entireFrustumVertices.begin(),
                 [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
             );
-
-            /*{
-                // the code below renders the light frustum
-                const auto _lightProjection = glm::inverse(lightProjection * lightView);
-                std::vector<glm::vec3> _lightFrustumVertices;
-
-                std::transform(
-                    _frustumCornerVertices.begin(),
-                    _frustumCornerVertices.end(),
-                    _lightFrustumVertices.begin(),
-                    [proj](glm::vec3 p) { return glm::vec3(_lightProjection * glm::vec4(p, 1.0f)); }
-                );
-
-                primitiveRenderingTransformationUniform->set(cameraProjection * cameraView);
-                primitiveRenderingColorUniform->set(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-                frustumVertexBuffer->setData(_lightFrustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-                frustumVAO->bind();
-
-                frustumVAO->drawElements(
-                    static_cast<gl::GLenum>(GL_LINES),
-                    2 * 12, // frustumIndices.size(),
-                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-                    nullptr);
-
-                frustumVAO->unbind();
-            }*/
 
             std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
@@ -1033,6 +1026,70 @@ int main()
         shadowRenderingProgram->release();
 
         // render frustums
+
+        {
+            // the code below renders the camera frustum
+            // const auto proj = glm::inverse(initialCameraProjection * initialCameraView);
+            // std::array<glm::vec3, 8> _frustumVertices;
+
+            // std::transform(
+            //     _cameraFrustumCornerVertices.begin(),
+            //     _cameraFrustumCornerVertices.end(),
+            //     _frustumVertices.begin(),
+            //     [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
+            // );
+
+            primitiveRenderingProgram->use();
+
+            primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
+            primitiveRenderingProgram->setUniform("color", glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+
+            _frustumVertexBuffer->setData(_cameraFrustumCornerVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+            _frustumVAO->bind();
+
+            _frustumVAO->drawElements(
+                static_cast<gl::GLenum>(GL_LINES),
+                2 * 12, // frustumIndices.size(),
+                static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                nullptr);
+
+            _frustumVAO->unbind();
+
+            primitiveRenderingProgram->release();
+        }
+
+        {
+            // the code below renders the light frustum
+            const auto proj = glm::inverse(lightProjection * lightView);
+            std::array<glm::vec3, 8> _frustumVertices2;
+
+            std::transform(
+                _frustumCornerVertices.begin(),
+                _frustumCornerVertices.end(),
+                _frustumVertices2.begin(),
+                [proj](glm::vec3 p) { return glm::vec3(proj * glm::vec4(p, 1.0f)); }
+            );
+
+            primitiveRenderingProgram->use();
+
+            primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
+            primitiveRenderingProgram->setUniform("color", glm::vec4(0.5f, 0.5f, 0.2f, 1.0f));
+
+            _frustumVertexBuffer->setData(_frustumVertices2, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+            _frustumVAO->bind();
+
+            _frustumVAO->drawElements(
+                static_cast<gl::GLenum>(GL_LINES),
+                2 * 12, // frustumIndices.size(),
+                static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                nullptr);
+
+            _frustumVAO->unbind();
+
+            primitiveRenderingProgram->release();
+        }
 
         for (auto i = 0; i < 4; ++i)
         {
