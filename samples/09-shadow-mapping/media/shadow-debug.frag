@@ -6,11 +6,12 @@ in VS_OUT {
     vec2 textureCoord;
 } fsIn;
 
-uniform sampler2D shadowMap;
+uniform sampler2DArray shadowMaps;
+uniform int textureLayer;
 
 void main()
 {
-    float depth = texture(shadowMap, fsIn.textureCoord).r;
+    float depth = texture(shadowMaps, vec3(fsIn.textureCoord, textureLayer)).r;
 
     fragmentColor = vec4(vec3(depth), 1.0);
 }

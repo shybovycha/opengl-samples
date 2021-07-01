@@ -981,19 +981,27 @@ int main()
 
         // render quad with depth (shadow) map
 
-        /*shadowDebuggingPipeline->use();
+        ::glDepthMask(false);
 
-        shadowDebuggingModelTransformationUniform->set(glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.75f)));
+        shadowDebuggingProgram->use();
 
         shadowMapTexture->bindActive(0);
 
-        quadModel->bind();
-        quadModel->draw();
-        quadModel->unbind();
+        for (auto i = 0; i < 4; ++i)
+        {
+            shadowDebuggingModelTransformationUniform->set(glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(0.75f)), glm::vec3(-1.0f + (i * (2.0f / 4.0f)) + (i * 0.01f), -1.0f, -0.2f)));
+            shadowDebuggingProgram->setUniform("textureLayer", i);
 
-        shadowMapTexture->unbind();
+            quadModel->bind();
+            quadModel->draw();
+            quadModel->unbind();
+        }
 
-        shadowDebuggingPipeline->release();*/
+        shadowMapTexture->unbindActive(0);
+
+        shadowDebuggingProgram->release();
+
+        ::glDepthMask(true);
 
         // done rendering the frame
 
