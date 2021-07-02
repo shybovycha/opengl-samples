@@ -686,14 +686,22 @@ int main()
         cameraPos + cameraForward,
         cameraUp);
 
-    /*std::array<glm::vec3, 8> _cameraFrustumCornerVertices{
+    std::cout << "[DEBUG] Preparing frustum debugging VAO..." << std::endl;
+
+    glm::vec3 lightPosition = glm::vec3(0.0f, 3.0f, 4.0f); // cameraPos;
+
+    const float nearPlane = 0.1f;
+    const float farPlane = 20.0f;
+
+    // these vertices define view frustum in screen space coordinates
+    std::array<glm::vec3, 8> _cameraFrustumCornerVertices{
         {
             { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
             { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
         }
-    };*/
+    };
 
-    std::array<GLuint, 6 * 2 * 3> frustumIndices {
+    std::array<GLuint, 6 * 2 * 3> frustumIndices{
         {
             0, 1, 2,
             2, 3, 0, // front
@@ -715,35 +723,13 @@ int main()
         }
     };
 
-    std::cout << "[DEBUG] Preparing frustum debugging VAO..." << std::endl;
-
-    glm::vec3 lightPosition = glm::vec3(0.0f, 3.0f, 4.0f); // cameraPos;
-
-    const float nearPlane = 0.1f;
-    const float farPlane = 20.0f;
-
-    // these vertices define view frustum in screen space coordinates
-    std::array<glm::vec3, 8> _frustumCornerVertices{
-        {
-            { -1.0f, -1.0f, nearPlane }, { 1.0f, -1.0f, nearPlane }, { 1.0f, 1.0f, nearPlane }, { -1.0f, 1.0f, nearPlane },
-            { -1.0f, -1.0f, farPlane }, { 1.0f, -1.0f, farPlane }, { 1.0f, 1.0f, farPlane }, { -1.0f, 1.0f, farPlane },
-        }
-    };
-
-    std::array<glm::vec3, 8> _cameraFrustumCornerVertices{
-        {
-            { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
-            { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
-        }
-    };
-
     auto _frustumVAO = std::make_unique<globjects::VertexArray>();
 
     auto _frustumIndexBuffer = std::make_unique<globjects::Buffer>();
     auto _frustumVertexBuffer = std::make_unique<globjects::Buffer>();
 
     _frustumIndexBuffer->setData(frustumIndices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
-    _frustumVertexBuffer->setData(_frustumCornerVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+    _frustumVertexBuffer->setData(_cameraFrustumCornerVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
 
     std::cout << "[DEBUG] Binding element buffer..." << std::endl;
 
@@ -925,9 +911,7 @@ int main()
                     _frustumVertices.begin(),
                     [&](glm::vec3 p) {
                         auto v = proj * glm::vec4(p, 1.0f);
-                        // auto v1 = glm::vec3(v) / v.w; // v, frustum split' corner vertex, in world space // why divide by `w` component if we could just continue multiplying by matrix
-                        auto u = lightView * v; // glm::vec4(v1, 1.0f); // v1 in light view space
-                        return glm::vec3(u) / u.w;
+                        return glm::vec3(v) / v.w;
                     }
                 );
 
@@ -1128,10 +1112,6 @@ int main()
                     }
                 );
 
-                /*glm::vec3 _cameraForward =
-                    ((_cameraFrustumSliceCornerVertices[0] + _cameraFrustumSliceCornerVertices[1] + _cameraFrustumSliceCornerVertices[2] + _cameraFrustumSliceCornerVertices[3]) / 4.0f) -
-                    ((_cameraFrustumSliceCornerVertices[4] + _cameraFrustumSliceCornerVertices[5] + _cameraFrustumSliceCornerVertices[6] + _cameraFrustumSliceCornerVertices[7]) / 4.0f);*/
-
                 std::array<glm::vec3, 4> _frustumVectors{
                     {
                         _totalFrustumVertices[4] - _totalFrustumVertices[0],
@@ -1183,15 +1163,6 @@ int main()
                         }
                     }
 
-                    // this is needed for _cubic_ projection slices
-                    /*maxX = (maxX - minX) / 2.0f;
-                    maxY = (maxY - minY) / 2.0f;
-                    maxZ = (maxZ - minZ) / 2.0f;
-
-                    minX = -maxX;
-                    minY = -maxY;
-                    minZ = -maxZ;*/
-
                     std::array<glm::vec3, 8> _aabbVertices{
                         {
                             { minX, minY, minZ }, { maxX, minY, minZ }, { maxX, maxY, minZ }, { minX, maxY, minZ },
@@ -1212,19 +1183,13 @@ int main()
 
                     glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition);
 
-                    glm::mat4 _lightViewMatrix = glm::lookAt(_frustumCenter - _lightDirection * ((maxZ + minZ) / 2.0f), _frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
-
-                    // glm::lookAt won't work nicely here since the direction of each frustum slice must be preserved, hence doing it by hand
-                    /*auto _up = glm::vec3(0.0f, 1.0f, 0.0f);
-                    auto _forward = glm::normalize(lightPosition - glm::vec3(0.0f, 0.0f, 0.0f));
-                    auto _right = glm::normalize(glm::cross(_up, _forward));
-
-                    glm::mat4 _lightViewMatrix{
-                        _right.x, _up.x, _forward.x, _frustumCenter.x,
-                        _right.y, _up.y, _forward.y, _frustumCenter.y,
-                        _right.z, _up.z, _forward.z, _frustumCenter.z,
-                        0.0f, 0.0f, 0.0f, 1.0f,
-                    };*/
+                    // we position AABB at the center of a frustum slice (_frustumCenter) and orient it along the light direction
+                    // the trick here is to offset the AABB by its half so that all the AABBs stack together nicely and neither overlap nor leave gaps
+                    glm::mat4 _lightViewMatrix = glm::lookAt(
+                        _frustumCenter - _lightDirection * ((maxZ + minZ) / 2.0f),
+                        _frustumCenter,
+                        glm::vec3(0.0f, 1.0f, 0.0f)
+                    );
 
                     glm::mat4 _lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, 0.0f, maxZ - minZ);
 
@@ -1276,8 +1241,6 @@ int main()
                     _totalFrustumVertices.begin(),
                     [&](glm::vec3 p) {
                         auto v = proj * glm::vec4(p, 1.0f);
-                        // auto v1 = glm::vec3(v) / v.w; // v, frustum split' corner vertex, in world space // why divide by `w` component if we could just continue multiplying by matrix
-                        // auto u = lightView * v; // glm::vec4(v1, 1.0f); // v1 in light view space
                         return glm::vec3(v) / v.w;
                     }
                 );
