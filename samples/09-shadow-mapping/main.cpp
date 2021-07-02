@@ -769,6 +769,10 @@ int main()
 
     bool renderLightFrusta = false;
     bool renderLightProjection = false;
+    bool debugOn = false;
+
+    glm::mat4 cameraProjection(1.0f);
+    glm::mat4 cameraView(1.0f);
 
 #ifndef WIN32
     auto previousMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
@@ -791,6 +795,13 @@ int main()
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Return)
             {
                 renderLightProjection = !renderLightProjection;
+            }
+
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Q)
+            {
+                initialCameraProjection = cameraProjection;
+                initialCameraView = cameraView;
+                debugOn = !debugOn;
             }
 
             if (event.type == sf::Event::Closed)
@@ -866,14 +877,15 @@ int main()
             }
         }
 
-        glm::mat4 cameraProjection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
+        cameraProjection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
 
-        glm::mat4 cameraView = glm::lookAt(
+        cameraView = glm::lookAt(
             cameraPos,
             cameraPos + cameraForward,
             cameraUp);
 
         std::vector<glm::mat4> lightViewProjectionMatrices;
+        std::vector<float> splitDepths;
 
         {
             std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
@@ -983,9 +995,8 @@ int main()
                 glm::mat4 _lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, 0.0f, maxZ - minZ);
 
                 lightViewProjectionMatrices.push_back(_lightOrthoMatrix * _lightViewMatrix);
+                splitDepths.push_back(maxZ);
             }
-
-            std::vector<float> splitDepths{ 0.05f * (farPlane - nearPlane), 0.2f * (farPlane - nearPlane), 0.5f * (farPlane - nearPlane), (farPlane - nearPlane) };
 
             shadowMappingLightViewProjectionMatrices->set(lightViewProjectionMatrices);
             shadowRenderingLightViewProjectionsUniform->set(lightViewProjectionMatrices);
@@ -1079,7 +1090,8 @@ int main()
 
         shadowRenderingProgram->release();
 
-        if (false) {
+        if (debugOn)
+        {
             glDisable(GL_CULL_FACE);
 
             primitiveRenderingProgram->use();
@@ -1367,8 +1379,6 @@ int main()
         shadowMapTexture->bindActive(0);
 
         const auto imageWidth = (window.getSize().x / 4) - 40;
-
-        std::cout << "[DEBUG] Debug frame width: " << imageWidth << std::endl;
 
         for (auto i = 0; i < 4; ++i)
         {
