@@ -876,48 +876,63 @@ int main()
         std::vector<glm::mat4> lightViewProjectionMatrices;
 
         {
-            // the code below renders the camera frustum
-            auto proj = glm::inverse(cameraProjection * cameraView);
-
-            std::array<glm::vec3, 8> _frustumVertices;
-
             std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
-            float _nearPlane = 1.0f;
-            float _farPlane = 1.0f; // _nearPlane - (0.02 * (farPlane - nearPlane))
+            const float _depth = 2.0f; // 1.0f - (-1.0f)
+
+            auto proj = glm::inverse(cameraProjection * cameraView);
+
+            std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
+                    {
+                        { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
+                        { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
+                    }
+            };
+
+            std::array<glm::vec3, 8> _totalFrustumVertices;
+
+            std::transform(
+                _cameraFrustumSliceCornerVertices.begin(),
+                _cameraFrustumSliceCornerVertices.end(),
+                _totalFrustumVertices.begin(),
+                [&](glm::vec3 p) {
+                    auto v = proj * glm::vec4(p, 1.0f);
+                    return glm::vec3(v) / v.w;
+                }
+            );
+
+            std::array<glm::vec3, 4> _frustumVectors{
+                {
+                    _totalFrustumVertices[4] - _totalFrustumVertices[0],
+                    _totalFrustumVertices[5] - _totalFrustumVertices[1],
+                    _totalFrustumVertices[6] - _totalFrustumVertices[2],
+                    _totalFrustumVertices[7] - _totalFrustumVertices[3],
+                }
+            };
 
             for (auto i = 1; i < splits.size(); ++i)
             {
-                _nearPlane = _farPlane;
-                _farPlane = 1.0f - (2.0f * splits[i]);
-
-                std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
+                std::array<glm::vec3, 8> _frustumSliceVertices{
                     {
-                        { -1.0f, -1.0f, _nearPlane }, { 1.0f, -1.0f, _nearPlane }, { 1.0f, 1.0f, _nearPlane }, { -1.0f, 1.0f, _nearPlane },
-                        { -1.0f, -1.0f, _farPlane }, { 1.0f, -1.0f, _farPlane }, { 1.0f, 1.0f, _farPlane }, { -1.0f, 1.0f, _farPlane },
+                        _totalFrustumVertices[0] + (_frustumVectors[0] * _depth * splits[i - 1]),
+                        _totalFrustumVertices[1] + (_frustumVectors[1] * _depth * splits[i - 1]),
+                        _totalFrustumVertices[2] + (_frustumVectors[2] * _depth * splits[i - 1]),
+                        _totalFrustumVertices[3] + (_frustumVectors[3] * _depth * splits[i - 1]),
+
+                        _totalFrustumVertices[0] + (_frustumVectors[0] * _depth * splits[i]),
+                        _totalFrustumVertices[1] + (_frustumVectors[1] * _depth * splits[i]),
+                        _totalFrustumVertices[2] + (_frustumVectors[2] * _depth * splits[i]),
+                        _totalFrustumVertices[3] + (_frustumVectors[3] * _depth * splits[i]),
                     }
                 };
 
-                std::transform(
-                    _cameraFrustumSliceCornerVertices.begin(),
-                    _cameraFrustumSliceCornerVertices.end(),
-                    _frustumVertices.begin(),
-                    [&](glm::vec3 p) {
-                        auto v = proj * glm::vec4(p, 1.0f);
-                        return glm::vec3(v) / v.w;
-                    }
-                );
-
-                // at this stage, _frustumVertices are the vertices of camera frustum split, in light view space
-
-                // calculate frustum slice' AABB
                 float minX = 0.0f, maxX = 0.0f;
                 float minY = 0.0f, maxY = 0.0f;
                 float minZ = 0.0f, maxZ = 0.0f;
 
-                for (auto i = 0; i < _frustumVertices.size(); ++i)
+                for (auto i = 0; i < _frustumSliceVertices.size(); ++i)
                 {
-                    auto p = _frustumVertices[i];
+                    auto p = _frustumSliceVertices[i];
 
                     if (i == 0)
                     {
@@ -937,12 +952,37 @@ int main()
                     }
                 }
 
-                // quality optimization: make ortho projection square:
-                minX = -maxX; minY = -maxY; minZ = -maxZ;
+                std::array<glm::vec3, 8> _aabbVertices{
+                    {
+                        { minX, minY, minZ }, { maxX, minY, minZ }, { maxX, maxY, minZ }, { minX, maxY, minZ },
+                        { minX, minY, maxZ }, { maxX, minY, maxZ }, { maxX, maxY, maxZ }, { minX, maxY, maxZ },
+                    }
+                };
 
-                auto frustumSplitProjectionMatrix = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ) * lightView;
+                std::array<glm::vec3, 8> _frustumSliceAlignedAABBVertices;
 
-                lightViewProjectionMatrices.push_back(frustumSplitProjectionMatrix);
+                glm::vec3 _frustumCenter(0.0f);
+
+                for (auto p : _frustumSliceVertices)
+                {
+                    _frustumCenter += p;
+                }
+
+                _frustumCenter /= 8.0f;
+
+                glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition);
+
+                // we position AABB at the center of a frustum slice (_frustumCenter) and orient it along the light direction
+                // the trick here is to offset the AABB by its half so that all the AABBs stack together nicely and neither overlap nor leave gaps
+                glm::mat4 _lightViewMatrix = glm::lookAt(
+                    _frustumCenter - _lightDirection * ((maxZ + minZ) / 2.0f),
+                    _frustumCenter,
+                    glm::vec3(0.0f, 1.0f, 0.0f)
+                );
+
+                glm::mat4 _lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, 0.0f, maxZ - minZ);
+
+                lightViewProjectionMatrices.push_back(_lightOrthoMatrix * _lightViewMatrix);
             }
 
             std::vector<float> splitDepths{ 0.05f * (farPlane - nearPlane), 0.2f * (farPlane - nearPlane), 0.5f * (farPlane - nearPlane), (farPlane - nearPlane) };
@@ -1039,7 +1079,7 @@ int main()
 
         shadowRenderingProgram->release();
 
-        {
+        if (false) {
             glDisable(GL_CULL_FACE);
 
             primitiveRenderingProgram->use();
@@ -1322,13 +1362,24 @@ int main()
         }
 
         // render quad with depth (shadow) map
-        /*shadowDebuggingProgram->use();
+        shadowDebuggingProgram->use();
 
         shadowMapTexture->bindActive(0);
 
+        const auto imageWidth = (window.getSize().x / 4) - 40;
+
+        std::cout << "[DEBUG] Debug frame width: " << imageWidth << std::endl;
+
         for (auto i = 0; i < 4; ++i)
         {
-            shadowDebuggingModelTransformationUniform->set(glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(2.0f / (4 * (1.0f + 0.1f)))), glm::vec3(-1.0f + (i * (2.0f / (4 * 1.1f))) + (-0.05f * i), -1.0f, 0.f)));
+            ::glViewport(
+                (((2 * i) + 1) * 20) + (i * imageWidth),
+                0,
+                (((2 * i) + 1) * 20) + ((i + 1) * imageWidth),
+                (window.getSize().y / 4)
+            );
+
+            shadowDebuggingModelTransformationUniform->set(glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.f)));
             shadowDebuggingProgram->setUniform("textureLayer", i);
 
             quadModel->bind();
@@ -1338,7 +1389,7 @@ int main()
 
         shadowMapTexture->unbindActive(0);
 
-        shadowDebuggingProgram->release();*/
+        shadowDebuggingProgram->release();
 
         // done rendering the frame
 
