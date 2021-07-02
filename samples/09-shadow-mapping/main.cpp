@@ -1181,7 +1181,11 @@ int main()
                         }
                     }
 
-                    auto _ortho = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
+                    auto _orthoWidth = (maxX - minX) * 0.5f;
+                    auto _orthoHeight = (maxX - minX) * 0.5f;
+                    auto _orthoDepth = (maxX - minX) * 0.5f;
+
+                    auto _ortho = glm::ortho(-_orthoWidth, _orthoWidth, -_orthoHeight, _orthoHeight, -_orthoDepth, _orthoDepth);
 
                     std::array<glm::vec3, 8> _aabbVertices;
 
@@ -1190,7 +1194,7 @@ int main()
                         _cameraFrustumSliceCornerVertices.end(),
                         _aabbVertices.begin(),
                         [&](glm::vec3 p) {
-                            auto v = _ortho * glm::vec4(p.x * (maxX - minX), p.y * (maxY - minY), p.z * (maxZ - minZ), 1.0f); // this apparently won't work, since points must be in minX..maxX / minY..maxY / minZ..maxZ ranges
+                            auto v = _ortho * glm::vec4(p, 1.0f); // this apparently won't work, since points must be in minX..maxX / minY..maxY / minZ..maxZ ranges
                             return glm::vec3(v) / v.w;
                         }
                     );
