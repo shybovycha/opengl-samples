@@ -776,13 +776,6 @@ int main()
 
     while (window.isOpen())
     {
-#ifdef WIN32
-        if (!window.hasFocus())
-        {
-            continue;
-        }
-#endif
-
         sf::Event event {};
 
         // measure time since last frame, in seconds
@@ -1047,6 +1040,8 @@ int main()
         shadowRenderingProgram->release();
 
         {
+            glDisable(GL_CULL_FACE);
+
             primitiveRenderingProgram->use();
 
             // render frusta
@@ -1322,6 +1317,8 @@ int main()
             }
 
             primitiveRenderingProgram->release();
+
+            glEnable(GL_CULL_FACE);
         }
 
         // render quad with depth (shadow) map
