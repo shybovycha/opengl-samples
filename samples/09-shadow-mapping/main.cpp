@@ -760,15 +760,17 @@ int main()
     _frustumVAO->enable(0);
 
     std::vector<glm::vec4> _splitColors{
-        { 0.0f, 1.0f, 0.0f, 0.5f },
-        { 0.0f, 0.0f, 1.0f, 0.5f },
-        { 1.0f, 1.0f, 0.0f, 0.5f },
-        { 1.0f, 0.0f, 0.0f, 0.5f },
+        { 0.1f, 0.1f, 0.1f, 1.0f },
+        { 0.0f, 1.0f, 0.0f, 1.0f },
+        { 0.0f, 0.0f, 1.0f, 1.0f },
+        { 1.0f, 1.0f, 0.0f, 1.0f },
+        { 1.0f, 0.0f, 0.0f, 1.0f },
+        { 0.9f, 0.9f, 0.9f, 1.0f },
     };
 
     std::cout << "[DEBUG] Done" << std::endl;
 
-    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+    glm::mat4 lightProjection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, nearPlane, farPlane);
 
     glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -879,96 +881,11 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        ::glViewport(0, 0, 2048, 2048);
-
-        // first render pass - shadow mapping
-
-        framebuffer->bind();
-
-        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
-        ::glClear(GL_DEPTH_BUFFER_BIT);
-        framebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
-
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-
-        // cull front faces to prevent peter panning the generated shadow map
-        glCullFace(GL_FRONT);
-
-        shadowMappingProgram->use();
-
-        shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
-
-        chickenModel->bind();
-        chickenModel->draw();
-        chickenModel->unbind();
-
-        // the ground plane will get culled, we don't want that
-        glDisable(GL_CULL_FACE);
-
-        shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
-
-        quadModel->bind();
-        quadModel->draw();
-        quadModel->unbind();
-
-        framebuffer->unbind();
-
-        shadowMappingProgram->release();
-
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-
-        // second pass - switch to normal shader and render picture with depth information to the viewport
-
-        ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
-        ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        shadowRenderingProgram->use();
-
-        shadowRenderingLightPositionUniform->set(lightPosition);
-        shadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
-        // ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
-        // materialSpecularUniform->set(12.0f);
-        shadowRenderingCameraPositionUniform->set(cameraPos);
-
-        shadowRenderingProjectionTransformationUniform->set(cameraProjection);
-        shadowRenderingViewTransformationUniform->set(cameraView);
-        // shadowRenderingLightSpaceMatrixUniform->set(lightSpaceMatrix);
-
-        // draw chicken
-
-        shadowMapTexture->bindActive(0);
-
-        shadowRenderingProgram->setUniform("shadowMaps", 0);
-        shadowRenderingProgram->setUniform("diffuseTexture", 1);
-
-        shadowRenderingModelTransformationUniform->set(chickenModel->getTransformation());
-
-        chickenModel->bind();
-        chickenModel->draw();
-        chickenModel->unbind();
-
-        shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
-
-        defaultTexture->bindActive(1);
-
-        quadModel->bind();
-        quadModel->draw();
-        quadModel->unbind();
-
-        defaultTexture->unbindActive(1);
-
-        shadowMapTexture->unbindActive(0);
-
-        shadowRenderingProgram->release();
-
         std::vector<glm::mat4> lightViewProjectionMatrices;
 
         {
             // the code below renders the camera frustum
-            auto proj = glm::inverse(cameraView) * glm::inverse(cameraProjection);
+            auto proj = glm::inverse(cameraProjection * cameraView);
 
             std::array<glm::vec3, 8> _frustumVertices;
 
@@ -1031,7 +948,10 @@ int main()
                     }
                 }
 
-                auto frustumSplitProjectionMatrix = glm::ortho(minX, maxX, minY, maxY, maxZ, minZ);
+                // quality optimization: make ortho projection square:
+                minX = -maxX; minY = -maxY; minZ = -maxZ;
+
+                auto frustumSplitProjectionMatrix = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ) * lightView;
 
                 lightViewProjectionMatrices.push_back(frustumSplitProjectionMatrix);
             }
@@ -1043,6 +963,169 @@ int main()
             shadowRenderingSplitsUniform->set(splitDepths);
         }
 
+        ::glViewport(0, 0, 2048, 2048);
+
+        // first render pass - shadow mapping
+
+        framebuffer->bind();
+
+        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
+        ::glClear(GL_DEPTH_BUFFER_BIT);
+        framebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
+        // cull front faces to prevent peter panning the generated shadow map
+        glCullFace(GL_FRONT);
+
+        shadowMappingProgram->use();
+
+        shadowMappingModelTransformationUniform->set(chickenModel->getTransformation());
+
+        chickenModel->bind();
+        chickenModel->draw();
+        chickenModel->unbind();
+
+        // the ground plane will get culled, we don't want that
+        glDisable(GL_CULL_FACE);
+
+        shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
+
+        quadModel->bind();
+        quadModel->draw();
+        quadModel->unbind();
+
+        framebuffer->unbind();
+
+        shadowMappingProgram->release();
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
+        // second pass - switch to normal shader and render picture with depth information to the viewport
+
+        ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
+        ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        shadowRenderingProgram->use();
+
+        shadowRenderingProgram->setUniform("splitColors", _splitColors);
+
+        shadowRenderingLightPositionUniform->set(lightPosition);
+        shadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
+        // ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
+        // materialSpecularUniform->set(12.0f);
+        shadowRenderingCameraPositionUniform->set(cameraPos);
+
+        shadowRenderingProjectionTransformationUniform->set(cameraProjection);
+        shadowRenderingViewTransformationUniform->set(cameraView);
+        // shadowRenderingLightSpaceMatrixUniform->set(lightSpaceMatrix);
+
+        // draw chicken
+
+        shadowMapTexture->bindActive(0);
+
+        shadowRenderingProgram->setUniform("shadowMaps", 0);
+        shadowRenderingProgram->setUniform("diffuseTexture", 1);
+
+        shadowRenderingModelTransformationUniform->set(chickenModel->getTransformation());
+
+        chickenModel->bind();
+        chickenModel->draw();
+        chickenModel->unbind();
+
+        shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
+
+        defaultTexture->bindActive(1);
+
+        quadModel->bind();
+        quadModel->draw();
+        quadModel->unbind();
+
+        defaultTexture->unbindActive(1);
+
+        shadowMapTexture->unbindActive(0);
+
+        shadowRenderingProgram->release();
+
+        // render frusta
+        {
+            primitiveRenderingProgram->use();
+
+            for (auto i = 0; i < lightViewProjectionMatrices.size(); ++i)
+            {
+                auto _lightProj = lightViewProjectionMatrices[i];
+
+                // the code below renders the camera frustum
+                const auto proj = glm::inverse(_lightProj * lightView);
+
+                std::array<glm::vec3, 8> _frustumVertices;
+
+                std::transform(
+                    _cameraFrustumCornerVertices.begin(),
+                    _cameraFrustumCornerVertices.end(),
+                    _frustumVertices.begin(),
+                    [&](glm::vec3 p) {
+                        auto v = proj * glm::vec4(p, 1.0f);
+                        return glm::vec3(v) / v.w;
+                    }
+                );
+
+                primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
+                primitiveRenderingProgram->setUniform("color", _splitColors[i + 1]);
+
+                _frustumVertexBuffer->setData(_frustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                _frustumVAO->bind();
+
+                _frustumVAO->drawElements(
+                    static_cast<gl::GLenum>(GL_LINES),
+                    2 * 12, // frustumIndices.size(),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                    nullptr);
+
+                _frustumVAO->unbind();
+
+            }
+
+            // light frustum
+            {
+                // the code below renders the camera frustum
+                const auto proj = glm::inverse(lightProjection * lightView);
+
+                std::array<glm::vec3, 8> _frustumVertices;
+
+                std::transform(
+                    _cameraFrustumCornerVertices.begin(),
+                    _cameraFrustumCornerVertices.end(),
+                    _frustumVertices.begin(),
+                    [&](glm::vec3 p) {
+                        auto v = proj * glm::vec4(p, 1.0f);
+                        return glm::vec3(v) / v.w;
+                    }
+                );
+
+                primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
+                primitiveRenderingProgram->setUniform("color", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+                _frustumVertexBuffer->setData(_frustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                _frustumVAO->bind();
+
+                _frustumVAO->drawElements(
+                    static_cast<gl::GLenum>(GL_LINES),
+                    2 * 12, // frustumIndices.size(),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                    nullptr);
+
+                _frustumVAO->unbind();
+            }
+
+            primitiveRenderingProgram->release();
+        }
+
         // render quad with depth (shadow) map
         shadowDebuggingProgram->use();
 
@@ -1050,7 +1133,7 @@ int main()
 
         for (auto i = 0; i < 4; ++i)
         {
-            shadowDebuggingModelTransformationUniform->set(glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(0.75f)), glm::vec3(-1.0f + (i * (2.0f / 4.0f)) + (i * 0.01f), -1.0f, -0.2f)));
+            shadowDebuggingModelTransformationUniform->set(glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(2.0f / (4 * (1.0f + 0.1f)))), glm::vec3(-1.0f + (i * (2.0f / (4 * 1.1f))) + (-0.05f * i), -1.0f, 0.f)));
             shadowDebuggingProgram->setUniform("textureLayer", i);
 
             quadModel->bind();

@@ -11,6 +11,7 @@ in VS_OUT {
 
 uniform mat4 lightViewProjections[4];
 uniform float splits[4];
+uniform vec4 splitColors[6];
 
 uniform sampler2DArray shadowMaps;
 uniform sampler2D diffuseTexture;
@@ -19,9 +20,10 @@ uniform vec3 lightPosition;
 uniform vec3 lightColor;
 uniform vec3 cameraPosition;
 
+// int shadowCalculation(vec3 normal, vec3 lightDirection)
 float shadowCalculation(vec3 normal, vec3 lightDirection)
 {
-    float cameraViewDepth = fsIn.viewPosition.z;
+    float cameraViewDepth = fsIn.fragmentPosition.z; //fsIn.viewPosition.z;
 
     for (int i = 0; i < 4; ++i)
     {
@@ -34,13 +36,18 @@ float shadowCalculation(vec3 normal, vec3 lightDirection)
 
             if (thisDepth > 1.0)
             {
+                // return 0;
                 return 0.0;
             }
 
-            return thisDepth > occluderDepth ? 0.25 : 1.0;
+            float bias = max(0.05 * (1.0 - dot(normal, lightDirection)), 0.005);
+
+            // return i + 1;
+            return thisDepth - bias > occluderDepth ? 0.25 : 1.0;
         }
     }
 
+    // return 5;
     return 0.0;
 }
 
@@ -64,9 +71,11 @@ void main()
     vec3 specular = spec * lightColor;
 
     // calculate shadow
+    // int shadow = shadowCalculation(normal, lightDirection);
     float shadow = shadowCalculation(normal, lightDirection);
 
     vec3 lighting = ((shadow * (diffuse + specular)) + ambient) * color;
 
+    // fragmentColor = splitColors[shadow];
     fragmentColor = vec4(lighting, 1.0);
 }
