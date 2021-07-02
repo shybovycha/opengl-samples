@@ -693,7 +693,7 @@ int main()
         }
     };*/
 
-    std::array<GLuint, 2 * 2 * 3> frustumIndices {
+    std::array<GLuint, 6 * 2 * 3> frustumIndices {
         {
             0, 1, 2,
             2, 3, 0, // front
@@ -701,7 +701,7 @@ int main()
             4, 5, 6,
             6, 7, 4, // back
 
-            /*0, 1, 5,
+            0, 1, 5,
             5, 4, 0, // bottom
 
             3, 7, 6,
@@ -711,7 +711,7 @@ int main()
             7, 3, 0, // left
 
             1, 2, 6,
-            6, 5, 1, // right*/
+            6, 5, 1, // right
         }
     };
 
@@ -720,7 +720,7 @@ int main()
     glm::vec3 lightPosition = glm::vec3(0.0f, 3.0f, 4.0f); // cameraPos;
 
     const float nearPlane = 0.1f;
-    const float farPlane = 10.0f;
+    const float farPlane = 20.0f;
 
     // these vertices define view frustum in screen space coordinates
     std::array<glm::vec3, 8> _frustumCornerVertices{
@@ -767,7 +767,7 @@ int main()
 
     std::cout << "[DEBUG] Done" << std::endl;
 
-    glm::mat4 lightProjection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, nearPlane, farPlane);
+    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
 
     glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -1068,7 +1068,7 @@ int main()
             // render frusta
             if (renderLightFrusta)
             {
-                for (auto i = 0; i < lightViewProjectionMatrices.size(); ++i)
+                /*for (auto i = 0; i < lightViewProjectionMatrices.size(); ++i)
                 {
                     auto _lightProj = lightViewProjectionMatrices[i];
 
@@ -1101,46 +1101,176 @@ int main()
                         nullptr);
 
                     _frustumVAO->unbind();
+                }*/
 
-                }
-            } else
-            {
                 std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
-                float _nearPlane = -1.0f;
-                float _farPlane = 1.0f; // _nearPlane - (0.02 * (farPlane - nearPlane))
-                const float _depth = _farPlane - _nearPlane;
+                const float _depth = 2.0f; // 1.0f - (-1.0f)
 
                 auto proj = glm::inverse(initialCameraProjection * initialCameraView);
 
-                //for (auto i = 1; i < splits.size(); ++i)
-                {
-                    //_nearPlane = _depth * splits[i - 1];
-                    //_farPlane = _depth * splits[i];
-
-                    std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
+                std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
                         {
-                            { -1.0f, -1.0f, _nearPlane }, { 1.0f, -1.0f, _nearPlane }, { 1.0f, 1.0f, _nearPlane }, { -1.0f, 1.0f, _nearPlane },
-                            { -1.0f, -1.0f, _farPlane }, { 1.0f, -1.0f, _farPlane }, { 1.0f, 1.0f, _farPlane }, { -1.0f, 1.0f, _farPlane },
+                            { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
+                            { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
+                        }
+                };
+
+                std::array<glm::vec3, 8> _totalFrustumVertices;
+
+                std::transform(
+                    _cameraFrustumSliceCornerVertices.begin(),
+                    _cameraFrustumSliceCornerVertices.end(),
+                    _totalFrustumVertices.begin(),
+                    [&](glm::vec3 p) {
+                        auto v = proj * glm::vec4(p, 1.0f);
+                        // auto v1 = glm::vec3(v) / v.w; // v, frustum split' corner vertex, in world space // why divide by `w` component if we could just continue multiplying by matrix
+                        // auto u = lightView * v; // glm::vec4(v1, 1.0f); // v1 in light view space
+                        return glm::vec3(v) / v.w;
+                    }
+                );
+
+                std::array<glm::vec3, 4> _frustumVectors{
+                    {
+                        _totalFrustumVertices[4] - _totalFrustumVertices[0],
+                        _totalFrustumVertices[5] - _totalFrustumVertices[1],
+                        _totalFrustumVertices[6] - _totalFrustumVertices[2],
+                        _totalFrustumVertices[7] - _totalFrustumVertices[3],
+                    }
+                };
+
+                for (auto i = 1; i < splits.size(); ++i)
+                {
+                    std::array<glm::vec3, 8> _frustumSliceVertices{
+                        {
+                            _totalFrustumVertices[0] + (_frustumVectors[0] * _depth * splits[i - 1]),
+                            _totalFrustumVertices[1] + (_frustumVectors[1] * _depth * splits[i - 1]),
+                            _totalFrustumVertices[2] + (_frustumVectors[2] * _depth * splits[i - 1]),
+                            _totalFrustumVertices[3] + (_frustumVectors[3] * _depth * splits[i - 1]),
+
+                            _totalFrustumVertices[0] + (_frustumVectors[0] * _depth * splits[i]),
+                            _totalFrustumVertices[1] + (_frustumVectors[1] * _depth * splits[i]),
+                            _totalFrustumVertices[2] + (_frustumVectors[2] * _depth * splits[i]),
+                            _totalFrustumVertices[3] + (_frustumVectors[3] * _depth * splits[i]),
                         }
                     };
 
-                    std::array<glm::vec3, 8> _frustumVertices;
+                    float minX = 0.0f, maxX = 0.0f;
+                    float minY = 0.0f, maxY = 0.0f;
+                    float minZ = 0.0f, maxZ = 0.0f;
+
+                    for (auto i = 0; i < _frustumSliceVertices.size(); ++i)
+                    {
+                        auto p = _frustumSliceVertices[i];
+
+                        if (i == 0)
+                        {
+                            minX = maxX = p.x;
+                            minY = maxY = p.y;
+                            minZ = maxZ = p.z;
+                        }
+                        else
+                        {
+                            minX = std::fmin(minX, p.x);
+                            minY = std::fmin(minY, p.y);
+                            minZ = std::fmin(minZ, p.z);
+
+                            maxX = std::fmax(maxX, p.x);
+                            maxY = std::fmax(maxY, p.y);
+                            maxZ = std::fmax(maxZ, p.z);
+                        }
+                    }
+
+                    std::array<glm::vec3, 8> _aabbVertices{
+                        {
+                            { minX, minY, minZ }, { maxX, minY, minZ }, { maxX, maxY, minZ }, { minX, maxY, minZ },
+                            { minX, minY, maxZ }, { maxX, minY, maxZ }, { maxX, maxY, maxZ }, { minX, maxY, maxZ },
+                        }
+                    };
+
+                    std::array<glm::vec3, 8> _frustumSliceAlignedAABBVertices;
 
                     std::transform(
-                        _cameraFrustumSliceCornerVertices.begin(),
-                        _cameraFrustumSliceCornerVertices.end(),
-                        _frustumVertices.begin(),
+                        _aabbVertices.begin(),
+                        _aabbVertices.end(),
+                        _frustumSliceAlignedAABBVertices.begin(),
                         [&](glm::vec3 p) {
-                            auto v = proj * glm::vec4(p, 1.0f);
-                            // auto v1 = glm::vec3(v) / v.w; // v, frustum split' corner vertex, in world space // why divide by `w` component if we could just continue multiplying by matrix
-                            // auto u = lightView * v; // glm::vec4(v1, 1.0f); // v1 in light view space
+                            auto v = lightView * glm::vec4(p, 1.0f);
                             return glm::vec3(v) / v.w;
                         }
                     );
 
                     primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
-                    primitiveRenderingProgram->setUniform("color", _splitColors[0]); //i + 1]);
+                    primitiveRenderingProgram->setUniform("color", _splitColors[i]);
+
+                    _frustumVertexBuffer->setData(_frustumSliceAlignedAABBVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                    _frustumVAO->bind();
+
+                    _frustumVAO->drawElements(
+                        static_cast<gl::GLenum>(GL_TRIANGLES),
+                        frustumIndices.size(),
+                        static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+                        nullptr);
+
+                    _frustumVAO->unbind();
+                }
+            } else
+            {
+                std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
+
+                const float _depth = 2.0f; // 1.0f - (-1.0f)
+
+                auto proj = glm::inverse(initialCameraProjection * initialCameraView);
+
+                std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
+                        {
+                            { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
+                            { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
+                        }
+                };
+
+                std::array<glm::vec3, 8> _totalFrustumVertices;
+
+                std::transform(
+                    _cameraFrustumSliceCornerVertices.begin(),
+                    _cameraFrustumSliceCornerVertices.end(),
+                    _totalFrustumVertices.begin(),
+                    [&](glm::vec3 p) {
+                        auto v = proj * glm::vec4(p, 1.0f);
+                        // auto v1 = glm::vec3(v) / v.w; // v, frustum split' corner vertex, in world space // why divide by `w` component if we could just continue multiplying by matrix
+                        // auto u = lightView * v; // glm::vec4(v1, 1.0f); // v1 in light view space
+                        return glm::vec3(v) / v.w;
+                    }
+                );
+
+                std::array<glm::vec3, 4> _frustumVectors{
+                    {
+                        _totalFrustumVertices[4] - _totalFrustumVertices[0],
+                        _totalFrustumVertices[5] - _totalFrustumVertices[1],
+                        _totalFrustumVertices[6] - _totalFrustumVertices[2],
+                        _totalFrustumVertices[7] - _totalFrustumVertices[3],
+                    }
+                };
+
+                for (auto i = 1; i < splits.size(); ++i)
+                {
+                    std::array<glm::vec3, 8> _frustumVertices{
+                        {
+                            _totalFrustumVertices[0] + (_frustumVectors[0] * _depth * splits[i - 1]),
+                            _totalFrustumVertices[1] + (_frustumVectors[1] * _depth * splits[i - 1]),
+                            _totalFrustumVertices[2] + (_frustumVectors[2] * _depth * splits[i - 1]),
+                            _totalFrustumVertices[3] + (_frustumVectors[3] * _depth * splits[i - 1]),
+
+                            _totalFrustumVertices[0] + (_frustumVectors[0] * _depth * splits[i]),
+                            _totalFrustumVertices[1] + (_frustumVectors[1] * _depth * splits[i]),
+                            _totalFrustumVertices[2] + (_frustumVectors[2] * _depth * splits[i]),
+                            _totalFrustumVertices[3] + (_frustumVectors[3] * _depth * splits[i]),
+                        }
+                    };
+
+                    primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
+                    primitiveRenderingProgram->setUniform("color", _splitColors[i]);
 
                     _frustumVertexBuffer->setData(_frustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
 
@@ -1153,7 +1283,6 @@ int main()
                         nullptr);
 
                     _frustumVAO->unbind();
-
                 }
             }
 
@@ -1195,7 +1324,7 @@ int main()
         }
 
         // render quad with depth (shadow) map
-        shadowDebuggingProgram->use();
+        /*shadowDebuggingProgram->use();
 
         shadowMapTexture->bindActive(0);
 
@@ -1211,7 +1340,7 @@ int main()
 
         shadowMapTexture->unbindActive(0);
 
-        shadowDebuggingProgram->release();
+        shadowDebuggingProgram->release();*/
 
         // done rendering the frame
 
