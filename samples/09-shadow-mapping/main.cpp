@@ -686,7 +686,14 @@ int main()
         cameraPos + cameraForward,
         cameraUp);
 
-    std::array<GLuint, 6 * 2 * 3> frustumIndices {
+    /*std::array<glm::vec3, 8> _cameraFrustumCornerVertices{
+        {
+            { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
+            { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
+        }
+    };*/
+
+    std::array<GLuint, 2 * 2 * 3> frustumIndices {
         {
             0, 1, 2,
             2, 3, 0, // front
@@ -694,7 +701,7 @@ int main()
             4, 5, 6,
             6, 7, 4, // back
 
-            0, 1, 5,
+            /*0, 1, 5,
             5, 4, 0, // bottom
 
             3, 7, 6,
@@ -704,7 +711,7 @@ int main()
             7, 3, 0, // left
 
             1, 2, 6,
-            6, 5, 1, // right
+            6, 5, 1, // right*/
         }
     };
 
@@ -725,8 +732,8 @@ int main()
 
     std::array<glm::vec3, 8> _cameraFrustumCornerVertices{
         {
-            { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
             { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
+            { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
         }
     };
 
@@ -750,7 +757,7 @@ int main()
     _frustumVAO->enable(0);
 
     std::vector<glm::vec4> _splitColors{
-        { 0.1f, 0.1f, 0.1f, 0.4f },
+        { 0.5f, 0.5f, 0.7f, 0.4f },
         { 0.0f, 1.0f, 0.0f, 0.4f },
         { 0.0f, 0.0f, 1.0f, 0.4f },
         { 1.0f, 1.0f, 0.0f, 0.4f },
@@ -775,6 +782,7 @@ int main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     bool renderLightFrusta = false;
+    bool renderLightProjection = false;
 
 #ifndef WIN32
     auto previousMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
@@ -799,6 +807,11 @@ int main()
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space)
             {
                 renderLightFrusta = !renderLightFrusta;
+            }
+
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Return)
+            {
+                renderLightProjection = !renderLightProjection;
             }
 
             if (event.type == sf::Event::Closed)
@@ -1094,15 +1107,16 @@ int main()
             {
                 std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
-                float _nearPlane = 1.0f;
+                float _nearPlane = -1.0f;
                 float _farPlane = 1.0f; // _nearPlane - (0.02 * (farPlane - nearPlane))
+                const float _depth = _farPlane - _nearPlane;
 
                 auto proj = glm::inverse(initialCameraProjection * initialCameraView);
 
-                for (auto i = 1; i < splits.size(); ++i)
+                //for (auto i = 1; i < splits.size(); ++i)
                 {
-                    _nearPlane = _farPlane;
-                    _farPlane = 1.0f - (2.0f * splits[i]);
+                    //_nearPlane = _depth * splits[i - 1];
+                    //_farPlane = _depth * splits[i];
 
                     std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
                         {
@@ -1120,23 +1134,13 @@ int main()
                         [&](glm::vec3 p) {
                             auto v = proj * glm::vec4(p, 1.0f);
                             // auto v1 = glm::vec3(v) / v.w; // v, frustum split' corner vertex, in world space // why divide by `w` component if we could just continue multiplying by matrix
-                            auto u = lightView * v; // glm::vec4(v1, 1.0f); // v1 in light view space
-                            return glm::vec3(u) / u.w;
-                        }
-                    );
-
-                    std::transform(
-                        _cameraFrustumCornerVertices.begin(),
-                        _cameraFrustumCornerVertices.end(),
-                        _frustumVertices.begin(),
-                        [&](glm::vec3 p) {
-                            auto v = proj * glm::vec4(p, 1.0f);
+                            // auto u = lightView * v; // glm::vec4(v1, 1.0f); // v1 in light view space
                             return glm::vec3(v) / v.w;
                         }
                     );
 
                     primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
-                    primitiveRenderingProgram->setUniform("color", _splitColors[i + 1]);
+                    primitiveRenderingProgram->setUniform("color", _splitColors[0]); //i + 1]);
 
                     _frustumVertexBuffer->setData(_frustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
 
@@ -1153,7 +1157,7 @@ int main()
                 }
             }
 
-            if (true) // renderLightProjection)
+            if (renderLightProjection)
             // light frustum
             {
                 // the code below renders the camera frustum
