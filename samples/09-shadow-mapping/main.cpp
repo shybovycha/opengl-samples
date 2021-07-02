@@ -1181,12 +1181,19 @@ int main()
                         }
                     }
 
-                    std::array<glm::vec3, 8> _aabbVertices{
-                        {
-                            { minX, minY, minZ }, { maxX, minY, minZ }, { maxX, maxY, minZ }, { minX, maxY, minZ },
-                            { minX, minY, maxZ }, { maxX, minY, maxZ }, { maxX, maxY, maxZ }, { minX, maxY, maxZ },
+                    auto _ortho = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
+
+                    std::array<glm::vec3, 8> _aabbVertices;
+
+                    std::transform(
+                        _cameraFrustumSliceCornerVertices.begin(),
+                        _cameraFrustumSliceCornerVertices.end(),
+                        _aabbVertices.begin(),
+                        [&](glm::vec3 p) {
+                            auto v = _ortho * glm::vec4(p.x * (maxX - minX), p.y * (maxY - minY), p.z * (maxZ - minZ), 1.0f); // this apparently won't work, since points must be in minX..maxX / minY..maxY / minZ..maxZ ranges
+                            return glm::vec3(v) / v.w;
                         }
-                    };
+                    );
 
                     std::array<glm::vec3, 8> _frustumSliceAlignedAABBVertices;
 
@@ -1203,7 +1210,8 @@ int main()
                     primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
                     primitiveRenderingProgram->setUniform("color", _splitColors[i]);
 
-                    _frustumVertexBuffer->setData(_frustumSliceAlignedAABBVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+                    // _frustumVertexBuffer->setData(_frustumSliceAlignedAABBVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+                    _frustumVertexBuffer->setData(_aabbVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
 
                     _frustumVAO->bind();
 
