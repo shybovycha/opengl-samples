@@ -1197,7 +1197,7 @@ int main()
                         _aabbVertices.end(),
                         _frustumSliceAlignedAABBVertices.begin(),
                         [&](glm::vec3 p) {
-                            auto v = lightView * glm::vec4(p, 1.0f);
+                            auto v = lightProjection * lightView * glm::vec4(p, 1.0f);
                             return glm::vec3(v) / v.w;
                         }
                     );
@@ -1205,8 +1205,7 @@ int main()
                     primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
                     primitiveRenderingProgram->setUniform("color", _splitColors[i]);
 
-                    // _frustumVertexBuffer->setData(_frustumSliceAlignedAABBVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-                    _frustumVertexBuffer->setData(_aabbVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+                    _frustumVertexBuffer->setData(_frustumSliceAlignedAABBVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
 
                     _frustumVAO->bind();
 
