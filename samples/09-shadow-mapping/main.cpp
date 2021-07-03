@@ -770,6 +770,7 @@ int main()
     bool renderLightFrusta = false;
     bool renderLightProjection = false;
     bool debugOn = false;
+    bool debugShadowMaps = false;
 
     glm::mat4 cameraProjection(1.0f);
     glm::mat4 cameraView(1.0f);
@@ -802,6 +803,11 @@ int main()
                 initialCameraProjection = cameraProjection;
                 initialCameraView = cameraView;
                 debugOn = !debugOn;
+            }
+
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::E)
+            {
+                debugShadowMaps = !debugShadowMaps;
             }
 
             if (event.type == sf::Event::Closed)
@@ -1184,41 +1190,6 @@ int main()
                         }
                     };
 
-                    float minX = 0.0f, maxX = 0.0f;
-                    float minY = 0.0f, maxY = 0.0f;
-                    float minZ = 0.0f, maxZ = 0.0f;
-
-                    for (auto i = 0; i < _frustumSliceVertices.size(); ++i)
-                    {
-                        auto p = _frustumSliceVertices[i];
-
-                        if (i == 0)
-                        {
-                            minX = maxX = p.x;
-                            minY = maxY = p.y;
-                            minZ = maxZ = p.z;
-                        }
-                        else
-                        {
-                            minX = std::fmin(minX, p.x);
-                            minY = std::fmin(minY, p.y);
-                            minZ = std::fmin(minZ, p.z);
-
-                            maxX = std::fmax(maxX, p.x);
-                            maxY = std::fmax(maxY, p.y);
-                            maxZ = std::fmax(maxZ, p.z);
-                        }
-                    }
-
-                    std::array<glm::vec3, 8> _aabbVertices{
-                        {
-                            { minX, minY, minZ }, { maxX, minY, minZ }, { maxX, maxY, minZ }, { minX, maxY, minZ },
-                            { minX, minY, maxZ }, { maxX, minY, maxZ }, { maxX, maxY, maxZ }, { minX, maxY, maxZ },
-                        }
-                    };
-
-                    std::array<glm::vec3, 8> _frustumSliceAlignedAABBVertices;
-
                     glm::vec3 _frustumCenter(0.0f);
 
                     for (auto p : _frustumSliceVertices)
@@ -1228,24 +1199,36 @@ int main()
 
                     _frustumCenter /= 8.0f;
 
+                    float _boundingSphereRadius = 0.0f;
+
+                    for (auto p : _frustumSliceVertices)
+                    {
+                        _boundingSphereRadius = glm::max(_boundingSphereRadius, glm::length(p - _frustumCenter));
+                    }
+
+                    glm::vec3 _maxExtents(_boundingSphereRadius);
+                    glm::vec3 _minExtents = -_maxExtents;
+
                     glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition);
 
                     // we position AABB at the center of a frustum slice (_frustumCenter) and orient it along the light direction
                     // the trick here is to offset the AABB by its half so that all the AABBs stack together nicely and neither overlap nor leave gaps
                     glm::mat4 _lightViewMatrix = glm::lookAt(
-                        _frustumCenter - _lightDirection * ((maxZ + minZ) / 2.0f),
-                        _frustumCenter,
+                        _frustumCenter + _lightDirection * _boundingSphereRadius,
+                        _frustumCenter - _lightDirection * _boundingSphereRadius,
                         glm::vec3(0.0f, 1.0f, 0.0f)
                     );
 
-                    glm::mat4 _lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, 0.0f, maxZ - minZ);
+                    glm::mat4 _lightOrthoMatrix = glm::ortho(_minExtents.x, _maxExtents.x, _minExtents.y, _maxExtents.y, 0.0f, _maxExtents.z - _minExtents.z);
+
+                    std::array<glm::vec3, 8> _frustumSliceAlignedAABBVertices;
 
                     std::transform(
-                        _aabbVertices.begin(),
-                        _aabbVertices.end(),
+                        _cameraFrustumSliceCornerVertices.begin(),
+                        _cameraFrustumSliceCornerVertices.end(),
                         _frustumSliceAlignedAABBVertices.begin(),
                         [&](glm::vec3 p) {
-                            auto v = _lightViewMatrix * glm::vec4(p, 1.0f);
+                            auto v = glm::inverse(_lightViewMatrix) * glm::inverse(_lightOrthoMatrix) * glm::vec4(p, 1.0f);
                             return glm::vec3(v) / v.w;
                         }
                     );
@@ -1374,32 +1357,31 @@ int main()
         }
 
         // render quad with depth (shadow) map
-        shadowDebuggingProgram->use();
-
-        shadowMapTexture->bindActive(0);
-
-        const auto imageWidth = (window.getSize().x / 4) - 40;
-
-        for (auto i = 0; i < 4; ++i)
+        if (debugShadowMaps)
         {
-            ::glViewport(
-                (((2 * i) + 1) * 20) + (i * imageWidth),
-                0,
-                (((2 * i) + 1) * 20) + ((i + 1) * imageWidth),
-                (window.getSize().y / 4)
-            );
+            shadowDebuggingProgram->use();
 
-            shadowDebuggingModelTransformationUniform->set(glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.f)));
-            shadowDebuggingProgram->setUniform("textureLayer", i);
+            shadowMapTexture->bindActive(0);
 
-            quadModel->bind();
-            quadModel->draw();
-            quadModel->unbind();
+            const auto imageWidth = (window.getSize().x / 4) - 20;
+            const auto imageHeight = imageWidth; // (window.getSize().y / 4);
+
+            for (auto i = 0; i < 4; ++i)
+            {
+                ::glViewport(20 + (i * (imageWidth + 20)), 0, imageWidth, imageHeight);
+
+                shadowDebuggingModelTransformationUniform->set(glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.f)));
+                shadowDebuggingProgram->setUniform("textureLayer", i);
+
+                quadModel->bind();
+                quadModel->draw();
+                quadModel->unbind();
+            }
+
+            shadowMapTexture->unbindActive(0);
+
+            shadowDebuggingProgram->release();
         }
-
-        shadowMapTexture->unbindActive(0);
-
-        shadowDebuggingProgram->release();
 
         // done rendering the frame
 
