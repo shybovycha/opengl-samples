@@ -1206,29 +1206,73 @@ int main()
                         _boundingSphereRadius = glm::max(_boundingSphereRadius, glm::length(p - _frustumCenter));
                     }
 
-                    glm::vec3 _maxExtents(_boundingSphereRadius);
-                    glm::vec3 _minExtents = -_maxExtents;
-
+                    // find the bounding box we're gonna project
                     glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition);
 
-                    // we position AABB at the center of a frustum slice (_frustumCenter) and orient it along the light direction
-                    // the trick here is to offset the AABB by its half so that all the AABBs stack together nicely and neither overlap nor leave gaps
-                    glm::mat4 _lightViewMatrix = glm::lookAt(
+                    glm::mat4 _tmpProjection = glm::lookAt(
                         _frustumCenter + _lightDirection * _boundingSphereRadius,
                         _frustumCenter - _lightDirection * _boundingSphereRadius,
                         glm::vec3(0.0f, 1.0f, 0.0f)
                     );
 
-                    glm::mat4 _lightOrthoMatrix = glm::ortho(_minExtents.x, _maxExtents.x, _minExtents.y, _maxExtents.y, 0.0f, _maxExtents.z - _minExtents.z);
+                    // take a fairly large projection by using the overall frustum slice bounding sphere radius
+                    glm::mat4 _tmpView = glm::ortho(-_boundingSphereRadius, _boundingSphereRadius, -_boundingSphereRadius, _boundingSphereRadius, 0.0f, _boundingSphereRadius * 2.0f);
 
-                    std::array<glm::vec3, 8> _frustumSliceAlignedAABBVertices;
+                    std::array<glm::vec3, 8> _frustumSliceAABBProjectionVertices;
 
                     std::transform(
                         _cameraFrustumSliceCornerVertices.begin(),
                         _cameraFrustumSliceCornerVertices.end(),
+                        _frustumSliceAABBProjectionVertices.begin(),
+                        [&](glm::vec3 p) {
+                            auto v = _tmpProjection * _tmpView * glm::vec4(p, 1.0f);
+                            return glm::vec3(v.x / v.w, v.y / v.w, 0.0f); // discard Z coordinate as all we want is a quad perpendicular to light direction, which we are going to extrude
+                        }
+                    );
+
+                    // find the new bounding box
+                    float minX = 0.0f, maxX = 0.0f;
+                    float minY = 0.0f, maxY = 0.0f;
+
+                    // note we don't really care about Z coordinate
+
+                    for (auto i = 0; i < _frustumSliceAABBProjectionVertices.size(); ++i)
+                    {
+                        auto p = _frustumSliceAABBProjectionVertices[i];
+
+                        if (i == 0)
+                        {
+                            minX = maxX = p.x;
+                            minY = maxY = p.y;
+                        }
+                        else
+                        {
+                            minX = glm::min(minX, p.x);
+                            minY = glm::min(minY, p.y);
+                            maxX = glm::max(maxX, p.x);
+                            maxY = glm::max(maxY, p.y);
+                        }
+                    }
+
+                    // construct the final light projection and view matrices by using the data above
+                    glm::mat4 _lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, 0.0f, _boundingSphereRadius * 2.0f);
+                    glm::mat4 _lightProjectionMatrix = glm::lookAt(_frustumCenter - _boundingSphereRadius, _frustumCenter + _boundingSphereRadius, glm::vec3(0.0f, 1.0f, 0.0f));
+
+                    std::array<glm::vec3, 8> _frustumSliceAlignedAABBVertices;
+
+                    std::array<glm::vec3, 8> _aabbVertices{
+                        {
+                            { minX, minY, 0.0f }, { maxX, minY, 0.0f }, { maxX, maxY, 0.0f }, { minX, maxY, 0.0f },
+                            { minX, minY, _boundingSphereRadius * 2.0f }, { maxX, minY, _boundingSphereRadius * 2.0f }, { maxX, maxY, _boundingSphereRadius * 2.0f }, { minX, maxY, _boundingSphereRadius * 2.0f },
+                        }
+                    };
+
+                    std::transform(
+                        _aabbVertices.begin(),
+                        _aabbVertices.end(),
                         _frustumSliceAlignedAABBVertices.begin(),
                         [&](glm::vec3 p) {
-                            auto v = glm::inverse(_lightViewMatrix) * glm::inverse(_lightOrthoMatrix) * glm::vec4(p, 1.0f);
+                            auto v = glm::inverse(_lightProjectionMatrix) * glm::inverse(_lightOrthoMatrix) * glm::vec4(p, 1.0f);
                             return glm::vec3(v) / v.w;
                         }
                     );
