@@ -772,8 +772,16 @@ int main()
     bool debugOn = false;
     bool debugShadowMaps = false;
 
+    glm::mat4 _originalCameraProjection(1.0f);
+    glm::mat4 _originalCameraView(1.0f);
+
+    bool isDebuggingLight = false;
+
     glm::mat4 cameraProjection(1.0f);
     glm::mat4 cameraView(1.0f);
+
+    std::vector<glm::mat4> lightViewProjectionMatrices;
+    std::vector<float> splitDepths;
 
 #ifndef WIN32
     auto previousMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
@@ -788,26 +796,72 @@ int main()
 
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space)
+            if (event.type == sf::Event::KeyPressed)
             {
-                renderLightFrusta = !renderLightFrusta;
-            }
+                if (event.key.code == sf::Keyboard::Space)
+                {
+                    renderLightFrusta = !renderLightFrusta;
+                }
 
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Return)
-            {
-                renderLightProjection = !renderLightProjection;
-            }
+                if (event.key.code == sf::Keyboard::Return)
+                {
+                    renderLightProjection = !renderLightProjection;
+                }
 
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Q)
-            {
-                initialCameraProjection = cameraProjection;
-                initialCameraView = cameraView;
-                debugOn = !debugOn;
-            }
+                if (event.key.code == sf::Keyboard::Q)
+                {
+                    initialCameraProjection = cameraProjection;
+                    initialCameraView = cameraView;
+                    debugOn = !debugOn;
+                }
 
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::E)
-            {
-                debugShadowMaps = !debugShadowMaps;
+                if (event.key.code == sf::Keyboard::E)
+                {
+                    debugShadowMaps = !debugShadowMaps;
+                }
+
+                if (event.key.code == sf::Keyboard::Num1)
+                {
+                    _originalCameraProjection = cameraProjection;
+                    _originalCameraView = cameraView;
+                    cameraProjection = glm::mat4(1.0f);
+                    cameraView = lightViewProjectionMatrices[0];
+                    isDebuggingLight = true;
+                }
+
+                if (event.key.code == sf::Keyboard::Num2)
+                {
+                    _originalCameraProjection = cameraProjection;
+                    _originalCameraView = cameraView;
+                    cameraProjection = glm::mat4(1.0f);
+                    cameraView = lightViewProjectionMatrices[1];
+                    isDebuggingLight = true;
+                }
+
+                if (event.key.code == sf::Keyboard::Num3)
+                {
+                    _originalCameraProjection = cameraProjection;
+                    _originalCameraView = cameraView;
+                    cameraProjection = glm::mat4(1.0f);
+                    cameraView = lightViewProjectionMatrices[2];
+                    isDebuggingLight = true;
+                }
+
+                if (event.key.code == sf::Keyboard::Num4)
+                {
+                    _originalCameraProjection = cameraProjection;
+                    _originalCameraView = cameraView;
+                    cameraProjection = glm::mat4(1.0f);
+                    cameraView = lightViewProjectionMatrices[3];
+                    isDebuggingLight = true;
+                }
+
+                if (event.key.code == sf::Keyboard::Num0)
+                {
+                    cameraProjection = _originalCameraProjection;
+                    cameraView = _originalCameraView;
+                    isDebuggingLight = false;
+                }
             }
 
             if (event.type == sf::Event::Closed)
@@ -827,82 +881,84 @@ int main()
         previousMousePos = currentMousePos;
 #endif
 
-        float horizontalAngle = (mouseDelta.x / static_cast<float>(window.getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
-        float verticalAngle = (mouseDelta.y / static_cast<float>(window.getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
-
-        cameraForward = glm::rotate(cameraForward, horizontalAngle, cameraUp);
-        cameraForward = glm::rotate(cameraForward, verticalAngle, cameraRight);
-
-        cameraRight = glm::normalize(glm::rotate(cameraRight, horizontalAngle, cameraUp));
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+        if (!isDebuggingLight)
         {
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+            float horizontalAngle = (mouseDelta.x / static_cast<float>(window.getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
+            float verticalAngle = (mouseDelta.y / static_cast<float>(window.getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
+
+            cameraForward = glm::rotate(cameraForward, horizontalAngle, cameraUp);
+            cameraForward = glm::rotate(cameraForward, verticalAngle, cameraRight);
+
+            cameraRight = glm::normalize(glm::rotate(cameraRight, horizontalAngle, cameraUp));
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
             {
-                cameraPos += cameraForward * cameraMoveSpeed * 10.0f * deltaTime;
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                {
+                    cameraPos += cameraForward * cameraMoveSpeed * 10.0f * deltaTime;
+                }
+                else
+                {
+                    cameraPos += cameraForward * cameraMoveSpeed * deltaTime;
+                }
             }
-            else
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
             {
-                cameraPos += cameraForward * cameraMoveSpeed * deltaTime;
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                {
+                    cameraPos -= cameraForward * cameraMoveSpeed * 10.0f * deltaTime;
+                }
+                else
+                {
+                    cameraPos -= cameraForward * cameraMoveSpeed * deltaTime;
+                }
             }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+            {
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                {
+                    cameraPos -= glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * 10.0f * deltaTime;
+                }
+                else
+                {
+                    cameraPos -= glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
+                }
+            }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+            {
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                {
+                    cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * 10.0f * deltaTime;
+                }
+                else
+                {
+                    cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
+                }
+            }
+
+            cameraProjection = glm::perspective(glm::radians(fov), (float)window.getSize().x / (float)window.getSize().y, 0.1f, 100.0f);
+
+            cameraView = glm::lookAt(
+                cameraPos,
+                cameraPos + cameraForward,
+                cameraUp);
         }
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
         {
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-            {
-                cameraPos -= cameraForward * cameraMoveSpeed * 10.0f * deltaTime;
-            }
-            else
-            {
-                cameraPos -= cameraForward * cameraMoveSpeed * deltaTime;
-            }
-        }
+            lightViewProjectionMatrices.clear();
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-        {
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-            {
-                cameraPos -= glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * 10.0f * deltaTime;
-            }
-            else
-            {
-                cameraPos -= glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
-            }
-        }
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-        {
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-            {
-                cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * 10.0f * deltaTime;
-            }
-            else
-            {
-                cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
-            }
-        }
-
-        cameraProjection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
-
-        cameraView = glm::lookAt(
-            cameraPos,
-            cameraPos + cameraForward,
-            cameraUp);
-
-        std::vector<glm::mat4> lightViewProjectionMatrices;
-        std::vector<float> splitDepths;
-
-        {
             std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
             const float _depth = 2.0f; // 1.0f - (-1.0f)
 
-            auto proj = glm::inverse(cameraView * cameraProjection);
+            auto proj = glm::inverse(initialCameraView * initialCameraProjection);
 
-            glm::vec4 farCenter = proj * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f); // find the center of the far plane in world space
-            glm::vec3 totalCameraDirection = glm::vec3(farCenter / farCenter.w) - cameraPos;
-            const float eyeDistance = glm::length(totalCameraDirection);
+            // glm::vec4 farCenter = proj * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f); // find the center of the far plane in world space
+            // glm::vec3 totalCameraDirection = glm::vec3(farCenter / farCenter.w) - cameraPos;
+            const float eyeDistance = 100.0f; // glm::length(totalCameraDirection);
 
             std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
                     {
