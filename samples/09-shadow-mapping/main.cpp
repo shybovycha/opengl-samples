@@ -973,8 +973,8 @@ int main()
 
             std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
                     {
-                        { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
                         { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
+                        { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
                     }
             };
 
@@ -1175,7 +1175,6 @@ int main()
             primitiveRenderingProgram->use();
 
             // render frusta
-
             std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
             auto proj = glm::inverse(initialCameraProjection * initialCameraView);
