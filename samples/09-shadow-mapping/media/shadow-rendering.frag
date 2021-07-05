@@ -20,8 +20,7 @@ uniform vec3 lightPosition;
 uniform vec3 lightColor;
 uniform vec3 cameraPosition;
 
-/*
-float shadowCalculation(vec3 normal, vec3 lightDirection)
+/*float shadowCalculation(vec3 normal, vec3 lightDirection)
 {
     float cameraViewDepth = fsIn.fragmentPosition.z;
 
@@ -36,7 +35,7 @@ float shadowCalculation(vec3 normal, vec3 lightDirection)
 
             if (thisDepth > 1.0)
             {
-                return 0.0;
+                continue;
             }
 
             float bias = max(0.05 * (1.0 - dot(normal, lightDirection)), 0.005);
@@ -75,10 +74,9 @@ void main()
     fragmentColor = vec4(lighting, 1.0);
 }*/
 
-
 int shadowCalculation(vec3 normal, vec3 lightDirection)
 {
-    float cameraViewDepth = fsIn.fragmentPosition.z; //fsIn.viewPosition.z;
+    float cameraViewDepth = fsIn.viewPosition.z; // fsIn.fragmentPosition.z; //fsIn.viewPosition.z;
 
     for (int i = 0; i < 4; ++i)
     {
