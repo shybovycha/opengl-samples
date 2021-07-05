@@ -1030,7 +1030,14 @@ int main()
 
                 // find the bounding box we're gonna project
                 glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition); // TODO: update to some constant
-                glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -_lightDirection, glm::vec3(-1.0f, 0.0f, 0.0f));
+
+                // TODO: also check if camera is looking towards the light
+                /*
+                glm::vec3 upDir{ 0.0f, 1.0f, 0.0f };
+                if (std::fabsf(glm::dot(g_DirToLight, upDir)) > 0.99f)
+                    upDir = glm::vec3(0.0f, 0.0f, 1.0f);
+                */
+                glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -1.0f * _lightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
                 glm::mat4 _tmpLightProjection = glm::mat4(1.0f); // generic orthographic projection matrix
 
                 std::array<glm::vec3, 8> _frustumSliceInLightSpace;
@@ -1074,29 +1081,56 @@ int main()
                     }
                 }
 
-                auto Sx = 2.0f / (maxX - minX);
-                auto Sy = 2.0f / (maxY - minY);
+                // auto Sx = 2.0f / (maxX - minX);
+                // auto Sy = 2.0f / (maxY - minY);
 
-                auto Ox = -0.5f * (maxX + minX) * Sx;
-                auto Oy = -0.5f * (maxY + minY) * Sy;
+                // auto Ox = -0.5f * (maxX + minX) * Sx;
+                // auto Oy = -0.5f * (maxY + minY) * Sy;
 
-                glm::mat4 _lightProjection{
-                   Sx, 0.0f, 0.0f, 0.0f,
-                   0.0f, Sy, 0.0f, 0.0f,
-                   0.0f, 0.0f, 1.0f, 0.0f,
-                   Ox, Oy, 0.0f, 1.0f,
-                };
+                // glm::mat4 _lightProjection{
+                //    Sx, 0.0f, 0.0f, 0.0f,
+                //    0.0f, Sy, 0.0f, 0.0f,
+                //    0.0f, 0.0f, 1.0f, 0.0f,
+                //    Ox, Oy, 0.0f, 1.0f,
+                // };
+
+                glm::vec3 _frustumSliceCenter(0.0f);
+
+                for (auto p : _frustumSliceVertices)
+                {
+                    _frustumSliceCenter += p;
+                }
+
+                _frustumSliceCenter /= 8.0f;
+
+                glm::vec3 _radiusVector(0.0f);
+
+                for (auto p : _frustumSliceVertices)
+                {
+                    auto v = p - _frustumSliceCenter;
+
+                    if (glm::length(v) > glm::length(_radiusVector))
+                    {
+                        _radiusVector = v;
+                    }
+                }
+
+                float _radius = glm::length(_radiusVector);
+
+                glm::vec3 _lightPosition = _frustumSliceCenter - glm::normalize(_lightDirection) * _radius;
+
+                _lightView = glm::lookAt(_lightPosition, _frustumSliceCenter, glm::vec3(0.0f, 1.0f, 0.0f));
 
                 // works exactly same as setting the matrix manually, setting near and far clipping planes cuts off everything
-                _lightProjection = glm::ortho(minX, maxX, minY, maxY);
+                glm::mat4 _lightProjection = glm::ortho(minX, maxX, minY, maxY);
 
                 if (debugOn)
                 {
-                    lightViewProjectionMatrices.push_back(_lightProjection * _lightView * glm::inverse(initialCameraView));
+                    lightViewProjectionMatrices.push_back(_lightProjection * _lightView);
                 }
                 else
                 {
-                    lightViewProjectionMatrices.push_back(_lightProjection * _lightView * glm::inverse(cameraView));
+                    lightViewProjectionMatrices.push_back(_lightProjection * _lightView);
                 }
 
                 splitDepths.push_back(_depth * splits[splitIdx]);
