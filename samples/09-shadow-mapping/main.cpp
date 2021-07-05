@@ -771,6 +771,7 @@ int main()
     bool renderLightProjection = false;
     bool debugOn = false;
     bool debugShadowMaps = false;
+    bool debugProjectionSliceDimensions = false;
 
     glm::mat4 _originalCameraProjection(1.0f);
     glm::mat4 _originalCameraView(1.0f);
@@ -800,7 +801,7 @@ int main()
             {
                 if (event.key.code == sf::Keyboard::Space)
                 {
-                    renderLightFrusta = !renderLightFrusta;
+                    debugProjectionSliceDimensions = true;
                 }
 
                 if (event.key.code == sf::Keyboard::Return)
@@ -969,13 +970,13 @@ int main()
 
             std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
-            auto proj = glm::inverse(initialCameraProjection * initialCameraView);
+            auto proj = glm::inverse(cameraProjection * cameraView);
 
             std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
-                    {
-                        { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
-                        { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
-                    }
+                {
+                    { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
+                    { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
+                }
             };
 
             std::array<glm::vec3, 8> _entireFrustum;
@@ -1047,12 +1048,10 @@ int main()
                     minX = glm::min(minX, p.x);
                     minY = glm::min(minY, p.y);
                     minZ = glm::min(minZ, p.z);
-                    maxX = glm::min(maxX, p.x);
-                    maxY = glm::min(maxY, p.y);
-                    maxZ = glm::min(maxZ, p.z);
+                    maxX = glm::max(maxX, p.x);
+                    maxY = glm::max(maxY, p.y);
+                    maxZ = glm::max(maxZ, p.z);
                 }
-
-                glm::mat4 _lightProjection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, minZ, maxZ);
 
                 auto Sx = 2.0f / (maxX - minX);
                 auto Sy = 2.0f / (maxY - minY);
@@ -1060,19 +1059,15 @@ int main()
                 auto Ox = -0.5f * (maxX + minX) * Sx;
                 auto Oy = -0.5f * (maxY + minY) * Sy;
 
-                glm::mat4 C{
+                glm::mat4 _lightProjection{
                    Sx, 0.0f, 0.0f, 0.0f,
                    0.0f, Sy, 0.0f, 0.0f,
                    0.0f, 0.0f, 1.0f, 0.0f,
                    Ox, Oy, 0.0f, 1.0f,
                 };
 
-                lightViewProjectionMatrices.push_back(_lightView * C * _lightProjection);
+                lightViewProjectionMatrices.push_back(_lightView * _lightProjection);
 
-                // glm::vec4 nearCenter = proj * glm::vec4(0.0f, 0.0f, -1.0f + (2.0f * splits[splitIdx - 1]), 1.0f);
-                // glm::vec4 farCenter = proj * glm::vec4(0.0f, 0.0f, -1.0f + (2.0f * splits[splitIdx]), 1.0f);
-
-                // splitDepths.push_back((farCenter.z / farCenter.w) - (nearCenter.z / nearCenter.w));
                 splitDepths.push_back(_depth * splits[splitIdx]);
             }
 
@@ -1229,7 +1224,7 @@ int main()
                 // --------
                 // find the bounding box we're gonna project
                 glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition); // TODO: update to some constant
-                glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -_lightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
+                glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -lightPosition, glm::vec3(0.0f, 1.0f, 0.0f));
                 glm::mat4 _tmpLightProjection = glm::mat4(1.0f); // generic orthographic projection matrix
 
                 std::array<glm::vec3, 8> _frustumSliceInLightSpace;
@@ -1244,46 +1239,119 @@ int main()
                     }
                 );
 
-                float minX = std::numeric_limits<float>::max();
-                float minY = std::numeric_limits<float>::max();
-                float minZ = std::numeric_limits<float>::max();
-                float maxX = std::numeric_limits<float>::min();
-                float maxY = std::numeric_limits<float>::min();
-                float maxZ = std::numeric_limits<float>::min();
+                float _minX = std::numeric_limits<float>::max();
+                float _minY = std::numeric_limits<float>::max();
+                float _minZ = std::numeric_limits<float>::max();
+                float _maxX = std::numeric_limits<float>::min();
+                float _maxY = std::numeric_limits<float>::min();
+                float _maxZ = std::numeric_limits<float>::min();
 
-                for (auto p : _frustumSliceInLightSpace)
+                for (auto i = 0; i < _frustumSliceInLightSpace.size(); ++i)
                 {
-                    minX = glm::min(minX, p.x);
-                    minY = glm::min(minY, p.y);
-                    minZ = glm::min(minZ, p.z);
-                    maxX = glm::min(maxX, p.x);
-                    maxY = glm::min(maxY, p.y);
-                    maxZ = glm::min(maxZ, p.z);
+                    auto p = _frustumSliceInLightSpace[i];
+
+                    if (i == 0)
+                    {
+                        _maxX = _minX = p.x;
+                        _maxY = _minY = p.y;
+                        _maxZ = _minZ = p.z;
+                    }
+                    else
+                    {
+                        _minX = std::fmin(_minX, p.x);
+                        _minY = std::fmin(_minY, p.y);
+                        _minZ = std::fmin(_minZ, p.z);
+                        _maxX = std::fmax(_maxX, p.x);
+                        _maxY = std::fmax(_maxY, p.y);
+                        _maxZ = std::fmax(_maxZ, p.z);
+                    }
                 }
 
-                std::cout << "[DEBUG] Frustum slice #" << splitIdx << ":" << std::endl;
-
-                std::cout << "{" << std::endl;
-
-                for (auto p : _frustumSliceVertices)
+                if (debugProjectionSliceDimensions)
                 {
-                    std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
+                    std::cout << "[DEBUG] Frustum slice #" << splitIdx << ":" << std::endl;
+
+                    std::cout << "{" << std::endl;
+
+                    for (auto p : _frustumSliceVertices)
+                    {
+                        std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
+                    }
+
+                    std::cout << "}" << std::endl;
+
+                    std::cout << "Orthographically projected into light space:" << std::endl;
+
+                    std::cout << "{" << std::endl;
+
+                    for (auto p : _frustumSliceInLightSpace)
+                    {
+                        std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
+                    }
+
+                    std::cout << "}" << std::endl;
+
+                    std::cout << "Orthographically projected into camera space:" << std::endl;
+
+                    std::cout << "{" << std::endl;
+
+                    for (auto v : _frustumSliceVertices)
+                    {
+                        glm::vec4 p1 = cameraView * glm::mat4(1.0f) * glm::vec4(v, 1.0f);
+                        glm::vec3 p = glm::vec3(p1) / p1.w;
+
+                        std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
+                    }
+
+                    std::cout << "}" << std::endl;
+
+                    std::cout << "Orthographically projected into screen space:" << std::endl;
+
+                    std::cout << "{" << std::endl;
+
+                    glm::mat4 _ortho2dProjection{
+                        1.0f, 0.0f, 0.0f, 0.0f,
+                        0.0f, 1.0f, 0.0f, 0.0f,
+                        0.0, 0.0f, 0.0f, 0.0f,
+                        0.0f, 0.0f, 0.0f, 1.0f,
+                    };
+
+                    glm::mat4 _ortho2DView = glm::lookAt(cameraPos, cameraPos - cameraForward, glm::vec3(0.0f, 1.0f, 0.0f));
+
+                    for (auto v : _frustumSliceVertices)
+                    {
+                        glm::vec4 p1 = _ortho2DView * _ortho2dProjection * glm::vec4(v, 1.0f);
+                        glm::vec3 p = glm::vec3(p1) / p1.w;
+
+                        std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
+                    }
+
+                    std::cout << "}" << std::endl;
+
+                    std::cout << "Boundaries: (" << _minX << ".." << _maxX << ", " << _minY << ".." << _maxY << ", " << _minZ << ".." << _maxZ << ")" << std::endl;
+
+                    auto Sx = 2.0f / (_maxX - _minX);
+                    auto Sy = 2.0f / (_maxY - _minY);
+
+                    auto Ox = -0.5f * (_maxX + _minX) * Sx;
+                    auto Oy = -0.5f * (_maxY + _minY) * Sy;
+
+                    glm::mat4 C{
+                        Sx, 0.0f, 0.0f, 0.0f,
+                        0.0f, Sy, 0.0f, 0.0f,
+                        0.0f, 0.0f, 1.0f, 0.0f,
+                        Ox, Oy, 0.0f, 1.0f,
+                    };
+
+                    std::cout << "Light projection matrix: {" << std::endl;
+                    std::cout << "    " << Sx << ", " << 0.0f << ", " << 0.0f << ", " << Ox << "," << std::endl;
+                    std::cout << "    " << 0.0f << ", " << Sy << ", " << 0.0f << ", " << Oy << "," << std::endl;
+                    std::cout << "    " << 0.0f << ", " << 0.0f << ", " << 0.0f << ", " << 0.0f << "," << std::endl;
+                    std::cout << "    " << 0.0f << ", " << 0.0f << ", " << 1.0f << ", " << 1.0f << "," << std::endl;
+                    std::cout << "}" << std::endl;
+
+                    std::cout << "==== end of slice #" << splitIdx << "====" << std::endl;
                 }
-
-                std::cout << "}" << std::endl;
-
-                std::cout << "Orthographically projected:" << std::endl;
-
-                std::cout << "{" << std::endl;
-
-                for (auto p : _frustumSliceInLightSpace)
-                {
-                    std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
-                }
-
-                std::cout << "}" << std::endl;
-
-                std::cout << "Boundaries: (" << minX << ".." << maxX << ", " << minY << ".." << maxY << ", " << minZ << ".." << maxZ << ")" << std::endl;
 
                 primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
                 primitiveRenderingProgram->setUniform("color", _splitColors[splitIdx]);
@@ -1299,6 +1367,11 @@ int main()
                     nullptr);
 
                 _frustumVAO->unbind();
+            }
+
+            if (debugProjectionSliceDimensions)
+            {
+                debugProjectionSliceDimensions = false;
             }
 
             // light frustum
