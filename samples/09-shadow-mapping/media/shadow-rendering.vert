@@ -22,8 +22,12 @@ uniform mat4 model;
 
 void main()
 {
-    vsOut.fragmentPosition = vec3(model * vec4(vertexPosition, 1.0));
-    vsOut.viewPosition = vec3(view * model * vec4(vertexPosition, 1.0));
+    vec4 p = model * vec4(vertexPosition, 1.0);
+    vsOut.fragmentPosition = vec3(p) / p.w;
+
+    vec4 p1 = view * model * vec4(vertexPosition, 1.0);
+    vsOut.viewPosition = vec3(p1) / p1.w;
+
     vsOut.normal = vertexNormal;
     vsOut.textureCoord = vertexTextureCoord;
 

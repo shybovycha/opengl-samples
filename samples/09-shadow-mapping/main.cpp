@@ -970,7 +970,16 @@ int main()
 
             std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
-            auto proj = glm::inverse(cameraProjection * cameraView);
+            glm::mat4 proj;
+
+            if (debugOn)
+            {
+                proj = glm::inverse(initialCameraProjection * initialCameraView);
+            }
+            else
+            {
+                proj = glm::inverse(cameraProjection * cameraView);
+            }
 
             std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
                 {
@@ -1043,14 +1052,25 @@ int main()
                 float maxY = std::numeric_limits<float>::min();
                 float maxZ = std::numeric_limits<float>::min();
 
-                for (auto p : _frustumSliceInLightSpace)
+                for (auto i = 0; i < _frustumSliceInLightSpace.size(); ++i)
                 {
-                    minX = glm::min(minX, p.x);
-                    minY = glm::min(minY, p.y);
-                    minZ = glm::min(minZ, p.z);
-                    maxX = glm::max(maxX, p.x);
-                    maxY = glm::max(maxY, p.y);
-                    maxZ = glm::max(maxZ, p.z);
+                    auto p = _frustumSliceInLightSpace[i];
+
+                    if (i == 0)
+                    {
+                        maxX = minX = p.x;
+                        maxY = minY = p.y;
+                        maxZ = minZ = p.z;
+                    }
+                    else
+                    {
+                        minX = std::fmin(minX, p.x);
+                        minY = std::fmin(minY, p.y);
+                        minZ = std::fmin(minZ, p.z);
+                        maxX = std::fmax(maxX, p.x);
+                        maxY = std::fmax(maxY, p.y);
+                        maxZ = std::fmax(maxZ, p.z);
+                    }
                 }
 
                 auto Sx = 2.0f / (maxX - minX);
@@ -1066,7 +1086,10 @@ int main()
                    Ox, Oy, 0.0f, 1.0f,
                 };
 
-                lightViewProjectionMatrices.push_back(_lightView * _lightProjection);
+                // works exactly same as setting the matrix manually, setting near and far clipping planes cuts off everything
+                _lightProjection = glm::ortho(minX, maxX, minY, maxY);
+
+                lightViewProjectionMatrices.push_back(_lightProjection * _lightView);
 
                 splitDepths.push_back(_depth * splits[splitIdx]);
             }
