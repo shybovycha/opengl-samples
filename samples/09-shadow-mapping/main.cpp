@@ -775,6 +775,8 @@ int main()
 
     glm::mat4 _originalCameraProjection(1.0f);
     glm::mat4 _originalCameraView(1.0f);
+    glm::vec3 _originalCameraPos;
+    glm::vec3 _originalCameraForward;
 
     bool isDebuggingLight = false;
 
@@ -783,6 +785,9 @@ int main()
 
     std::vector<glm::mat4> lightViewProjectionMatrices;
     std::vector<float> splitDepths;
+    std::vector<glm::mat4> lightProjections;
+    std::vector<glm::vec3> lightPositions;
+    std::vector<glm::vec3> lightOrigins;
 
 #ifndef WIN32
     auto previousMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
@@ -827,11 +832,17 @@ int main()
                     {
                         _originalCameraProjection = cameraProjection;
                         _originalCameraView = cameraView;
+                        _originalCameraPos = cameraPos;
+                        _originalCameraForward = cameraForward;
                         isDebuggingLight = true;
                     }
 
-                    cameraProjection = glm::mat4(1.0f);
-                    cameraView = lightViewProjectionMatrices[0];
+                    // cameraProjection = glm::mat4(1.0f);
+                    // cameraView = glm::lookAt(lightPositions[0], lightOrigins[0], glm::vec3(0.0f, 1.0f, 0.0f));
+                    cameraPos = lightPositions[0];
+                    cameraForward = glm::normalize(lightOrigins[0] - lightPositions[0]);
+
+                    std::cout << "[DEBUG] Pointing camera to (" << lightOrigins[0].x << "," << lightOrigins[0].y << "," << lightOrigins[0].z << "); while moving it to (" << lightPositions[0].x << "," << lightPositions[0].y << "," << lightPositions[0].z << ")" << std::endl;
                 }
 
                 if (event.key.code == sf::Keyboard::Num2)
@@ -840,11 +851,17 @@ int main()
                     {
                         _originalCameraProjection = cameraProjection;
                         _originalCameraView = cameraView;
+                        _originalCameraPos = cameraPos;
+                        _originalCameraForward = cameraForward;
                         isDebuggingLight = true;
                     }
 
-                    cameraProjection = glm::mat4(1.0f);
-                    cameraView = lightViewProjectionMatrices[1];
+                    // cameraProjection = glm::mat4(1.0f);
+                    // cameraView = glm::lookAt(lightPositions[1], lightOrigins[1], glm::vec3(0.0f, 1.0f, 0.0f));
+                    cameraPos = lightPositions[1];
+                    cameraForward = glm::normalize(lightOrigins[1] - lightPositions[1]);
+
+                    std::cout << "[DEBUG] Pointing camera to (" << lightOrigins[1].x << "," << lightOrigins[1].y << "," << lightOrigins[1].z << "); while moving it to (" << lightPositions[1].x << "," << lightPositions[1].y << "," << lightPositions[1].z << ")" << std::endl;
                 }
 
                 if (event.key.code == sf::Keyboard::Num3)
@@ -853,11 +870,15 @@ int main()
                     {
                         _originalCameraProjection = cameraProjection;
                         _originalCameraView = cameraView;
+                        _originalCameraPos = cameraPos;
+                        _originalCameraForward = cameraForward;
                         isDebuggingLight = true;
                     }
 
-                    cameraProjection = glm::mat4(1.0f);
-                    cameraView = lightViewProjectionMatrices[2];
+                    // cameraProjection = glm::mat4(1.0f);
+                    // cameraView = glm::lookAt(lightPositions[2], lightOrigins[2], glm::vec3(0.0f, 1.0f, 0.0f));
+                    cameraPos = lightPositions[2];
+                    cameraForward = glm::normalize(lightOrigins[2] - lightPositions[2]);
                 }
 
                 if (event.key.code == sf::Keyboard::Num4)
@@ -866,17 +887,23 @@ int main()
                     {
                         _originalCameraProjection = cameraProjection;
                         _originalCameraView = cameraView;
+                        _originalCameraPos = cameraPos;
+                        _originalCameraForward = cameraForward;
                         isDebuggingLight = true;
                     }
 
-                    cameraProjection = glm::mat4(1.0f);
-                    cameraView = lightViewProjectionMatrices[3];
+                    // cameraProjection = glm::mat4(1.0f);
+                    // cameraView = glm::lookAt(lightPositions[3], lightOrigins[3], glm::vec3(0.0f, 1.0f, 0.0f));
+                    cameraPos = lightPositions[3];
+                    cameraForward = glm::normalize(lightOrigins[3] - lightPositions[3]);
                 }
 
                 if (event.key.code == sf::Keyboard::Num0)
                 {
                     cameraProjection = _originalCameraProjection;
                     cameraView = _originalCameraView;
+                    cameraPos = _originalCameraPos;
+                    cameraForward = _originalCameraForward;
                     isDebuggingLight = false;
                 }
             }
@@ -898,7 +925,7 @@ int main()
         previousMousePos = currentMousePos;
 #endif
 
-        if (!isDebuggingLight)
+        // if (!isDebuggingLight)
         {
             float horizontalAngle = (mouseDelta.x / static_cast<float>(window.getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
             float verticalAngle = (mouseDelta.y / static_cast<float>(window.getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
@@ -967,6 +994,8 @@ int main()
         {
             lightViewProjectionMatrices.clear();
             splitDepths.clear();
+            lightPositions.clear();
+            lightOrigins.clear();
 
             std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
@@ -1118,6 +1147,9 @@ int main()
                 float _radius = glm::length(_radiusVector);
 
                 glm::vec3 _lightPosition = _frustumSliceCenter - glm::normalize(_lightDirection) * _radius;
+
+                lightPositions.push_back(_lightPosition);
+                lightOrigins.push_back(_frustumSliceCenter);
 
                 _lightView = glm::lookAt(_lightPosition, _frustumSliceCenter, glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -1292,6 +1324,29 @@ int main()
                 glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -lightPosition, glm::vec3(0.0f, 1.0f, 0.0f));
                 glm::mat4 _tmpLightProjection = glm::mat4(1.0f); // generic orthographic projection matrix
 
+                glm::vec3 _frustumSliceCenter(0.0f);
+
+                for (auto p : _frustumSliceVertices)
+                {
+                    _frustumSliceCenter += p;
+                }
+
+                _frustumSliceCenter /= 8.0f;
+
+                glm::vec3 _frustumRadiusVector(0.0f);
+
+                for (auto p : _frustumSliceVertices)
+                {
+                    auto v = p - _frustumSliceCenter;
+
+                    if (glm::length(_frustumRadiusVector) < glm::length(v))
+                    {
+                        _frustumRadiusVector = v;
+                    }
+                }
+
+                glm::vec3 _lightPosition = _frustumSliceCenter - glm::normalize(_lightDirection) * glm::length(_frustumRadiusVector);
+
                 std::array<glm::vec3, 8> _frustumSliceInLightSpace;
 
                 std::transform(
@@ -1440,6 +1495,31 @@ int main()
                     std::cout << "==== end of slice #" << splitIdx << "====" << std::endl;
                 }
 
+                // light frustum
+                if (renderLightProjection)
+                {
+                    std::array<glm::vec3, 2> _lightBeam{
+                        _lightPosition, _frustumSliceCenter
+                    };
+
+                    std::array<int, 2> _lightBeamIndices{ 0, 1 };
+
+                    primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
+                    primitiveRenderingProgram->setUniform("color", _splitColors[splitIdx]);
+
+                    _frustumVertexBuffer->setData(_lightBeam, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
+
+                    _frustumVAO->bind();
+
+                    _frustumVAO->drawArrays(
+                        static_cast<gl::GLenum>(GL_LINES),
+                        0,
+                        _lightBeamIndices.size()
+                    );
+
+                    _frustumVAO->unbind();
+                }
+
                 primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
                 primitiveRenderingProgram->setUniform("color", _splitColors[splitIdx]);
 
@@ -1459,40 +1539,6 @@ int main()
             if (debugProjectionSliceDimensions)
             {
                 debugProjectionSliceDimensions = false;
-            }
-
-            // light frustum
-            if (renderLightProjection)
-            {
-                // the code below renders the camera frustum
-                const auto proj = glm::inverse(lightProjection * lightView);
-
-                std::array<glm::vec3, 8> _frustumVertices;
-
-                std::transform(
-                    _cameraFrustumCornerVertices.begin(),
-                    _cameraFrustumCornerVertices.end(),
-                    _frustumVertices.begin(),
-                    [&](glm::vec3 p) {
-                        auto v = proj * glm::vec4(p, 1.0f);
-                        return glm::vec3(v) / v.w;
-                    }
-                );
-
-                primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
-                primitiveRenderingProgram->setUniform("color", glm::vec4(1.0f, 1.0f, 1.0f, 0.4f));
-
-                _frustumVertexBuffer->setData(_frustumVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-                _frustumVAO->bind();
-
-                _frustumVAO->drawElements(
-                    static_cast<gl::GLenum>(GL_TRIANGLES),
-                    frustumIndices.size(),
-                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-                    nullptr);
-
-                _frustumVAO->unbind();
             }
 
             primitiveRenderingProgram->release();
