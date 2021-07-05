@@ -886,8 +886,8 @@ int main()
 
                 // cameraProjection = glm::mat4(1.0f);
                 // cameraView = glm::lookAt(lightPositions[0], lightOrigins[0], glm::vec3(0.0f, 1.0f, 0.0f));
-                cameraPos = lightPositions[lightDebuggingView];
-                cameraForward = glm::normalize(lightOrigins[lightDebuggingView] - lightPositions[lightDebuggingView]);
+                cameraPos = lightPositions[lightDebuggingView - 1];
+                cameraForward = glm::normalize(lightOrigins[lightDebuggingView - 1] - lightPositions[lightDebuggingView - 1]);
 
                 // std::cout << "[DEBUG] Pointing camera to (" << lightOrigins[0].x << "," << lightOrigins[0].y << "," << lightOrigins[0].z << "); while moving it to (" << lightPositions[0].x << "," << lightPositions[0].y << "," << lightPositions[0].z << ")" << std::endl;
             }
@@ -1012,15 +1012,10 @@ int main()
 
             for (auto i = 0; i < 4; ++i)
             {
-                _frustumEdgeDirections[i] = glm::normalize(_entireFrustum[i] - _entireFrustum[4 + i]);
+                _frustumEdgeDirections[i] = glm::normalize(_entireFrustum[4 + i] - _entireFrustum[i]);
             }
 
-            const auto _nearVec = proj * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
-            const auto _farVec = proj * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-
-            const float _near = _nearVec.z / _nearVec.w;
-            const float _far = _farVec.z / _farVec.w;
-            const float _depth = _far - _near;
+            const float _depth = 100.0f - 0.1f;
 
             // for some unreasonable reason the inverse projection does not work well with Z axis - it is NOT uniformely distributed with most of the depth lying in range (0.99..1.0)
             // hence using the vectors again
@@ -1045,7 +1040,7 @@ int main()
                 if (std::fabsf(glm::dot(g_DirToLight, upDir)) > 0.99f)
                     upDir = glm::vec3(0.0f, 0.0f, 1.0f);
                 */
-                glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -1.0f * _lightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
+                /*glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -1.0f * _lightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
                 glm::mat4 _tmpLightProjection = glm::mat4(1.0f); // generic orthographic projection matrix
 
                 std::array<glm::vec3, 8> _frustumSliceInLightSpace;
@@ -1058,7 +1053,7 @@ int main()
                         glm::vec4 v = _tmpLightProjection * _lightView * glm::vec4(p, 1.0f); // v - vertex in light space
                         return v / v.w;
                     }
-                );
+                );*/
 
                 /*float minX = std::numeric_limits<float>::max();
                 float minY = std::numeric_limits<float>::max();
@@ -1111,21 +1106,19 @@ int main()
 
                 _frustumSliceCenter /= 8.0f;
 
-                glm::vec3 _radiusVector(0.0f);
+                glm::vec3 _frustumRadiusVector(0.0f);
 
                 for (auto p : _frustumSliceVertices)
                 {
                     auto v = p - _frustumSliceCenter;
 
-                    if (glm::length(v) > glm::length(_radiusVector))
+                    if (glm::length(_frustumRadiusVector) < glm::length(v))
                     {
-                        _radiusVector = v;
+                        _frustumRadiusVector = v;
                     }
                 }
 
-                float _radius = glm::length(_radiusVector);
-
-                glm::vec3 _lightPosition = _frustumSliceCenter - glm::normalize(_lightDirection) * _radius;
+                glm::vec3 _lightPosition = _frustumSliceCenter - glm::normalize(_lightDirection) * glm::length(_frustumRadiusVector);
 
                 lightPositions.push_back(_lightPosition);
                 lightOrigins.push_back(_frustumSliceCenter);
@@ -1146,7 +1139,7 @@ int main()
 
                 glm::mat4 _lightProjection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f);
 
-                lightViewProjectionMatrices.push_back(_lightProjection * _lightView);
+                lightViewProjectionMatrices.push_back(_lightProjection * glm::mat4(1.0f));
 
                 splitDepths.push_back(_depth * splits[splitIdx]);
             }
@@ -1290,8 +1283,8 @@ int main()
                 // --------
                 // find the bounding box we're gonna project
                 glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition); // TODO: update to some constant
-                glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -lightPosition, glm::vec3(0.0f, 1.0f, 0.0f));
-                glm::mat4 _tmpLightProjection = glm::mat4(1.0f); // generic orthographic projection matrix
+                // glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -lightPosition, glm::vec3(0.0f, 1.0f, 0.0f));
+                // glm::mat4 _tmpLightProjection = glm::mat4(1.0f); // generic orthographic projection matrix
 
                 glm::vec3 _frustumSliceCenter(0.0f);
 
@@ -1471,8 +1464,6 @@ int main()
                         _lightPosition, _frustumSliceCenter
                     };
 
-                    std::array<int, 2> _lightBeamIndices{ 0, 1 };
-
                     primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
                     primitiveRenderingProgram->setUniform("color", _splitColors[splitIdx]);
 
@@ -1483,7 +1474,7 @@ int main()
                     _frustumVAO->drawArrays(
                         static_cast<gl::GLenum>(GL_LINES),
                         0,
-                        _lightBeamIndices.size()
+                        2
                     );
 
                     _frustumVAO->unbind();
