@@ -775,8 +775,8 @@ int main()
 
     glm::mat4 _originalCameraProjection(1.0f);
     glm::mat4 _originalCameraView(1.0f);
-    glm::vec3 _originalCameraPos;
-    glm::vec3 _originalCameraForward;
+    glm::vec3 _originalCameraPos(0.0f);
+    glm::vec3 _originalCameraForward(0.0f);
 
     bool isDebuggingLight = false;
 
@@ -788,6 +788,18 @@ int main()
     std::vector<glm::mat4> lightProjections;
     std::vector<glm::vec3> lightPositions;
     std::vector<glm::vec3> lightOrigins;
+
+    int lightDebuggingView = -1;
+    int prevLightDebuggingView = -1;
+
+    std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
+
+    std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
+        {
+            { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
+            { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
+        }
+    };
 
 #ifndef WIN32
     auto previousMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
@@ -828,83 +840,27 @@ int main()
 
                 if (event.key.code == sf::Keyboard::Num1)
                 {
-                    if (!isDebuggingLight)
-                    {
-                        _originalCameraProjection = cameraProjection;
-                        _originalCameraView = cameraView;
-                        _originalCameraPos = cameraPos;
-                        _originalCameraForward = cameraForward;
-                        isDebuggingLight = true;
-                    }
-
-                    // cameraProjection = glm::mat4(1.0f);
-                    // cameraView = glm::lookAt(lightPositions[0], lightOrigins[0], glm::vec3(0.0f, 1.0f, 0.0f));
-                    cameraPos = lightPositions[0];
-                    cameraForward = glm::normalize(lightOrigins[0] - lightPositions[0]);
-
-                    std::cout << "[DEBUG] Pointing camera to (" << lightOrigins[0].x << "," << lightOrigins[0].y << "," << lightOrigins[0].z << "); while moving it to (" << lightPositions[0].x << "," << lightPositions[0].y << "," << lightPositions[0].z << ")" << std::endl;
+                    lightDebuggingView = 1;
                 }
 
                 if (event.key.code == sf::Keyboard::Num2)
                 {
-                    if (!isDebuggingLight)
-                    {
-                        _originalCameraProjection = cameraProjection;
-                        _originalCameraView = cameraView;
-                        _originalCameraPos = cameraPos;
-                        _originalCameraForward = cameraForward;
-                        isDebuggingLight = true;
-                    }
-
-                    // cameraProjection = glm::mat4(1.0f);
-                    // cameraView = glm::lookAt(lightPositions[1], lightOrigins[1], glm::vec3(0.0f, 1.0f, 0.0f));
-                    cameraPos = lightPositions[1];
-                    cameraForward = glm::normalize(lightOrigins[1] - lightPositions[1]);
-
-                    std::cout << "[DEBUG] Pointing camera to (" << lightOrigins[1].x << "," << lightOrigins[1].y << "," << lightOrigins[1].z << "); while moving it to (" << lightPositions[1].x << "," << lightPositions[1].y << "," << lightPositions[1].z << ")" << std::endl;
+                    lightDebuggingView = 2;
                 }
 
                 if (event.key.code == sf::Keyboard::Num3)
                 {
-                    if (!isDebuggingLight)
-                    {
-                        _originalCameraProjection = cameraProjection;
-                        _originalCameraView = cameraView;
-                        _originalCameraPos = cameraPos;
-                        _originalCameraForward = cameraForward;
-                        isDebuggingLight = true;
-                    }
-
-                    // cameraProjection = glm::mat4(1.0f);
-                    // cameraView = glm::lookAt(lightPositions[2], lightOrigins[2], glm::vec3(0.0f, 1.0f, 0.0f));
-                    cameraPos = lightPositions[2];
-                    cameraForward = glm::normalize(lightOrigins[2] - lightPositions[2]);
+                    lightDebuggingView = 3;
                 }
 
                 if (event.key.code == sf::Keyboard::Num4)
                 {
-                    if (!isDebuggingLight)
-                    {
-                        _originalCameraProjection = cameraProjection;
-                        _originalCameraView = cameraView;
-                        _originalCameraPos = cameraPos;
-                        _originalCameraForward = cameraForward;
-                        isDebuggingLight = true;
-                    }
-
-                    // cameraProjection = glm::mat4(1.0f);
-                    // cameraView = glm::lookAt(lightPositions[3], lightOrigins[3], glm::vec3(0.0f, 1.0f, 0.0f));
-                    cameraPos = lightPositions[3];
-                    cameraForward = glm::normalize(lightOrigins[3] - lightPositions[3]);
+                    lightDebuggingView = 4;
                 }
 
                 if (event.key.code == sf::Keyboard::Num0)
                 {
-                    cameraProjection = _originalCameraProjection;
-                    cameraView = _originalCameraView;
-                    cameraPos = _originalCameraPos;
-                    cameraForward = _originalCameraForward;
-                    isDebuggingLight = false;
+                    lightDebuggingView = -1;
                 }
             }
 
@@ -913,6 +869,38 @@ int main()
                 window.close();
                 break;
             }
+        }
+
+        if (prevLightDebuggingView != lightDebuggingView)
+        {
+            if (lightDebuggingView > -1)
+            {
+                if (!isDebuggingLight)
+                {
+                    _originalCameraProjection = cameraProjection;
+                    _originalCameraView = cameraView;
+                    _originalCameraPos = cameraPos;
+                    _originalCameraForward = cameraForward;
+                    isDebuggingLight = true;
+                }
+
+                // cameraProjection = glm::mat4(1.0f);
+                // cameraView = glm::lookAt(lightPositions[0], lightOrigins[0], glm::vec3(0.0f, 1.0f, 0.0f));
+                cameraPos = lightPositions[lightDebuggingView];
+                cameraForward = glm::normalize(lightOrigins[lightDebuggingView] - lightPositions[lightDebuggingView]);
+
+                // std::cout << "[DEBUG] Pointing camera to (" << lightOrigins[0].x << "," << lightOrigins[0].y << "," << lightOrigins[0].z << "); while moving it to (" << lightPositions[0].x << "," << lightPositions[0].y << "," << lightPositions[0].z << ")" << std::endl;
+            }
+            else
+            {
+                cameraProjection = _originalCameraProjection;
+                cameraView = _originalCameraView;
+                cameraPos = _originalCameraPos;
+                cameraForward = _originalCameraForward;
+                isDebuggingLight = false;
+            }
+
+            prevLightDebuggingView = lightDebuggingView;
         }
 
         glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
@@ -997,8 +985,6 @@ int main()
             lightPositions.clear();
             lightOrigins.clear();
 
-            std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
-
             glm::mat4 proj;
 
             if (debugOn)
@@ -1009,13 +995,6 @@ int main()
             {
                 proj = glm::inverse(cameraProjection * cameraView);
             }
-
-            std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
-                {
-                    { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
-                    { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
-                }
-            };
 
             std::array<glm::vec3, 8> _entireFrustum;
 
@@ -1081,7 +1060,7 @@ int main()
                     }
                 );
 
-                float minX = std::numeric_limits<float>::max();
+                /*float minX = std::numeric_limits<float>::max();
                 float minY = std::numeric_limits<float>::max();
                 float minZ = std::numeric_limits<float>::max();
                 float maxX = std::numeric_limits<float>::min();
@@ -1108,7 +1087,7 @@ int main()
                         maxY = std::fmax(maxY, p.y);
                         maxZ = std::fmax(maxZ, p.z);
                     }
-                }
+                }*/
 
                 // auto Sx = 2.0f / (maxX - minX);
                 // auto Sy = 2.0f / (maxY - minY);
@@ -1151,7 +1130,7 @@ int main()
                 lightPositions.push_back(_lightPosition);
                 lightOrigins.push_back(_frustumSliceCenter);
 
-                _lightView = glm::lookAt(_lightPosition, _frustumSliceCenter, glm::vec3(0.0f, 1.0f, 0.0f));
+                /*_lightView = glm::lookAt(_lightPosition, _frustumSliceCenter, glm::vec3(0.0f, 1.0f, 0.0f));
 
                 // works exactly same as setting the matrix manually, setting near and far clipping planes cuts off everything
                 glm::mat4 _lightProjection = glm::ortho(minX, maxX, minY, maxY);
@@ -1163,7 +1142,11 @@ int main()
                 else
                 {
                     lightViewProjectionMatrices.push_back(_lightProjection * _lightView);
-                }
+                }*/
+
+                glm::mat4 _lightProjection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f);
+
+                lightViewProjectionMatrices.push_back(_lightProjection * _lightView);
 
                 splitDepths.push_back(_depth * splits[splitIdx]);
             }
@@ -1267,16 +1250,7 @@ int main()
             primitiveRenderingProgram->use();
 
             // render frusta
-            std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
-
             auto proj = glm::inverse(initialCameraProjection * initialCameraView);
-
-            std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
-                    {
-                        { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
-                        { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
-                    }
-            };
 
             std::array<glm::vec3, 8> _entireFrustum;
 
@@ -1294,15 +1268,10 @@ int main()
 
             for (auto i = 0; i < 4; ++i)
             {
-                _frustumEdgeDirections[i] = glm::normalize(_entireFrustum[i] - _entireFrustum[4 + i]);
+                _frustumEdgeDirections[i] = glm::normalize(_entireFrustum[4 + i] - _entireFrustum[i]);
             }
 
-            const auto _nearVec = proj * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
-            const auto _farVec = proj * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-
-            const float _near = _nearVec.z / _nearVec.w;
-            const float _far = _farVec.z / _farVec.w;
-            const float _depth = _far - _near;
+            const float _depth = 100.0f - 0.1f;
 
             // for some unreasonable reason the inverse projection does not work well with Z axis - it is NOT uniformely distributed with most of the depth lying in range (0.99..1.0)
             // hence using the vectors again
@@ -1347,7 +1316,7 @@ int main()
 
                 glm::vec3 _lightPosition = _frustumSliceCenter - glm::normalize(_lightDirection) * glm::length(_frustumRadiusVector);
 
-                std::array<glm::vec3, 8> _frustumSliceInLightSpace;
+                /*std::array<glm::vec3, 8> _frustumSliceInLightSpace;
 
                 std::transform(
                     _frustumSliceVertices.begin(),
@@ -1493,7 +1462,7 @@ int main()
                     std::cout << "}" << std::endl;
 
                     std::cout << "==== end of slice #" << splitIdx << "====" << std::endl;
-                }
+                }*/
 
                 // light frustum
                 if (renderLightProjection)
