@@ -1030,7 +1030,7 @@ int main()
 
                 // find the bounding box we're gonna project
                 glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition); // TODO: update to some constant
-                glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -_lightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
+                glm::mat4 _lightView = glm::lookAt(glm::vec3(0.0f), -_lightDirection, glm::vec3(-1.0f, 0.0f, 0.0f));
                 glm::mat4 _tmpLightProjection = glm::mat4(1.0f); // generic orthographic projection matrix
 
                 std::array<glm::vec3, 8> _frustumSliceInLightSpace;
@@ -1052,6 +1052,7 @@ int main()
                 float maxY = std::numeric_limits<float>::min();
                 float maxZ = std::numeric_limits<float>::min();
 
+                // maybe try NOT converting the frustum corners into light space, as per https://asawicki.info/news_1283_cascaded_shadow_mapping ?
                 for (auto i = 0; i < _frustumSliceInLightSpace.size(); ++i)
                 {
                     auto p = _frustumSliceInLightSpace[i];
@@ -1089,7 +1090,14 @@ int main()
                 // works exactly same as setting the matrix manually, setting near and far clipping planes cuts off everything
                 _lightProjection = glm::ortho(minX, maxX, minY, maxY);
 
-                lightViewProjectionMatrices.push_back(_lightProjection * _lightView);
+                if (debugOn)
+                {
+                    lightViewProjectionMatrices.push_back(_lightProjection * _lightView * glm::inverse(initialCameraView));
+                }
+                else
+                {
+                    lightViewProjectionMatrices.push_back(_lightProjection * _lightView * glm::inverse(cameraView));
+                }
 
                 splitDepths.push_back(_depth * splits[splitIdx]);
             }
