@@ -1291,6 +1291,28 @@ int main()
 
                     std::cout << "}" << std::endl;
 
+                    std::cout << "Polygon(";
+
+                    for (auto i = 0; i < 4; ++i)
+                    {
+                        auto p = _frustumSliceInLightSpace[i];
+                        std::cout << "(" << p.x << ", " << p.y << ")";
+                        if (i < 3) std::cout << ",";
+                    }
+
+                    std::cout << ")" << std::endl;
+
+                    std::cout << "Polygon(";
+
+                    for (auto i = 4; i < 8; ++i)
+                    {
+                        auto p = _frustumSliceInLightSpace[i];
+                        std::cout << "(" << p.x << ", " << p.y << ")";
+                        if (i < 7) std::cout << ",";
+                    }
+
+                    std::cout << ")" << std::endl;
+
                     std::cout << "Orthographically projected into camera space:" << std::endl;
 
                     std::cout << "{" << std::endl;
