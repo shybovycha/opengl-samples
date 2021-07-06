@@ -6,8 +6,8 @@ layout (location = 2) in vec2 vertexTextureCoord;
 
 out VS_OUT
 {
-    vec3 viewPosition;
-    vec3 fragmentPosition;
+    vec4 viewPosition;
+    vec4 fragmentPosition;
     vec3 normal;
     vec2 textureCoord;
 } vsOut;
@@ -22,11 +22,9 @@ uniform mat4 model;
 
 void main()
 {
-    vec4 p = model * vec4(vertexPosition, 1.0);
-    vsOut.fragmentPosition = vec3(p) / p.w;
+    vsOut.fragmentPosition = model * vec4(vertexPosition, 1.0);
 
-    vec4 p1 = view * model * vec4(vertexPosition, 1.0);
-    vsOut.viewPosition = vec3(p1) / p1.w;
+    vsOut.viewPosition = projection * view * model * vec4(vertexPosition, 1.0);
 
     vsOut.normal = vertexNormal;
     vsOut.textureCoord = vertexTextureCoord;

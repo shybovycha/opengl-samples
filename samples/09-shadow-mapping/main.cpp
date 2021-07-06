@@ -1094,8 +1094,8 @@ int main()
                 // calculate new light projection
                 glm::vec3 _forward = glm::normalize(_lightDirection);
                 glm::vec3 _right = glm::cross(_forward, glm::vec3(0.0f, 1.0f, 0.0f));
-                glm::vec3 _up(0.0f, 1.0f, 0.0f);//  = glm::cross(_forward, _right);
-                glm::mat4 _lightView = glm::lookAt(_frustumSliceCenter + glm::normalize(_lightDirection) * glm::length(_frustumRadiusVector), _frustumSliceCenter, _up);
+                glm::vec3 _up(0.0f, 1.0f, 0.0f);
+                glm::mat4 _lightView = glm::lookAt(_frustumSliceCenter - glm::normalize(_lightDirection) * glm::length(_frustumRadiusVector), _frustumSliceCenter, _up);
 
                 /*glm::mat4 _tmpLightProjection = glm::mat4(1.0f); // generic orthographic projection matrix
 
