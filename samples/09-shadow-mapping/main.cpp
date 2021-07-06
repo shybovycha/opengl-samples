@@ -759,9 +759,6 @@ int main()
 
     const glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition); // TODO: update to some constant
 
-    // project shadows onto cascades, aka frustum splits
-    // 0.05x, 0.2x, 0.5x, 1x of the entire view frustum
-
     sf::Clock clock;
 
     glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
@@ -897,16 +894,10 @@ int main()
                     isDebuggingLight = true;
                 }
 
-                // cameraProjection = glm::mat4(1.0f);
-                // cameraView = glm::lookAt(lightPositions[0], lightOrigins[0], glm::vec3(0.0f, 1.0f, 0.0f));
-                // cameraPos = lightPositions[lightDebuggingView - 1];
-                // cameraForward = glm::normalize(lightOrigins[lightDebuggingView - 1] - lightPositions[lightDebuggingView - 1]);
                 cameraPos = frustumSlices[lightDebuggingView - 1].center - glm::normalize(_lightDirection) * frustumSlices[lightDebuggingView - 1].radius;
                 cameraForward = frustumSlices[lightDebuggingView - 1].center - cameraPos;
                 cameraProjection = frustumSlices[lightDebuggingView - 1].projection;
                 cameraView = glm::mat4(1.0f);
-
-                // std::cout << "[DEBUG] Pointing camera to (" << lightOrigins[0].x << "," << lightOrigins[0].y << "," << lightOrigins[0].z << "); while moving it to (" << lightPositions[0].x << "," << lightPositions[0].y << "," << lightPositions[0].z << ")" << std::endl;
             }
             else
             {
@@ -1051,24 +1042,6 @@ int main()
                 }
 
                 // TODO: also check if camera is looking towards the light
-                /*
-                glm::vec3 upDir{ 0.0f, 1.0f, 0.0f };
-                if (std::fabsf(glm::dot(g_DirToLight, upDir)) > 0.99f)
-                    upDir = glm::vec3(0.0f, 0.0f, 1.0f);
-                */
-
-                // auto Sx = 2.0f / (maxX - minX);
-                // auto Sy = 2.0f / (maxY - minY);
-
-                // auto Ox = -0.5f * (maxX + minX) * Sx;
-                // auto Oy = -0.5f * (maxY + minY) * Sy;
-
-                // glm::mat4 _lightProjection{
-                //    Sx, 0.0f, 0.0f, 0.0f,
-                //    0.0f, Sy, 0.0f, 0.0f,
-                //    0.0f, 0.0f, 1.0f, 0.0f,
-                //    Ox, Oy, 0.0f, 1.0f,
-                // };
 
                 glm::vec3 _frustumSliceCenter(0.0f);
 
@@ -1097,61 +1070,6 @@ int main()
                 glm::vec3 _up(0.0f, 1.0f, 0.0f);
                 glm::mat4 _lightView = glm::lookAt(_frustumSliceCenter - glm::normalize(_lightDirection) * glm::length(_frustumRadiusVector), _frustumSliceCenter, _up);
 
-                /*glm::mat4 _tmpLightProjection = glm::mat4(1.0f); // generic orthographic projection matrix
-
-                std::array<glm::vec3, 8> _frustumSliceInLightSpace;
-
-                std::transform(
-                    _frustumSliceVertices.begin(),
-                    _frustumSliceVertices.end(),
-                    _frustumSliceInLightSpace.begin(),
-                    [&](glm::vec3 p) {
-                        glm::vec4 v = _tmpLightProjection * _lightView * glm::vec4(p, 1.0f); // v - vertex in light space
-                        return v / v.w;
-                    }
-                );
-
-                float minX = std::numeric_limits<float>::max();
-                float minY = std::numeric_limits<float>::max();
-                float minZ = std::numeric_limits<float>::max();
-                float maxX = std::numeric_limits<float>::min();
-                float maxY = std::numeric_limits<float>::min();
-                float maxZ = std::numeric_limits<float>::min();
-
-                for (auto i = 0; i < _frustumSliceInLightSpace.size(); ++i)
-                {
-                    auto p = _frustumSliceInLightSpace[i];
-
-                    if (i == 0)
-                    {
-                        maxX = minX = p.x;
-                        maxY = minY = p.y;
-                        maxZ = minZ = p.z;
-                    }
-                    else
-                    {
-                        minX = std::fmin(minX, p.x);
-                        minY = std::fmin(minY, p.y);
-                        minZ = std::fmin(minZ, p.z);
-                        maxX = std::fmax(maxX, p.x);
-                        maxY = std::fmax(maxY, p.y);
-                        maxZ = std::fmax(maxZ, p.z);
-                    }
-                }*/
-
-                /*auto Sx = 2.0f / (maxX - minX);
-                auto Sy = 2.0f / (maxY - minY);
-
-                auto Ox = -0.5f * (maxX + minX) * Sx;
-                auto Oy = -0.5f * (maxY + minY) * Sy;
-
-                glm::mat4 _lightProjection{
-                    Sx, 0.0f, 0.0f, 0.0f,
-                    0.0f, Sy, 0.0f, 0.0f,
-                    0.0f, 0.0f, 1.0f, 0.0f,
-                    Ox, Oy, 0.0f, 1.0f,
-                };*/
-
                 const float _frustumRadius = glm::length(_frustumRadiusVector);
 
                 glm::mat4 _lightProjectionViewMatrix = glm::ortho(
@@ -1166,28 +1084,6 @@ int main()
                 // push new frustum slice to the vector
                 frustumSlices.push_back({ _frustumSliceVertices, _frustumSliceCenter, _frustumRadius, _splitColors[splitIdx], _lightProjectionViewMatrix });
 
-                /*glm::vec3 _lightPosition = _frustumSliceCenter - glm::normalize(_lightDirection) * glm::length(_frustumRadiusVector);
-
-                lightPositions.push_back(_lightPosition);
-                lightOrigins.push_back(_frustumSliceCenter);*/
-
-                /*_lightView = glm::lookAt(_lightPosition, _frustumSliceCenter, glm::vec3(0.0f, 1.0f, 0.0f));
-
-                // works exactly same as setting the matrix manually, setting near and far clipping planes cuts off everything
-                glm::mat4 _lightProjection = glm::ortho(minX, maxX, minY, maxY);
-
-                if (debugOn)
-                {
-                    lightViewProjectionMatrices.push_back(_lightProjection * _lightView);
-                }
-                else
-                {
-                    lightViewProjectionMatrices.push_back(_lightProjection * _lightView);
-                }*/
-
-                // glm::mat4 _lightProjection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f);
-
-                // lightViewProjectionMatrices.push_back(_lightProjection * glm::mat4(1.0f));
                 lightViewProjectionMatrices.push_back(_lightProjectionViewMatrix);
 
                 splitDepths.push_back(_depth * splits[splitIdx]);
@@ -1250,13 +1146,10 @@ int main()
 
         shadowRenderingLightPositionUniform->set(lightPosition);
         shadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
-        // ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
-        // materialSpecularUniform->set(12.0f);
         shadowRenderingCameraPositionUniform->set(cameraPos);
 
         shadowRenderingProjectionTransformationUniform->set(cameraProjection);
         shadowRenderingViewTransformationUniform->set(cameraView);
-        // shadowRenderingLightSpaceMatrixUniform->set(lightSpaceMatrix);
 
         // draw chicken
 
@@ -1315,160 +1208,9 @@ int main()
 
             const float _depth = 100.0f - 0.1f;
 
-            // for some unreasonable reason the inverse projection does not work well with Z axis - it is NOT uniformely distributed with most of the depth lying in range (0.99..1.0)
-            // hence using the vectors again
-
             for (auto splitIdx = 1; splitIdx < splits.size(); ++splitIdx)
             {
                 auto slice = frustumSlices[splitIdx - 1];
-
-                /*std::array<glm::vec3, 8> _frustumSliceInLightSpace;
-
-                std::transform(
-                    _frustumSliceVertices.begin(),
-                    _frustumSliceVertices.end(),
-                    _frustumSliceInLightSpace.begin(),
-                    [&](glm::vec3 p) {
-                        glm::vec4 v = _tmpLightProjection * _lightView * glm::vec4(p, 1.0f); // v - vertex in light space
-                        return v / v.w;
-                    }
-                );
-
-                float _minX = std::numeric_limits<float>::max();
-                float _minY = std::numeric_limits<float>::max();
-                float _minZ = std::numeric_limits<float>::max();
-                float _maxX = std::numeric_limits<float>::min();
-                float _maxY = std::numeric_limits<float>::min();
-                float _maxZ = std::numeric_limits<float>::min();
-
-                for (auto i = 0; i < _frustumSliceInLightSpace.size(); ++i)
-                {
-                    auto p = _frustumSliceInLightSpace[i];
-
-                    if (i == 0)
-                    {
-                        _maxX = _minX = p.x;
-                        _maxY = _minY = p.y;
-                        _maxZ = _minZ = p.z;
-                    }
-                    else
-                    {
-                        _minX = std::fmin(_minX, p.x);
-                        _minY = std::fmin(_minY, p.y);
-                        _minZ = std::fmin(_minZ, p.z);
-                        _maxX = std::fmax(_maxX, p.x);
-                        _maxY = std::fmax(_maxY, p.y);
-                        _maxZ = std::fmax(_maxZ, p.z);
-                    }
-                }
-
-                if (debugProjectionSliceDimensions)
-                {
-                    std::cout << "[DEBUG] Frustum slice #" << splitIdx << ":" << std::endl;
-
-                    std::cout << "{" << std::endl;
-
-                    for (auto p : _frustumSliceVertices)
-                    {
-                        std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
-                    }
-
-                    std::cout << "}" << std::endl;
-
-                    std::cout << "Orthographically projected into light space:" << std::endl;
-
-                    std::cout << "{" << std::endl;
-
-                    for (auto p : _frustumSliceInLightSpace)
-                    {
-                        std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
-                    }
-
-                    std::cout << "}" << std::endl;
-
-                    std::cout << "Polygon(";
-
-                    for (auto i = 0; i < 4; ++i)
-                    {
-                        auto p = _frustumSliceInLightSpace[i];
-                        std::cout << "(" << p.x << ", " << p.y << ")";
-                        if (i < 3) std::cout << ",";
-                    }
-
-                    std::cout << ")" << std::endl;
-
-                    std::cout << "Polygon(";
-
-                    for (auto i = 4; i < 8; ++i)
-                    {
-                        auto p = _frustumSliceInLightSpace[i];
-                        std::cout << "(" << p.x << ", " << p.y << ")";
-                        if (i < 7) std::cout << ",";
-                    }
-
-                    std::cout << ")" << std::endl;
-
-                    std::cout << "Orthographically projected into camera space:" << std::endl;
-
-                    std::cout << "{" << std::endl;
-
-                    for (auto v : _frustumSliceVertices)
-                    {
-                        glm::vec4 p1 = cameraView * glm::mat4(1.0f) * glm::vec4(v, 1.0f);
-                        glm::vec3 p = glm::vec3(p1) / p1.w;
-
-                        std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
-                    }
-
-                    std::cout << "}" << std::endl;
-
-                    std::cout << "Orthographically projected into screen space:" << std::endl;
-
-                    std::cout << "{" << std::endl;
-
-                    glm::mat4 _ortho2dProjection{
-                        1.0f, 0.0f, 0.0f, 0.0f,
-                        0.0f, 1.0f, 0.0f, 0.0f,
-                        0.0, 0.0f, 0.0f, 0.0f,
-                        0.0f, 0.0f, 0.0f, 1.0f,
-                    };
-
-                    glm::mat4 _ortho2DView = glm::lookAt(cameraPos, cameraPos - cameraForward, glm::vec3(0.0f, 1.0f, 0.0f));
-
-                    for (auto v : _frustumSliceVertices)
-                    {
-                        glm::vec4 p1 = _ortho2DView * _ortho2dProjection * glm::vec4(v, 1.0f);
-                        glm::vec3 p = glm::vec3(p1) / p1.w;
-
-                        std::cout << "    (" << p.x << ", " << p.y << ", " << p.z << ")," << std::endl;
-                    }
-
-                    std::cout << "}" << std::endl;
-
-                    std::cout << "Boundaries: (" << _minX << ".." << _maxX << ", " << _minY << ".." << _maxY << ", " << _minZ << ".." << _maxZ << ")" << std::endl;
-
-                    auto Sx = 2.0f / (_maxX - _minX);
-                    auto Sy = 2.0f / (_maxY - _minY);
-
-                    auto Ox = -0.5f * (_maxX + _minX) * Sx;
-                    auto Oy = -0.5f * (_maxY + _minY) * Sy;
-
-                    glm::mat4 C{
-                        Sx, 0.0f, 0.0f, 0.0f,
-                        0.0f, Sy, 0.0f, 0.0f,
-                        0.0f, 0.0f, 1.0f, 0.0f,
-                        Ox, Oy, 0.0f, 1.0f,
-                    };
-
-                    std::cout << "Light projection matrix: {" << std::endl;
-                    std::cout << "    " << Sx << ", " << 0.0f << ", " << 0.0f << ", " << Ox << "," << std::endl;
-                    std::cout << "    " << 0.0f << ", " << Sy << ", " << 0.0f << ", " << Oy << "," << std::endl;
-                    std::cout << "    " << 0.0f << ", " << 0.0f << ", " << 0.0f << ", " << 0.0f << "," << std::endl;
-                    std::cout << "    " << 0.0f << ", " << 0.0f << ", " << 1.0f << ", " << 1.0f << "," << std::endl;
-                    std::cout << "}" << std::endl;
-
-                    std::cout << "==== end of slice #" << splitIdx << "====" << std::endl;
-                }*/
 
                 // light frustum
                 if (renderLightProjection)
@@ -1530,7 +1272,7 @@ int main()
             shadowMapTexture->bindActive(0);
 
             const auto imageWidth = (window.getSize().x / 4) - 20;
-            const auto imageHeight = imageWidth; // (window.getSize().y / 4);
+            const auto imageHeight = imageWidth;
 
             for (auto i = 0; i < 4; ++i)
             {
