@@ -11,7 +11,6 @@ in VS_OUT {
 
 uniform mat4 lightViewProjections[4];
 uniform float splits[4];
-uniform vec4 splitColors[6];
 
 uniform sampler2DArray shadowMaps;
 uniform sampler2D diffuseTexture;

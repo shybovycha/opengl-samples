@@ -635,6 +635,8 @@ int main()
 
     std::cout << "[DEBUG] Initializing shadowMapTexture...";
 
+    const glm::vec2 shadowMapSize = glm::vec2(2048, 2048);
+
     auto shadowMapTexture = std::make_unique<globjects::Texture>(gl::GL_TEXTURE_2D_ARRAY);
 
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
@@ -648,7 +650,7 @@ int main()
     shadowMapTexture->storage3D(
         4,
         static_cast<gl::GLenum>(GL_DEPTH_COMPONENT32F),
-        glm::vec3(2048, 2048, 4) // this last `4` is the number of layers of a 3D texture; must be equal to the number of frustum splits we are making
+        glm::vec3(shadowMapSize, 4) // this last `4` is the number of layers of a 3D texture; must be equal to the number of frustum splits we are making
     );
 
     std::cout << "done" << std::endl;
@@ -679,85 +681,29 @@ int main()
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 
-    glm::mat4 initialCameraProjection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
-
-    glm::mat4 initialCameraView = glm::lookAt(
-        cameraPos,
-        cameraPos + cameraForward,
-        cameraUp);
-
-    std::cout << "[DEBUG] Preparing frustum debugging VAO..." << std::endl;
+    const float nearPlane = 0.1f;
+    const float farPlane = 100.0f;
 
     glm::vec3 lightPosition = glm::vec3(0.0f, 3.0f, 4.0f); // cameraPos;
 
-    const float nearPlane = 0.1f;
-    const float farPlane = 20.0f;
+    glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+    const glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition); // TODO: update to some constant
+
+    glm::mat4 cameraProjection(1.0f);
+    glm::mat4 cameraView(1.0f);
+
+    std::vector<glm::mat4> lightViewProjectionMatrices;
+    std::vector<float> splitDepths;
+    std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
     // these vertices define view frustum in screen space coordinates
-    std::array<glm::vec3, 8> _cameraFrustumCornerVertices{
+    std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
         {
             { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
             { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
         }
     };
-
-    std::array<GLuint, 6 * 2 * 3> frustumIndices{
-        {
-            0, 1, 2,
-            2, 3, 0, // front
-
-            4, 5, 6,
-            6, 7, 4, // back
-
-            0, 1, 5,
-            5, 4, 0, // bottom
-
-            3, 7, 6,
-            6, 2, 3, // top
-
-            0, 4, 7,
-            7, 3, 0, // left
-
-            1, 2, 6,
-            6, 5, 1, // right
-        }
-    };
-
-    auto _frustumVAO = std::make_unique<globjects::VertexArray>();
-
-    auto _frustumIndexBuffer = std::make_unique<globjects::Buffer>();
-    auto _frustumVertexBuffer = std::make_unique<globjects::Buffer>();
-
-    _frustumIndexBuffer->setData(frustumIndices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
-    _frustumVertexBuffer->setData(_cameraFrustumCornerVertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-    std::cout << "[DEBUG] Binding element buffer..." << std::endl;
-
-    _frustumVAO->bindElementBuffer(_frustumIndexBuffer.get());
-
-    std::cout << "[DEBUG] Binding vertex buffer..." << std::endl;
-
-    _frustumVAO->binding(0)->setAttribute(0);
-    _frustumVAO->binding(0)->setBuffer(_frustumVertexBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
-    _frustumVAO->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-    _frustumVAO->enable(0);
-
-    std::vector<glm::vec4> _splitColors{
-        { 0.5f, 0.5f, 0.7f, 0.4f },
-        { 0.0f, 1.0f, 0.0f, 0.4f },
-        { 0.0f, 0.0f, 1.0f, 0.4f },
-        { 1.0f, 1.0f, 0.0f, 0.4f },
-        { 1.0f, 0.0f, 0.0f, 0.4f },
-        { 0.9f, 0.9f, 0.9f, 0.4f },
-    };
-
-    std::cout << "[DEBUG] Done" << std::endl;
-
-    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
-
-    glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    const glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition); // TODO: update to some constant
 
     sf::Clock clock;
 
@@ -765,27 +711,6 @@ int main()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glm::mat4 cameraProjection(1.0f);
-    glm::mat4 cameraView(1.0f);
-
-    std::vector<glm::mat4> lightViewProjectionMatrices;
-    std::vector<float> splitDepths;
-    std::vector<glm::mat4> lightProjections;
-    std::vector<glm::vec3> lightPositions;
-    std::vector<glm::vec3> lightOrigins;
-
-    int lightDebuggingView = -1;
-    int prevLightDebuggingView = -1;
-
-    std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
-
-    std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
-        {
-            { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
-            { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
-        }
-    };
 
 #ifndef WIN32
     auto previousMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
@@ -874,7 +799,7 @@ int main()
                 }
             }
 
-            cameraProjection = glm::perspective(glm::radians(fov), static_cast<float>(window.getSize().x) / static_cast<float>(window.getSize().y), 0.1f, 100.0f);
+            cameraProjection = glm::perspective(glm::radians(fov), static_cast<float>(window.getSize().x) / static_cast<float>(window.getSize().y), nearPlane, farPlane);
 
             cameraView = glm::lookAt(
                 cameraPos,
@@ -886,9 +811,7 @@ int main()
             lightViewProjectionMatrices.clear();
             splitDepths.clear();
 
-            glm::mat4 proj;
-
-            proj = glm::inverse(cameraProjection * cameraView);
+            glm::mat4 proj = glm::inverse(cameraProjection * cameraView);
 
             std::array<glm::vec3, 8> _entireFrustum;
 
@@ -909,7 +832,7 @@ int main()
                 _frustumEdgeDirections[i] = glm::normalize(_entireFrustum[4 + i] - _entireFrustum[i]);
             }
 
-            const float _depth = 100.0f - 0.1f;
+            const float _depth = farPlane - nearPlane;
 
             for (auto splitIdx = 1; splitIdx < splits.size(); ++splitIdx)
             {
@@ -972,7 +895,7 @@ int main()
             shadowRenderingSplitsUniform->set(splitDepths);
         }
 
-        ::glViewport(0, 0, 2048, 2048);
+        ::glViewport(0, 0, shadowMapSize.x, shadowMapSize.y);
 
         // first render pass - shadow mapping
 
@@ -1019,8 +942,6 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shadowRenderingProgram->use();
-
-        shadowRenderingProgram->setUniform("splitColors", _splitColors);
 
         shadowRenderingLightPositionUniform->set(lightPosition);
         shadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
