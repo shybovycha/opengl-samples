@@ -3,16 +3,13 @@
 layout (location = 0) out vec4 fragmentColor;
 
 in VS_OUT {
-    vec4 viewPosition;
-    vec4 fragmentPosition;
+    vec3 fragmentPosition;
     vec3 normal;
     vec2 textureCoord;
+    vec4 fragmentPositionInLightSpace;
 } fsIn;
 
-uniform mat4 lightViewProjections[4];
-uniform float splits[4];
-
-uniform sampler2DArray shadowMaps;
+uniform sampler2D shadowMap;
 uniform sampler2D diffuseTexture;
 
 uniform vec3 lightPosition;
@@ -21,31 +18,34 @@ uniform vec3 cameraPosition;
 
 float shadowCalculation(vec3 normal, vec3 lightDirection)
 {
-    float cameraViewDepth = fsIn.viewPosition.z;
+    vec3 shadowMapCoord = (fsIn.fragmentPositionInLightSpace.xyz / fsIn.fragmentPositionInLightSpace.w) * 0.5 + 0.5;
+    float occluderDepth = texture(shadowMap, shadowMapCoord.xy).r;
+    float thisDepth = shadowMapCoord.z;
 
-    for (int i = 0; i < 4; ++i)
+    if (thisDepth > 1.0)
     {
-        if (cameraViewDepth < splits[i])
+        return 0.0;
+    }
+
+    float bias = max(0.05 * (1.0 - dot(normal, lightDirection)), 0.005);
+
+    // PCF
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
         {
-            vec4 fragmentPositionInLightSpace = lightViewProjections[i] * fsIn.fragmentPosition;
-            vec3 shadowPos1 = fragmentPositionInLightSpace.xyz / fragmentPositionInLightSpace.w;
-            vec3 shadowMapCoord = shadowPos1 * 0.5 + 0.5;
-            float thisDepth = shadowMapCoord.z;
+            float pcfDepth = texture(shadowMap, shadowMapCoord.xy + vec2(x, y) * texelSize).r;
 
-            if (thisDepth > 1.0)
-            {
-                continue;
-            }
-
-            float occluderDepth = texture(shadowMaps, vec3(shadowMapCoord.xy, i)).r;
-
-            float bias = max(0.05 * (1.0 - dot(normal, lightDirection)), 0.005);
-
-            return thisDepth - bias > occluderDepth ? 0.25 : 1.0;
+            shadow += thisDepth - bias < pcfDepth  ? 1.0 : 0.0;
         }
     }
 
-    return 0.0;
+    shadow /= 9.0;
+
+    return shadow;
 }
 
 void main()
@@ -57,12 +57,12 @@ void main()
     vec3 ambient = 0.3 * color;
 
     // diffuse
-    vec3 lightDirection = normalize(lightPosition - vec3(fsIn.fragmentPosition) / fsIn.fragmentPosition.w);
+    vec3 lightDirection = normalize(lightPosition - fsIn.fragmentPosition);
     float diff = max(dot(lightDirection, normal), 0.0);
     vec3 diffuse = diff * lightColor;
 
     // specular
-    vec3 viewDirection = normalize(cameraPosition - vec3(fsIn.fragmentPosition) / fsIn.fragmentPosition.w);
+    vec3 viewDirection = normalize(cameraPosition - fsIn.fragmentPosition);
     vec3 halfwayDirection = normalize(lightDirection + viewDirection);
     float spec = pow(max(dot(normal, halfwayDirection), 0.0), 64.0);
     vec3 specular = spec * lightColor;

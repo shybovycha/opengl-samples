@@ -7,10 +7,9 @@ out gl_PerVertex
     vec4 gl_Position;
 };
 
-uniform mat4 lightSpaceMatrix;
 uniform mat4 modelTransformation;
 
 void main()
 {
-    gl_Position = lightSpaceMatrix * modelTransformation * vec4(vertexPosition, 1.0);
+    gl_Position = modelTransformation * vec4(vertexPosition, 1.0);
 }

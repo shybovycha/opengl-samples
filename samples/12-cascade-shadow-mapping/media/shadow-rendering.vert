@@ -6,10 +6,10 @@ layout (location = 2) in vec2 vertexTextureCoord;
 
 out VS_OUT
 {
-    vec3 fragmentPosition;
+    vec4 viewPosition;
+    vec4 fragmentPosition;
     vec3 normal;
     vec2 textureCoord;
-    vec4 fragmentPositionInLightSpace;
 } vsOut;
 
 out gl_PerVertex {
@@ -19,14 +19,15 @@ out gl_PerVertex {
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
-uniform mat4 lightSpaceMatrix;
 
 void main()
 {
-    vsOut.fragmentPosition = vec3(model * vec4(vertexPosition, 1.0));
+    vsOut.fragmentPosition = model * vec4(vertexPosition, 1.0);
+
+    vsOut.viewPosition = projection * view * model * vec4(vertexPosition, 1.0);
+
     vsOut.normal = vertexNormal;
     vsOut.textureCoord = vertexTextureCoord;
-    vsOut.fragmentPositionInLightSpace = lightSpaceMatrix * model * vec4(vertexPosition, 1.0);
 
     gl_Position = projection * view * model * vec4(vertexPosition, 1.0);
 }
