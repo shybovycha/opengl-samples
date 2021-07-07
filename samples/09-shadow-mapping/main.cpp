@@ -766,30 +766,8 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    bool renderLightFrusta = false;
-    bool renderLightProjection = false;
-    bool debugOn = false;
-    bool debugShadowMaps = false;
-    bool debugProjectionSliceDimensions = false;
-
-    glm::mat4 _originalCameraProjection(1.0f);
-    glm::mat4 _originalCameraView(1.0f);
-    glm::vec3 _originalCameraPos(0.0f);
-    glm::vec3 _originalCameraForward(0.0f);
-
-    bool isDebuggingLight = false;
-
     glm::mat4 cameraProjection(1.0f);
     glm::mat4 cameraView(1.0f);
-
-    struct FrustumSlice
-    {
-        std::array<glm::vec3, 8> vertices;
-        glm::vec3 center;
-        float radius;
-        glm::vec4 color;
-        glm::mat4 projection;
-    };
 
     std::vector<glm::mat4> lightViewProjectionMatrices;
     std::vector<float> splitDepths;
@@ -809,8 +787,6 @@ int main()
         }
     };
 
-    std::vector<FrustumSlice> frustumSlices;
-
 #ifndef WIN32
     auto previousMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
 #endif
@@ -824,91 +800,11 @@ int main()
 
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::KeyPressed)
-            {
-                if (event.key.code == sf::Keyboard::Space)
-                {
-                    debugProjectionSliceDimensions = true;
-                }
-
-                if (event.key.code == sf::Keyboard::Return)
-                {
-                    renderLightProjection = !renderLightProjection;
-                }
-
-                if (event.key.code == sf::Keyboard::Q)
-                {
-                    initialCameraProjection = cameraProjection;
-                    initialCameraView = cameraView;
-                    debugOn = !debugOn;
-                }
-
-                if (event.key.code == sf::Keyboard::E)
-                {
-                    debugShadowMaps = !debugShadowMaps;
-                }
-
-                if (event.key.code == sf::Keyboard::Num1)
-                {
-                    lightDebuggingView = 1;
-                }
-
-                if (event.key.code == sf::Keyboard::Num2)
-                {
-                    lightDebuggingView = 2;
-                }
-
-                if (event.key.code == sf::Keyboard::Num3)
-                {
-                    lightDebuggingView = 3;
-                }
-
-                if (event.key.code == sf::Keyboard::Num4)
-                {
-                    lightDebuggingView = 4;
-                }
-
-                if (event.key.code == sf::Keyboard::Num0)
-                {
-                    lightDebuggingView = -1;
-                }
-            }
-
             if (event.type == sf::Event::Closed)
             {
                 window.close();
                 break;
             }
-        }
-
-        if (prevLightDebuggingView != lightDebuggingView)
-        {
-            if (lightDebuggingView > -1)
-            {
-                if (!isDebuggingLight)
-                {
-                    _originalCameraProjection = cameraProjection;
-                    _originalCameraView = cameraView;
-                    _originalCameraPos = cameraPos;
-                    _originalCameraForward = cameraForward;
-                    isDebuggingLight = true;
-                }
-
-                cameraPos = frustumSlices[lightDebuggingView - 1].center - glm::normalize(_lightDirection) * frustumSlices[lightDebuggingView - 1].radius;
-                cameraForward = frustumSlices[lightDebuggingView - 1].center - cameraPos;
-                cameraProjection = frustumSlices[lightDebuggingView - 1].projection;
-                cameraView = glm::mat4(1.0f);
-            }
-            else
-            {
-                cameraProjection = _originalCameraProjection;
-                cameraView = _originalCameraView;
-                cameraPos = _originalCameraPos;
-                cameraForward = _originalCameraForward;
-                isDebuggingLight = false;
-            }
-
-            prevLightDebuggingView = lightDebuggingView;
         }
 
         glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
@@ -921,7 +817,6 @@ int main()
         previousMousePos = currentMousePos;
 #endif
 
-        // if (!isDebuggingLight)
         {
             float horizontalAngle = (mouseDelta.x / static_cast<float>(window.getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
             float verticalAngle = (mouseDelta.y / static_cast<float>(window.getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
@@ -979,10 +874,7 @@ int main()
                 }
             }
 
-            if (!isDebuggingLight)
-            {
-                cameraProjection = glm::perspective(glm::radians(fov), static_cast<float>(window.getSize().x) / static_cast<float>(window.getSize().y), 0.1f, 100.0f);
-            }
+            cameraProjection = glm::perspective(glm::radians(fov), static_cast<float>(window.getSize().x) / static_cast<float>(window.getSize().y), 0.1f, 100.0f);
 
             cameraView = glm::lookAt(
                 cameraPos,
@@ -993,21 +885,10 @@ int main()
         {
             lightViewProjectionMatrices.clear();
             splitDepths.clear();
-            lightPositions.clear();
-            lightOrigins.clear();
-
-            frustumSlices.clear();
 
             glm::mat4 proj;
 
-            if (debugOn)
-            {
-                proj = glm::inverse(initialCameraProjection * initialCameraView);
-            }
-            else
-            {
-                proj = glm::inverse(cameraProjection * cameraView);
-            }
+            proj = glm::inverse(cameraProjection * cameraView);
 
             std::array<glm::vec3, 8> _entireFrustum;
 
@@ -1080,9 +961,6 @@ int main()
                     0.0f,
                     _frustumSliceCenter.z + 2.0f * _frustumRadius
                 ) * _lightView;
-
-                // push new frustum slice to the vector
-                frustumSlices.push_back({ _frustumSliceVertices, _frustumSliceCenter, _frustumRadius, _splitColors[splitIdx], _lightProjectionViewMatrix });
 
                 lightViewProjectionMatrices.push_back(_lightProjectionViewMatrix);
 
@@ -1177,119 +1055,6 @@ int main()
         shadowMapTexture->unbindActive(0);
 
         shadowRenderingProgram->release();
-
-        if (debugOn)
-        {
-            glDisable(GL_CULL_FACE);
-
-            primitiveRenderingProgram->use();
-
-            // render frusta
-            auto proj = glm::inverse(initialCameraProjection * initialCameraView);
-
-            std::array<glm::vec3, 8> _entireFrustum;
-
-            std::transform(
-                _cameraFrustumSliceCornerVertices.begin(),
-                _cameraFrustumSliceCornerVertices.end(),
-                _entireFrustum.begin(),
-                [&](glm::vec3 p) {
-                    glm::vec4 v = proj * glm::vec4(p, 1.0f);
-                    return glm::vec3(v) / v.w;
-                }
-            );
-
-            std::array<glm::vec3, 4> _frustumEdgeDirections;
-
-            for (auto i = 0; i < 4; ++i)
-            {
-                _frustumEdgeDirections[i] = glm::normalize(_entireFrustum[4 + i] - _entireFrustum[i]);
-            }
-
-            const float _depth = 100.0f - 0.1f;
-
-            for (auto splitIdx = 1; splitIdx < splits.size(); ++splitIdx)
-            {
-                auto slice = frustumSlices[splitIdx - 1];
-
-                // light frustum
-                if (renderLightProjection)
-                {
-                    glm::vec3 _lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - lightPosition); // TODO: update to some constant
-                    glm::vec3 _lightPosition = slice.center - glm::normalize(_lightDirection) * slice.radius;
-
-                    std::array<glm::vec3, 2> _lightBeam{
-                        _lightPosition, slice.center
-                    };
-
-                    primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
-                    primitiveRenderingProgram->setUniform("color", slice.color);
-
-                    _frustumVertexBuffer->setData(_lightBeam, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-                    _frustumVAO->bind();
-
-                    _frustumVAO->drawArrays(
-                        static_cast<gl::GLenum>(GL_LINES),
-                        0,
-                        2
-                    );
-
-                    _frustumVAO->unbind();
-                }
-
-                primitiveRenderingProgram->setUniform("transformation", cameraProjection * cameraView);
-                primitiveRenderingProgram->setUniform("color", slice.color);
-
-                _frustumVertexBuffer->setData(slice.vertices, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW));
-
-                _frustumVAO->bind();
-
-                _frustumVAO->drawElements(
-                    static_cast<gl::GLenum>(GL_TRIANGLES),
-                    frustumIndices.size(),
-                    static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-                    nullptr);
-
-                _frustumVAO->unbind();
-            }
-
-            if (debugProjectionSliceDimensions)
-            {
-                debugProjectionSliceDimensions = false;
-            }
-
-            primitiveRenderingProgram->release();
-
-            glEnable(GL_CULL_FACE);
-        }
-
-        // render quad with depth (shadow) map
-        if (debugShadowMaps)
-        {
-            shadowDebuggingProgram->use();
-
-            shadowMapTexture->bindActive(0);
-
-            const auto imageWidth = (window.getSize().x / 4) - 20;
-            const auto imageHeight = imageWidth;
-
-            for (auto i = 0; i < 4; ++i)
-            {
-                ::glViewport(20 + (i * (imageWidth + 20)), 0, imageWidth, imageHeight);
-
-                shadowDebuggingModelTransformationUniform->set(glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.f)));
-                shadowDebuggingProgram->setUniform("textureLayer", i);
-
-                quadModel->bind();
-                quadModel->draw();
-                quadModel->unbind();
-            }
-
-            shadowMapTexture->unbindActive(0);
-
-            shadowDebuggingProgram->release();
-        }
 
         // done rendering the frame
 
