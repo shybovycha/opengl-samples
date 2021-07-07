@@ -1086,7 +1086,7 @@ int main()
 
                 lightViewProjectionMatrices.push_back(_lightProjectionViewMatrix);
 
-                splitDepths.push_back(_depth * splits[splitIdx]);
+                splitDepths.push_back(_depth * splits[splitIdx] * 0.7f);
             }
 
             shadowMappingLightViewProjectionMatrices->set(lightViewProjectionMatrices);
