@@ -622,43 +622,23 @@ public:
     }
 
 protected:
-    /*! \brief Calculate interpolated value using the Bezier curve
-    * \param splineOrder the order of the Bezier curve; 2 for quadratic, 3 for cubic, etc.
-    * \param t the parameter for the Bezier function
-    * \param varargs the list of points defining the Bezier curve; must be \p splineOrder + 1
-    * \return The function \f$y = B_{splineOrder}(x)\f$ applied to argument \p t
-    */
     template <unsigned int splineOrder, unsigned int iteration>
     float bezier(float t, float p_0)
     {
         return p_0 * std::powf(1.0f - t, static_cast<float>(splineOrder));
     }
 
+    /*! \brief Calculate interpolated value using the Bezier curve
+    * \param splineOrder the order of the Bezier curve; 2 for quadratic, 3 for cubic, etc.
+    * \param t the parameter for the Bezier function
+    * \param args the list of points defining the Bezier curve; must be \p splineOrder + 1
+    * \return The function \f$y = B_{splineOrder}(x)\f$ applied to argument \p t
+    */
     template <unsigned int splineOrder, unsigned int iteration = splineOrder, typename... TArgs>
     float bezier(float t, float p_i, TArgs... args)
     {
         return bezier<splineOrder, iteration - 1>(t, args...);
     }
-
-    /*template <unsigned int splineOrder, typename... TArgs>
-    float bezier1(float t, TArgs... args)
-    {
-        return bezier_<splineOrder>(t, args...);
-    }
-
-    template <unsigned int splineOrder>
-    float bezier_(float t, unsigned int iteration, float p_0)
-    {
-        return p_0;
-    }
-
-    template <unsigned int splineOrder, typename... TArgs>
-    float bezier_(float t, unsigned int iteration, float p_i, TArgs... args)
-    {
-        float B_i_n = polynomial(splineOrder, iteration) * std::powf(t, static_cast<float>(iteration)) * std::powf(1.0f - t, static_cast<float>(splineOrder - iteration));
-
-        return B_i_n + bezier_<splineOrder>(t, iteration - 1, args...);
-    }*/
 
     //! Generates polynomial coefficients
     /*!
@@ -735,6 +715,15 @@ public:
 
         glm::mat4 modelMatrix = particle->getModelMatrix();
 
+        /*
+        * reset the rotation for the particles by replacing the model matrix' top 3x3 sub-matrix, containing the rotation and scale,
+        * with the transposed top 3x3 sub-matrix of the view matrix, as per ThinMatrix' particles tutorial.
+        *
+        * this effectively makes the result of multiplication viewMatrix * modelMatrix have an identity matrix at the top 3x3 sub-matrix.
+        *
+        * hence after the multiplication we have to scale and rotate the model matrix again, this time in the "camera space", so to speak
+        * meaning the particle is already facing camera, so we can scale and rotate it relatively to itself
+        */
         modelMatrix[0][0] = viewMatrix[0][0];
         modelMatrix[0][1] = viewMatrix[1][0];
         modelMatrix[0][2] = viewMatrix[2][0];
