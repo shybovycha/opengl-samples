@@ -469,7 +469,7 @@ template <class TParticle>
 class AbstractParticleRenderer
 {
 public:
-    virtual void draw(TParticle* particle, glm::mat4 viewMatrix) = 0;
+    virtual void draw(TParticle* particle, glm::mat4 projectionMatrix, glm::mat4 viewMatrix) = 0;
 };
 
 template <class TParticle>
@@ -512,11 +512,11 @@ public:
         }
     }
 
-    void draw(glm::mat4 viewMatrix)
+    void draw(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
     {
         for (auto& particle : m_particles)
         {
-            m_renderer->draw(particle.get(), viewMatrix);
+            m_renderer->draw(particle.get(), projectionMatrix, viewMatrix);
         }
     }
 
@@ -664,7 +664,7 @@ public:
         std::cout << "done" << std::endl;
     }
 
-    void draw(SimpleParticle* particle, glm::mat4 viewMatrix) override
+    void draw(SimpleParticle* particle, glm::mat4 projectionMatrix, glm::mat4 viewMatrix) override
     {
         ::glEnable(GL_BLEND);
         ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -673,21 +673,31 @@ public:
         m_particleRenderingProgram->use();
 
         glm::mat4 modelMatrix = particle->getModelMatrix();
+
+        modelMatrix[0][0] = viewMatrix[0][0];
+        modelMatrix[0][1] = viewMatrix[1][0];
+        modelMatrix[0][2] = viewMatrix[2][0];
+
+        modelMatrix[1][0] = viewMatrix[0][1];
+        modelMatrix[1][1] = viewMatrix[1][1];
+        modelMatrix[1][2] = viewMatrix[2][1];
+
+        modelMatrix[2][0] = viewMatrix[0][2];
+        modelMatrix[2][1] = viewMatrix[1][2];
+        modelMatrix[2][2] = viewMatrix[2][2];
+
         glm::mat4 modelViewMatrix = viewMatrix * modelMatrix;
 
-        modelViewMatrix[0][0] = glm::length(glm::vec3(modelMatrix[0]));
-        modelViewMatrix[0][1] = 0.0f;
-        modelViewMatrix[0][2] = 0.0f;
+        glm::mat4 finalModelMatrix = glm::scale(
+            glm::rotate(
+                modelViewMatrix,
+                glm::radians(particle->getRotation()),
+                glm::vec3(0.0f, 0.0f, 1.0f)
+            ),
+            glm::vec3(particle->getScale())
+        );
 
-        modelViewMatrix[1][0] = 0.0f;
-        modelViewMatrix[1][1] = glm::length(glm::vec3(modelMatrix[1]));
-        modelViewMatrix[1][2] = 0.0f;
-
-        modelViewMatrix[2][0] = 0.0f;
-        modelViewMatrix[2][1] = 0.0f;
-        modelViewMatrix[2][2] = glm::length(glm::vec3(modelMatrix[2]));
-
-        m_transformationMatrixUniform->set(modelViewMatrix);
+        m_transformationMatrixUniform->set(projectionMatrix * finalModelMatrix);
         m_lifetimeUniform->set(particle->getLifetime());
 
         m_model->bind();
@@ -1179,7 +1189,7 @@ int main()
         shadowRenderingProgram->release();
 
         particleSystem->update(deltaTime);
-        particleSystem->draw(cameraProjection * cameraView);
+        particleSystem->draw(cameraProjection, cameraView);
 
         // render quad with depth (shadow) map
 
