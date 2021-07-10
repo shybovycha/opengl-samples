@@ -11,5 +11,5 @@ uniform sampler2D particleTexture;
 
 void main()
 {
-    fragmentColor = fsIn.vertexColor; // texture(particleTexture, fsIn.textureCoord)
+    fragmentColor = texture(particleTexture, fsIn.textureCoord);
 }
