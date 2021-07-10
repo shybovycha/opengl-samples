@@ -613,10 +613,71 @@ public:
 
     void affect(SimpleParticle* particle, float deltaTime) override
     {
+        float speed = bezier<3>(particle->getLifetime(), 0.32f, 0.0f, 1.0f, 0.12f);
+
         particle->setLifetime(particle->getLifetime() - deltaTime);
-        particle->setVelocity(particle->getVelocity() + particle->getMass() * GRAVITY * deltaTime);
+        particle->setVelocity(particle->getVelocity() + speed * particle->getMass() * GRAVITY * deltaTime);
         particle->setPosition(particle->getPosition() + particle->getVelocity() * deltaTime);
         particle->setRotation(particle->getRotation() + 2.0f * deltaTime);
+    }
+
+protected:
+    /*! \brief Calculate interpolated value using the Bezier curve
+    * \param splineOrder the order of the Bezier curve; 2 for quadratic, 3 for cubic, etc.
+    * \param t the parameter for the Bezier function
+    * \param varargs the list of points defining the Bezier curve; must be \p splineOrder + 1
+    * \return The function \f$y = B_{splineOrder}(x)\f$ applied to argument \p t
+    */
+    template <unsigned int splineOrder, unsigned int iteration>
+    float bezier(float t, float p_0)
+    {
+        return p_0 * std::powf(1.0f - t, static_cast<float>(splineOrder));
+    }
+
+    template <unsigned int splineOrder, unsigned int iteration = splineOrder, typename... TArgs>
+    float bezier(float t, float p_i, TArgs... args)
+    {
+        return bezier<splineOrder, iteration - 1>(t, args...);
+    }
+
+    /*template <unsigned int splineOrder, typename... TArgs>
+    float bezier1(float t, TArgs... args)
+    {
+        return bezier_<splineOrder>(t, args...);
+    }
+
+    template <unsigned int splineOrder>
+    float bezier_(float t, unsigned int iteration, float p_0)
+    {
+        return p_0;
+    }
+
+    template <unsigned int splineOrder, typename... TArgs>
+    float bezier_(float t, unsigned int iteration, float p_i, TArgs... args)
+    {
+        float B_i_n = polynomial(splineOrder, iteration) * std::powf(t, static_cast<float>(iteration)) * std::powf(1.0f - t, static_cast<float>(splineOrder - iteration));
+
+        return B_i_n + bezier_<splineOrder>(t, iteration - 1, args...);
+    }*/
+
+    //! Generates polynomial coefficients
+    /*!
+    * \param n total number of polynomial coefficients
+    * \param i current polynomial coefficient index
+    */
+    float polynomial(unsigned int n, unsigned int i)
+    {
+        return factorial(n) / (factorial(i) * factorial(n - i));
+    }
+
+    unsigned int factorial(unsigned int n)
+    {
+        if (n == 0)
+        {
+            return 1;
+        }
+
+        return n * factorial(n - 1);
     }
 };
 
