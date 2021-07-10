@@ -64,7 +64,6 @@ int main()
 
     std::cout << "[INFO] Compiling vertex shader...";
 
-    auto vertexProgram = globjects::Program::create();
     auto vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
     auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
     auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
@@ -79,7 +78,6 @@ int main()
 
     std::cout << "[INFO] Compiling fragment shader...";
 
-    auto fragmentProgram = globjects::Program::create();
     auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
     auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
     auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
@@ -94,17 +92,8 @@ int main()
 
     std::cout << "[INFO] Linking shader programs...";
 
-    vertexProgram->attach(vertexShader.get());
-    fragmentProgram->attach(fragmentShader.get());
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Creating rendering pipeline...";
-
-    auto programPipeline = globjects::ProgramPipeline::create();
-
-    programPipeline->useStages(vertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    programPipeline->useStages(fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+    auto renderProgram = globjects::Program::create();
+    renderProgram->attach(vertexShader.get(), fragmentShader.get());
 
     std::cout << "done" << std::endl;
 
@@ -206,7 +195,7 @@ int main()
         static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
         reinterpret_cast<const gl::GLvoid*>(textureImage.getPixelsPtr()));
 
-    fragmentProgram->setUniform("textureSampler", 0);
+    renderProgram->setUniform("textureSampler", 0);
 
     std::cout << "done" << std::endl;
 
@@ -290,9 +279,9 @@ int main()
 
         glm::mat4 model = glm::mat4(1.0f); // identity
 
-        vertexProgram->setUniform("model", model);
-        vertexProgram->setUniform("view", view);
-        vertexProgram->setUniform("projection", projection);
+        renderProgram->setUniform("model", model);
+        renderProgram->setUniform("view", view);
+        renderProgram->setUniform("projection", projection);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -302,13 +291,13 @@ int main()
 
         texture->bind();
 
-        programPipeline->use();
+        renderProgram->use();
 
         // number of values passed = number of elements * number of vertices per element
         // in this case: 2 triangles, 3 vertex indexes per triangle
         vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), numFaces * 3, static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr);
 
-        programPipeline->release();
+        renderProgram->release();
 
         vao->unbind();
 

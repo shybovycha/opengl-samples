@@ -63,7 +63,6 @@ int main()
 
     std::cout << "[INFO] Compiling vertex shader...";
 
-    auto vertexProgram = globjects::Program::create();
     auto vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
     auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
     auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
@@ -72,26 +71,16 @@ int main()
 
     std::cout << "[INFO] Compiling fragment shader...";
 
-    auto fragmentProgram = globjects::Program::create();
     auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
     auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
     auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Linking shader programs...";
+    std::cout << "[INFO] Linking shaders...";
 
-    vertexProgram->attach(vertexShader.get());
-    fragmentProgram->attach(fragmentShader.get());
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Creating rendering pipeline...";
-
-    auto programPipeline = globjects::ProgramPipeline::create();
-
-    programPipeline->useStages(vertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    programPipeline->useStages(fragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+    auto renderProgram = globjects::Program::create();
+    renderProgram->attach(vertexShader.get(), fragmentShader.get());
 
     std::cout << "done" << std::endl;
 
@@ -197,17 +186,19 @@ int main()
 
         glm::mat4 model = glm::mat4(1.0f); // identity
 
-        vertexProgram->setUniform("model", model);
-        vertexProgram->setUniform("view", view);
-        vertexProgram->setUniform("projection", projection);
+        renderProgram->setUniform("model", model);
+        renderProgram->setUniform("view", view);
+        renderProgram->setUniform("projection", projection);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
 
-        programPipeline->use();
+        renderProgram->use();
 
         vao->drawArrays(static_cast<gl::GLenum>(GL_TRIANGLE_STRIP), 0, 4);
+
+        renderProgram->release();
 
         window.display();
     }
