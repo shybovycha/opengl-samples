@@ -38,20 +38,33 @@
 using namespace gl;
 #endif
 
-class Mesh
+class AbstractDrawable
 {
 public:
-    Mesh(
-        std::unique_ptr<globjects::VertexArray> vao,
-        std::vector<std::unique_ptr<globjects::Texture>> textures,
+    virtual void draw() = 0;
+
+    virtual void drawInstanced(unsigned int instances) = 0;
+
+    virtual void bind() = 0;
+
+    virtual void unbind() = 0;
+};
+
+class AbstractMesh : public AbstractDrawable
+{
+public:
+    AbstractMesh(
         std::vector<glm::vec3> vertices,
         std::vector<glm::vec3> normals,
         std::vector<glm::vec2> uvs,
         std::vector<unsigned int> indices,
+        std::unique_ptr<globjects::VertexArray> vao,
+        std::vector<std::unique_ptr<globjects::Texture>> textures,
         std::unique_ptr<globjects::Buffer> vertexBuffer,
         std::unique_ptr<globjects::Buffer> indexBuffer,
         std::unique_ptr<globjects::Buffer> normalBuffer,
-        std::unique_ptr<globjects::Buffer> uvBuffer) :
+        std::unique_ptr<globjects::Buffer> uvBuffer
+    ) :
 
         m_vao(std::move(vao)),
         m_textures(std::move(textures)),
@@ -66,11 +79,153 @@ public:
     {
     }
 
-    ~Mesh()
+    void draw() override
+    {
+        // number of values passed = number of elements * number of vertices per element
+        // in this case: 2 triangles, 3 vertex indexes per triangle
+        m_vao->drawElements(
+            static_cast<gl::GLenum>(GL_TRIANGLES),
+            m_indices.size(),
+            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+            nullptr);
+    }
+
+    void drawInstanced(unsigned int instances) override
+    {
+        m_vao->drawElementsInstanced(
+            static_cast<gl::GLenum>(GL_TRIANGLES),
+            m_indices.size(),
+            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+            nullptr,
+            instances);
+    }
+
+    void bind() override
+    {
+        m_vao->bind();
+
+        for (auto& texture : m_textures)
+        {
+            texture->bindActive(1);
+        }
+    }
+
+    void unbind() override
+    {
+        for (auto& texture : m_textures)
+        {
+            texture->unbindActive(1);
+        }
+
+        m_vao->unbind();
+    }
+
+private:
+    std::unique_ptr<globjects::VertexArray> m_vao;
+
+    std::unique_ptr<globjects::Buffer> m_vertexBuffer;
+    std::unique_ptr<globjects::Buffer> m_indexBuffer;
+    std::unique_ptr<globjects::Buffer> m_normalBuffer;
+    std::unique_ptr<globjects::Buffer> m_uvBuffer;
+
+    std::vector<std::unique_ptr<globjects::Texture>> m_textures;
+
+    std::vector<unsigned int> m_indices;
+    std::vector<glm::vec3> m_vertices;
+    std::vector<glm::vec3> m_normals;
+    std::vector<glm::vec2> m_uvs;
+};
+
+class AbstractModel : public AbstractDrawable
+{
+public:
+    AbstractModel(std::vector<std::unique_ptr<AbstractMesh>> meshes) : m_meshes(std::move(meshes)), m_transformation(1.0f)
     {
     }
 
-    static std::unique_ptr<Mesh> fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
+    void setTransformation(glm::mat4 transformation)
+    {
+        m_transformation = transformation;
+    }
+
+    glm::mat4 getTransformation() const
+    {
+        return m_transformation;
+    }
+
+    void draw() override
+    {
+        for (auto& mesh : m_meshes)
+        {
+            mesh->draw();
+        }
+    }
+
+    void drawInstanced(unsigned int instances) override
+    {
+        for (auto& mesh : m_meshes)
+        {
+            mesh->drawInstanced(instances);
+        }
+    }
+
+    void bind() override
+    {
+        for (auto& mesh : m_meshes)
+        {
+            mesh->bind();
+        }
+    }
+
+    void unbind() override
+    {
+        for (auto& mesh : m_meshes)
+        {
+            mesh->unbind();
+        }
+    }
+
+protected:
+    void setMeshes(std::vector<std::unique_ptr<AbstractMesh>> meshes)
+    {
+        m_meshes = std::move(meshes);
+    }
+
+    std::vector<std::unique_ptr<AbstractMesh>> m_meshes;
+    glm::mat4 m_transformation;
+};
+
+class AssimpMesh : public AbstractMesh
+{
+public:
+    AssimpMesh(
+        std::vector<glm::vec3> vertices,
+        std::vector<glm::vec3> normals,
+        std::vector<glm::vec2> uvs,
+        std::vector<unsigned int> indices,
+        std::unique_ptr<globjects::VertexArray> vao,
+        std::vector<std::unique_ptr<globjects::Texture>> textures,
+        std::unique_ptr<globjects::Buffer> vertexBuffer,
+        std::unique_ptr<globjects::Buffer> indexBuffer,
+        std::unique_ptr<globjects::Buffer> normalBuffer,
+        std::unique_ptr<globjects::Buffer> uvBuffer
+    ) :
+        AbstractMesh(
+            std::move(vertices),
+            std::move(normals),
+            std::move(uvs),
+            std::move(indices),
+            std::move(vao),
+            std::move(textures),
+            std::move(vertexBuffer),
+            std::move(indexBuffer),
+            std::move(normalBuffer),
+            std::move(uvBuffer)
+        )
+    {
+    }
+
+    static std::unique_ptr<AssimpMesh> fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
         std::cout << "[INFO] Creating buffer objects...";
 
@@ -233,146 +388,42 @@ public:
 
         std::cout << "done" << std::endl;
 
-        return std::make_unique<Mesh>(
-            std::move(vao),
-            std::move(textures),
+        return std::make_unique<AssimpMesh>(
             std::move(vertices),
             std::move(normals),
             std::move(uvs),
             std::move(indices),
+            std::move(vao),
+            std::move(textures),
             std::move(vertexBuffer),
             std::move(indexBuffer),
             std::move(normalBuffer),
             std::move(uvBuffer));
     }
-
-    void draw()
-    {
-        // number of values passed = number of elements * number of vertices per element
-        // in this case: 2 triangles, 3 vertex indexes per triangle
-        m_vao->drawElements(
-            static_cast<gl::GLenum>(GL_TRIANGLES),
-            m_indices.size(),
-            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-            nullptr);
-    }
-
-    void drawInstanced(unsigned int instances)
-    {
-        m_vao->drawElementsInstanced(
-            static_cast<gl::GLenum>(GL_TRIANGLES),
-            m_indices.size(),
-            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-            nullptr,
-            instances);
-    }
-
-    void bind()
-    {
-        m_vao->bind();
-
-        for (auto& texture : m_textures)
-        {
-            texture->bindActive(1);
-        }
-    }
-
-    void unbind()
-    {
-        for (auto& texture : m_textures)
-        {
-            texture->unbindActive(1);
-        }
-
-        m_vao->unbind();
-    }
-
-private:
-    std::unique_ptr<globjects::VertexArray> m_vao;
-
-    std::unique_ptr<globjects::Buffer> m_vertexBuffer;
-    std::unique_ptr<globjects::Buffer> m_indexBuffer;
-    std::unique_ptr<globjects::Buffer> m_normalBuffer;
-    std::unique_ptr<globjects::Buffer> m_uvBuffer;
-
-    std::vector<std::unique_ptr<globjects::Texture>> m_textures;
-
-    std::vector<unsigned int> m_indices;
-    std::vector<glm::vec3> m_vertices;
-    std::vector<glm::vec3> m_normals;
-    std::vector<glm::vec2> m_uvs;
 };
 
-class Model
+class AssimpModel : public AbstractModel
 {
 public:
-    Model(std::vector<std::unique_ptr<Mesh>> meshes) :
-        m_meshes(std::move(meshes)),
-        m_transformation(1.0f)
+    AssimpModel(std::vector<std::unique_ptr<AbstractMesh>> meshes) : AbstractModel(std::move(meshes))
     {
     }
 
-    ~Model()
+    static std::unique_ptr<AssimpModel> fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
-    }
-
-    static std::unique_ptr<Model> fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
-    {
-        std::vector<std::unique_ptr<Mesh>> meshes;
+        std::vector<std::unique_ptr<AbstractMesh>> meshes;
 
         processAiNode(scene, node, materialLookupPaths, meshes);
 
-        return std::make_unique<Model>(std::move(meshes));
-    }
-
-    void setTransformation(glm::mat4 transformation)
-    {
-        m_transformation = transformation;
-    }
-
-    glm::mat4 getTransformation() const
-    {
-        return m_transformation;
-    }
-
-    void draw()
-    {
-        for (auto& mesh : m_meshes)
-        {
-            mesh->draw();
-        }
-    }
-
-    void drawInstanced(unsigned int instances)
-    {
-        for (auto& mesh : m_meshes)
-        {
-            mesh->drawInstanced(instances);
-        }
-    }
-
-    void bind()
-    {
-        for (auto& mesh : m_meshes)
-        {
-            mesh->bind();
-        }
-    }
-
-    void unbind()
-    {
-        for (auto& mesh : m_meshes)
-        {
-            mesh->unbind();
-        }
+        return std::make_unique<AssimpModel>(std::move(meshes));
     }
 
 protected:
-    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<Mesh>>& meshes)
+    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<AbstractMesh>>& meshes)
     {
         for (auto t = 0; t < node->mNumMeshes; ++t)
         {
-            auto mesh = Mesh::fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
+            auto mesh = AssimpMesh::fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
             meshes.push_back(std::move(mesh));
         }
 
@@ -384,10 +435,6 @@ protected:
             processAiNode(scene, child, materialLookupPaths, meshes);
         }
     }
-
-private:
-    std::vector<std::unique_ptr<Mesh>> m_meshes;
-    glm::mat4 m_transformation;
 };
 
 int main()
@@ -516,7 +563,7 @@ int main()
         return 1;
     }
 
-    auto chickenModel = Model::fromAiNode(chickenScene, chickenScene->mRootNode, { "media" });
+    auto chickenModel = AssimpModel::fromAiNode(chickenScene, chickenScene->mRootNode, { "media" });
 
     // INFO: this transformation is hard-coded specifically for Chicken.3ds model
     chickenModel->setTransformation(glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));
@@ -529,7 +576,7 @@ int main()
         return 1;
     }
 
-    auto quadModel = Model::fromAiNode(quadScene, quadScene->mRootNode);
+    auto quadModel = AssimpModel::fromAiNode(quadScene, quadScene->mRootNode);
 
     quadModel->setTransformation(glm::rotate(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-5, 0, 5)), glm::vec3(10.0f, 0, 10.0f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));
 
