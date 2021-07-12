@@ -1,4 +1,4 @@
-#version 410
+#version 430
 
 layout (location = 0) in vec3 vertexPosition;
 layout (location = 1) in vec3 vertexNormal;
@@ -14,13 +14,20 @@ out gl_PerVertex {
     vec4 gl_Position;
 };
 
-uniform mat4 transformationMatrices[100];
-uniform float lifetimes[100];
+struct Particle {
+    mat4 transformationMatrix;
+    float lifetime;
+};
+
+layout (std430, binding = 3) buffer particleData
+{
+    Particle[] particles;
+};
 
 void main()
 {
-    mat4 transformationMatrix = transformationMatrices[gl_InstanceID];
-    float lifetime = lifetimes[gl_InstanceID];
+    mat4 transformationMatrix = particles[gl_InstanceID].transformationMatrix;
+    float lifetime = particles[gl_InstanceID].lifetime;
 
     float alpha = max(min(lifetime, 1.0), 0.0);
 

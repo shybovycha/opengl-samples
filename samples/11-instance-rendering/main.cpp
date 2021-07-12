@@ -703,6 +703,16 @@ protected:
     }
 };
 
+/*! OpenGL *requires* you to align data in the buffers to 16 bytes
+ * Since `mat4 transformationMatrix` uses 4 (cols) * 4 (rows) * 4 (bytes) = 64 bytes already andthe last member, `float lifetime`, uses only 4 bytes,
+ * we need to tell C++ to align the whole structure to blocks of 16 bytes
+ */
+struct alignas(16) SimpleParticleData
+{
+    glm::mat4 transformationMatrix;
+    float lifetime;
+};
+
 class SimpleParticleRenderer : public AbstractParticleRenderer<SimpleParticle>
 {
 public:
@@ -741,14 +751,15 @@ public:
         m_particleRenderingProgram = std::make_unique<globjects::Program>();
         m_particleRenderingProgram->attach(m_particleRenderingVertexShader.get(), m_particleRenderingFragmentShader.get());
 
-        m_transformationMatrixUniform = m_particleRenderingProgram->getUniform<glm::mat4>("transformationMatrix");
-        m_lifetimeUniform = m_particleRenderingProgram->getUniform<float>("lifetime");
+        m_sharedStorageBufferObject = std::make_unique<globjects::Buffer>();
 
         std::cout << "done" << std::endl;
     }
 
     void beforeDraw(std::vector<std::shared_ptr<SimpleParticle>> particles, glm::mat4 projectionMatrix, glm::mat4 viewMatrix) override
     {
+        std::vector<SimpleParticleData> particleData;
+
         for (auto i = 0; i < particles.size(); ++i)
         {
             const auto particle = particles[i];
@@ -787,9 +798,11 @@ public:
                 glm::vec3(particle->getScale())
             );
 
-            m_particleRenderingProgram->setUniform("transformationMatrices[" + std::to_string(i) + "]", projectionMatrix * finalModelMatrix);
-            m_particleRenderingProgram->setUniform("lifetimes[" + std::to_string(i) + "]", particle->getLifetime());
+            auto transformationMatrix = projectionMatrix * finalModelMatrix;
+            particleData.push_back({ transformationMatrix, particle->getLifetime() });
         }
+
+        m_sharedStorageBufferObject->setData(particleData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
     }
 
     void draw(std::vector<std::shared_ptr<SimpleParticle>> particles, glm::mat4 projectionMatrix, glm::mat4 viewMatrix) override
@@ -804,7 +817,11 @@ public:
 
         m_texture->bindActive(0);
 
+        m_sharedStorageBufferObject->bindBase(GL_SHADER_STORAGE_BUFFER, 3);
+
         m_model->drawInstanced(particles.size());
+
+        m_sharedStorageBufferObject->unbind(GL_SHADER_STORAGE_BUFFER, 3);
 
         m_texture->unbindActive(0);
 
@@ -818,8 +835,8 @@ public:
 
 private:
     std::unique_ptr<globjects::Program> m_particleRenderingProgram;
-    globjects::Uniform<glm::mat4>* m_transformationMatrixUniform;
-    globjects::Uniform<float>* m_lifetimeUniform;
+
+    std::unique_ptr<globjects::Buffer> m_sharedStorageBufferObject;
 
     std::unique_ptr<globjects::Shader> m_particleRenderingVertexShader;
     std::unique_ptr<globjects::Shader> m_particleRenderingFragmentShader;
@@ -1033,7 +1050,7 @@ int main()
     auto particleAffector = std::make_shared<SimpleParticleAffector>();
     auto particleRenderer = std::make_unique<SimpleParticleRenderer>(std::move(particleModel), std::move(particleTexture));
     auto particleSystem = std::make_unique<ParticleSystem<SimpleParticle>>(
-        100,
+        1000,
         std::move(particleEmitter),
         std::vector<std::shared_ptr<AbstractParticleAffector<SimpleParticle>>>{ particleAffector },
         std::move(particleRenderer)
@@ -1108,6 +1125,8 @@ int main()
 
         // measure time since last frame, in seconds
         float deltaTime = static_cast<float>(clock.restart().asSeconds());
+
+        window.setTitle("Hello, Instanced particle rendering! FPS: " + std::to_string(1.0f / deltaTime));
 
         while (window.pollEvent(event))
         {

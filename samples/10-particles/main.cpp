@@ -1083,6 +1083,8 @@ int main()
         // measure time since last frame, in seconds
         float deltaTime = static_cast<float>(clock.restart().asSeconds());
 
+        window.setTitle("Hello, Particles! FPS: " + std::to_string(1.0f / deltaTime));
+
         while (window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
