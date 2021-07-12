@@ -797,18 +797,6 @@ int main()
     // INFO: this transformation is hard-coded specifically for Chicken.3ds model
     chickenModel->setTransformation(glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));
 
-    auto quadScene = importer.ReadFile("media/quad.obj", 0);
-
-    if (!quadScene)
-    {
-        std::cerr << "failed: " << importer.GetErrorString() << std::endl;
-        return 1;
-    }
-
-    auto quadModel = AssimpModel::fromAiNode(quadScene, quadScene->mRootNode);
-
-    quadModel->setTransformation(glm::rotate(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-5, 0, 5)), glm::vec3(10.0f, 0, 10.0f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));
-
     auto terrainModel = Terrain::flat(10, 1.0f);
 
     sf::Image textureImage;
