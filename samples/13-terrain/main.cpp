@@ -140,7 +140,7 @@ public:
         m_vao->unbind();
     }
 
-private:
+// private:
     std::unique_ptr<globjects::VertexArray> m_vao;
 
     std::unique_ptr<globjects::Buffer> m_vertexBuffer;
@@ -276,10 +276,10 @@ public:
         }
 
         return std::make_unique<AbstractMesh>(
-            std::move(m_vertices),
-            std::move(m_normals),
-            std::move(m_uvs),
-            std::move(m_indices),
+            m_vertices,
+            m_normals,
+            m_uvs,
+            m_indices,
             std::move(m_textures),
             std::move(m_vao),
             std::move(m_vertexBuffer),
@@ -559,10 +559,10 @@ protected:
         std::cout << "done" << std::endl;
 
         return AbstractMesh::builder()
-            ->addVertices(std::move(vertices))
-            ->addIndices(std::move(indices))
-            ->addNormals(std::move(normals))
-            ->addUVs(std::move(uvs))
+            ->addVertices(vertices)
+            ->addIndices(indices)
+            ->addNormals(normals)
+            ->addUVs(uvs)
             ->addTextures(std::move(textures))
             ->build();
     }
@@ -575,23 +575,68 @@ public:
     {
     }
 
-    /*static std::unique_ptr<Terrain> flat()
+    static std::unique_ptr<Terrain> flat(unsigned int size, float step = 0.5f)
     {
-        auto mesh = std::make_unique<AbstractMesh>(
-            vertices,
-            normals,
-            uvs,
-            indices,
-            std::move(textures),
-            std::move(vao),
-            std::move(vertexBuffer),
-            std::move(indexBuffer),
-            std::move(normalBuffer),
-            std::move(uvBuffer)
-        );
+        std::vector<glm::vec3> vertices;
+        std::vector<glm::vec3> normals;
+        std::vector<glm::vec2> uvs;
+        std::vector<unsigned int> indices;
+
+        for (auto i = 0; i < size; ++i)
+        {
+            for (auto t = 0; t < size; ++t)
+            {
+                float x = t * step;
+                float y = 0.0f;
+                float z = i * step;
+
+                glm::vec3 position(x, y, z);
+                glm::vec3 normal(0.0f, 1.0f, 0.0f);
+                glm::vec2 uv(i / static_cast<float>(size - 1), t / static_cast<float>(size - 1));
+
+                vertices.push_back(position);
+                normals.push_back(normal);
+                uvs.push_back(uv);
+            }
+        }
+
+        for (auto i = 0; i < size - 1; ++i)
+        {
+            for (auto t = 0; t < size - 1; ++t)
+            {
+                /*
+                * [(i+1)*size + t] [(i+1)*size+t+1]
+                * [i*size + t]     [i*size + t + 1]
+                *
+                * x.x
+                * |\.
+                * x-x
+                */
+                indices.push_back(((i + 1) *size) + t);
+                indices.push_back((i * size) + t + 1);
+                indices.push_back((i * size) + t);
+
+                /*
+                *
+                * x-x
+                * .\|
+                * x.x
+                */
+                indices.push_back(((i + 1) * size) + t);
+                indices.push_back(((i + 1) * size) + t + 1);
+                indices.push_back((i * size) + t + 1);
+            }
+        }
+
+        auto mesh = AbstractMesh::builder()
+            ->addVertices(vertices)
+            ->addIndices(indices)
+            ->addNormals(normals)
+            ->addUVs(uvs)
+            ->build();
 
         return std::make_unique<Terrain>(std::move(mesh));
-    }*/
+    }
 
     /*static std::unique_ptr<Terrain> fromHeightmap(sf::Image heightmap)
     {
@@ -609,6 +654,15 @@ public:
         );
 
         return std::make_unique<Terrain>(mesh);
+    }*/
+
+    /*void draw() override
+    {
+        m_mesh->m_vao->drawElements(
+            static_cast<gl::GLenum>(GL_LINES),
+            m_mesh->m_indices.size(),
+            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+            nullptr);
     }*/
 };
 
@@ -754,6 +808,8 @@ int main()
     auto quadModel = AssimpModel::fromAiNode(quadScene, quadScene->mRootNode);
 
     quadModel->setTransformation(glm::rotate(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-5, 0, 5)), glm::vec3(10.0f, 0, 10.0f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));
+
+    auto terrainModel = Terrain::flat(10, 1.0f);
 
     sf::Image textureImage;
 
@@ -972,9 +1028,13 @@ int main()
 
         shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
 
-        quadModel->bind();
+        /*quadModel->bind();
         quadModel->draw();
-        quadModel->unbind();
+        quadModel->unbind();*/
+
+        terrainModel->bind();
+        terrainModel->draw();
+        terrainModel->unbind();
 
         framebuffer->unbind();
 
@@ -1012,13 +1072,18 @@ int main()
         chickenModel->draw();
         chickenModel->unbind();
 
-        shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
+        // shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
+        shadowRenderingModelTransformationUniform->set(terrainModel->getTransformation());
 
         defaultTexture->bindActive(1);
 
-        quadModel->bind();
+        /*quadModel->bind();
         quadModel->draw();
-        quadModel->unbind();
+        quadModel->unbind();*/
+
+        terrainModel->bind();
+        terrainModel->draw();
+        terrainModel->unbind();
 
         defaultTexture->unbindActive(1);
 
