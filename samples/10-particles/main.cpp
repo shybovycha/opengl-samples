@@ -647,17 +647,41 @@ protected:
     */
     float polynomial(unsigned int n, unsigned int i)
     {
-        return factorial(n) / (factorial(i) * factorial(n - i));
+        static std::map<std::pair<unsigned int, unsigned int>, float> cache;
+
+        const auto key = std::make_pair(n, i);
+
+        if (cache.contains(key))
+        {
+            return cache[key];
+        }
+
+        const auto value = factorial(n) / (factorial(i) * factorial(n - i));
+
+        cache[key] = value;
+
+        return value;
     }
 
     unsigned int factorial(unsigned int n)
     {
+        static std::map<unsigned int, unsigned int> cache;
+
+        if (cache.contains(n))
+        {
+            return cache[n];
+        }
+
         if (n == 0)
         {
             return 1;
         }
 
-        return n * factorial(n - 1);
+        const auto value = n * factorial(n - 1);
+
+        cache[n] = value;
+
+        return value;
     }
 };
 
@@ -1203,8 +1227,6 @@ int main()
 
         shadowRenderingLightPositionUniform->set(lightPosition);
         shadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
-        // ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
-        // materialSpecularUniform->set(12.0f);
         shadowRenderingCameraPositionUniform->set(cameraPos);
 
         shadowRenderingProjectionTransformationUniform->set(cameraProjection);
@@ -1240,22 +1262,6 @@ int main()
 
         particleSystem->update(deltaTime);
         particleSystem->draw(cameraProjection, cameraView);
-
-        // render quad with depth (shadow) map
-
-        /*shadowDebuggingPipeline->use();
-
-        shadowDebuggingModelTransformationUniform->set(glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.75f)));
-
-        shadowMapTexture->bindActive(0);
-
-        quadModel->bind();
-        quadModel->draw();
-        quadModel->unbind();
-
-        shadowMapTexture->unbind();
-
-        shadowDebuggingPipeline->release();*/
 
         // done rendering the frame
 
