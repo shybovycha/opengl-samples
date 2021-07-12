@@ -14,8 +14,8 @@ out gl_PerVertex {
     vec4 gl_Position;
 };
 
-uniform mat4 transformationMatrices[1000];
-uniform float lifetimes[1000];
+uniform mat4 transformationMatrices[100];
+uniform float lifetimes[100];
 
 void main()
 {

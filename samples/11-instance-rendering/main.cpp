@@ -787,10 +787,8 @@ public:
                 glm::vec3(particle->getScale())
             );
 
-            std::string indexStr = std::format("[%s]", i);
-
-            m_particleRenderingProgram->setUniform("transformationMatrices" + indexStr, projectionMatrix * finalModelMatrix);
-            m_particleRenderingProgram->setUniform("lifetimes" + indexStr, particle->getLifetime());
+            m_particleRenderingProgram->setUniform("transformationMatrices[" + std::to_string(i) + "]", projectionMatrix * finalModelMatrix);
+            m_particleRenderingProgram->setUniform("lifetimes[" + std::to_string(i) + "]", particle->getLifetime());
         }
     }
 
