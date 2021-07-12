@@ -54,7 +54,14 @@ class AbstractMeshBuilder;
 
 class AbstractMesh : public AbstractDrawable
 {
+    friend class AbstractMeshBuilder;
+
 public:
+    static std::shared_ptr<AbstractMeshBuilder> builder()
+    {
+        return std::make_shared<AbstractMeshBuilder>();
+    }
+
     AbstractMesh(
         std::vector<glm::vec3> vertices,
         std::vector<glm::vec3> normals,
@@ -154,32 +161,34 @@ private:
 class AbstractMeshBuilder
 {
 public:
-    AbstractMeshBuilder() {}
+    AbstractMeshBuilder() : m_positionAttributeIndex(0), m_normalAttributeIndex(1), m_uvAttributeIndex(2)
+    {
+    }
 
     AbstractMeshBuilder* addVertices(std::vector<glm::vec3> vertices)
     {
-        m_vertices.insert(m_vertices.end(), vertices.begin(), vertices.end());
+        m_vertices.insert(m_vertices.end(), std::make_move_iterator(vertices.begin()), std::make_move_iterator(vertices.end()));
 
         return this;
     }
 
     AbstractMeshBuilder* addIndices(std::vector<unsigned int> indices)
     {
-        m_indices.insert(m_indices.end(), indices.begin(), indices.end());
+        m_indices.insert(m_indices.end(), std::make_move_iterator(indices.begin()), std::make_move_iterator(indices.end()));
 
         return this;
     }
 
     AbstractMeshBuilder* addNormals(std::vector<glm::vec3> normals)
     {
-        m_normals.insert(m_normals.end(), normals.begin(), normals.end());
+        m_normals.insert(m_normals.end(), std::make_move_iterator(normals.begin()), std::make_move_iterator(normals.end()));
 
         return this;
     }
 
     AbstractMeshBuilder* addUVs(std::vector<glm::vec2> uvs)
     {
-        m_uvs.insert(m_uvs.end(), uvs.begin(), uvs.end());
+        m_uvs.insert(m_uvs.end(), std::make_move_iterator(uvs.begin()), std::make_move_iterator(uvs.end()));
 
         return this;
     }
@@ -191,9 +200,92 @@ public:
         return this;
     }
 
+    AbstractMeshBuilder* addTextures(std::vector<std::unique_ptr<globjects::Texture>> textures)
+    {
+        m_textures.insert(m_textures.end(), std::make_move_iterator(textures.begin()), std::make_move_iterator(textures.end()));
+
+        return this;
+    }
+
+    AbstractMeshBuilder* setPositionAttributerIndex(unsigned int positionAttributeIndex)
+    {
+        m_positionAttributeIndex = positionAttributeIndex;
+
+        return this;
+    }
+
+    AbstractMeshBuilder* setNormalAttributerIndex(unsigned int normalAttributeIndex)
+    {
+        m_normalAttributeIndex = normalAttributeIndex;
+
+        return this;
+    }
+
+    AbstractMeshBuilder* setUVAttributerIndex(unsigned int uvAttributeIndex)
+    {
+        m_uvAttributeIndex = uvAttributeIndex;
+
+        return this;
+    }
+
     std::unique_ptr<AbstractMesh> build()
     {
-        return nullptr;
+        m_vertexBuffer = std::make_unique<globjects::Buffer>();
+
+        m_vertexBuffer->setData(m_vertices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+        m_indexBuffer = std::make_unique<globjects::Buffer>();
+
+        m_indexBuffer->setData(m_indices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+        m_vao = std::make_unique<globjects::VertexArray>();
+
+        m_vao->bindElementBuffer(m_indexBuffer.get());
+
+        m_vao->binding(0)->setAttribute(0);
+        m_vao->binding(0)->setBuffer(m_vertexBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(0);
+
+        m_normalBuffer = std::make_unique<globjects::Buffer>();
+
+        if (!m_normals.empty())
+        {
+            m_normalBuffer->setData(m_normals, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+            m_vao->binding(m_normalAttributeIndex)->setAttribute(m_normalAttributeIndex);
+            m_vao->binding(m_normalAttributeIndex)->setBuffer(m_normalBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+            m_vao->binding(m_normalAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+            m_vao->enable(m_normalAttributeIndex);
+
+            // TODO: enable the corresponding shader sections (those which require normal data)
+        }
+
+        m_uvBuffer = std::make_unique<globjects::Buffer>();
+
+        if (!m_uvs.empty())
+        {
+            m_uvBuffer->setData(m_uvs, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+            m_vao->binding(m_uvAttributeIndex)->setAttribute(m_uvAttributeIndex);
+            m_vao->binding(m_uvAttributeIndex)->setBuffer(m_uvBuffer.get(), 0, sizeof(glm::vec2)); // number of elements in buffer, stride, size of buffer element
+            m_vao->binding(m_uvAttributeIndex)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+            m_vao->enable(m_uvAttributeIndex);
+
+            // TODO: enable the corresponding shader sections (those which require UV data)
+        }
+
+        return std::make_unique<AbstractMesh>(
+            std::move(m_vertices),
+            std::move(m_normals),
+            std::move(m_uvs),
+            std::move(m_indices),
+            std::move(m_textures),
+            std::move(m_vao),
+            std::move(m_vertexBuffer),
+            std::move(m_indexBuffer),
+            std::move(m_normalBuffer),
+            std::move(m_uvBuffer));
     }
 
 private:
@@ -206,8 +298,13 @@ private:
     std::unique_ptr<globjects::VertexArray> m_vao;
     std::unique_ptr<globjects::Buffer> m_vertexBuffer;
     std::unique_ptr<globjects::Buffer> m_indexBuffer;
+
     std::unique_ptr<globjects::Buffer> m_normalBuffer;
     std::unique_ptr<globjects::Buffer> m_uvBuffer;
+
+    unsigned int m_positionAttributeIndex;
+    unsigned int m_normalAttributeIndex;
+    unsigned int m_uvAttributeIndex;
 };
 
 class SingleMeshModel : public AbstractDrawable
@@ -307,50 +404,6 @@ protected:
     glm::mat4 m_transformation;
 };
 
-class Terrain : public SingleMeshModel
-{
-public:
-    Terrain(std::unique_ptr<AbstractMesh> mesh) : SingleMeshModel(std::move(mesh))
-    {
-    }
-
-    /*static std::unique_ptr<Terrain> flat()
-    {
-        auto mesh = std::make_unique<AbstractMesh>(
-            vertices,
-            normals,
-            uvs,
-            indices,
-            std::move(textures),
-            std::move(vao),
-            std::move(vertexBuffer),
-            std::move(indexBuffer),
-            std::move(normalBuffer),
-            std::move(uvBuffer)
-        );
-
-        return std::make_unique<Terrain>(std::move(mesh));
-    }*/
-
-    /*static std::unique_ptr<Terrain> fromHeightmap(sf::Image heightmap)
-    {
-        auto mesh = std::make_unique<AbstractMesh>(
-            vertices,
-            normals,
-            uvs,
-            indices,
-            std::move(vao),
-            std::move(textures),
-            std::move(vertexBuffer),
-            std::move(indexBuffer),
-            std::move(normalBuffer),
-            std::move(uvBuffer)
-        );
-
-        return std::make_unique<Terrain>(mesh);
-    }*/
-};
-
 class AssimpModel : public MultiMeshModel
 {
 public:
@@ -393,6 +446,10 @@ protected:
         std::vector<glm::vec3> normals;
         std::vector<glm::vec2> uvs;
 
+        std::vector<GLuint> indices;
+
+        auto builder = AbstractMesh::builder();
+
         for (auto i = 0; i < mesh->mNumVertices; ++i)
         {
             glm::vec3 position(
@@ -423,8 +480,6 @@ protected:
             }
         }
 
-        std::vector<GLuint> indices;
-
         for (auto i = 0; i < mesh->mNumFaces; ++i)
         {
             auto face = mesh->mFaces[i];
@@ -433,51 +488,6 @@ protected:
             {
                 indices.push_back(face.mIndices[t]);
             }
-        }
-
-        auto vertexBuffer = std::make_unique<globjects::Buffer>();
-
-        vertexBuffer->setData(vertices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
-
-        auto indexBuffer = std::make_unique<globjects::Buffer>();
-
-        indexBuffer->setData(indices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
-
-        auto vao = std::make_unique<globjects::VertexArray>();
-
-        vao->bindElementBuffer(indexBuffer.get());
-
-        vao->binding(0)->setAttribute(0);
-        vao->binding(0)->setBuffer(vertexBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
-        vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-        vao->enable(0);
-
-        auto normalBuffer = std::make_unique<globjects::Buffer>();
-
-        if (!normals.empty())
-        {
-            normalBuffer->setData(normals, static_cast<gl::GLenum>(GL_STATIC_DRAW));
-
-            vao->binding(1)->setAttribute(1);
-            vao->binding(1)->setBuffer(normalBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
-            vao->binding(1)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-            vao->enable(1);
-
-            // TODO: set uniform flag signalling the normals are present
-        }
-
-        auto uvBuffer = std::make_unique<globjects::Buffer>();
-
-        if (!uvs.empty())
-        {
-            uvBuffer->setData(uvs, static_cast<gl::GLenum>(GL_STATIC_DRAW));
-
-            vao->binding(2)->setAttribute(2);
-            vao->binding(2)->setBuffer(uvBuffer.get(), 0, sizeof(glm::vec2)); // number of elements in buffer, stride, size of buffer element
-            vao->binding(2)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-            vao->enable(2);
-
-            // TODO: set uniform flag signalling the uvs are present
         }
 
         std::cout << "done" << std::endl;
@@ -548,18 +558,58 @@ protected:
 
         std::cout << "done" << std::endl;
 
-        return std::make_unique<AbstractMesh>(
-            std::move(vertices),
-            std::move(normals),
-            std::move(uvs),
-            std::move(indices),
+        return AbstractMesh::builder()
+            ->addVertices(std::move(vertices))
+            ->addIndices(std::move(indices))
+            ->addNormals(std::move(normals))
+            ->addUVs(std::move(uvs))
+            ->addTextures(std::move(textures))
+            ->build();
+    }
+};
+
+class Terrain : public SingleMeshModel
+{
+public:
+    Terrain(std::unique_ptr<AbstractMesh> mesh) : SingleMeshModel(std::move(mesh))
+    {
+    }
+
+    /*static std::unique_ptr<Terrain> flat()
+    {
+        auto mesh = std::make_unique<AbstractMesh>(
+            vertices,
+            normals,
+            uvs,
+            indices,
             std::move(textures),
             std::move(vao),
             std::move(vertexBuffer),
             std::move(indexBuffer),
             std::move(normalBuffer),
-            std::move(uvBuffer));
-    }
+            std::move(uvBuffer)
+        );
+
+        return std::make_unique<Terrain>(std::move(mesh));
+    }*/
+
+    /*static std::unique_ptr<Terrain> fromHeightmap(sf::Image heightmap)
+    {
+        auto mesh = std::make_unique<AbstractMesh>(
+            vertices,
+            normals,
+            uvs,
+            indices,
+            std::move(vao),
+            std::move(textures),
+            std::move(vertexBuffer),
+            std::move(indexBuffer),
+            std::move(normalBuffer),
+            std::move(uvBuffer)
+        );
+
+        return std::make_unique<Terrain>(mesh);
+    }*/
 };
 
 int main()
