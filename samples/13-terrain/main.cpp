@@ -896,6 +896,7 @@ int main()
 #ifdef WIN32
         if (!window.hasFocus())
         {
+            clock.restart();
             continue;
         }
 #endif
