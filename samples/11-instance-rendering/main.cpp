@@ -257,6 +257,16 @@ public:
             nullptr);
     }
 
+    void drawInstanced(unsigned int instances)
+    {
+        m_vao->drawElementsInstanced(
+            static_cast<gl::GLenum>(GL_TRIANGLES),
+            m_indices.size(),
+            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+            nullptr,
+            instances);
+    }
+
     void bind()
     {
         m_vao->bind();
@@ -333,6 +343,14 @@ public:
         }
     }
 
+    void drawInstanced(unsigned int instances)
+    {
+        for (auto& mesh : m_meshes)
+        {
+            mesh->drawInstanced(instances);
+        }
+    }
+
     void bind()
     {
         for (auto& mesh : m_meshes)
@@ -372,6 +390,446 @@ private:
     glm::mat4 m_transformation;
 };
 
+class Particle {
+public:
+    Particle() :
+        m_position(glm::vec3(0.0f)),
+        m_velocity(glm::vec3(0.0f)),
+        m_scale(1.0f),
+        m_lifetime(1.0f)
+    {
+    }
+
+    float getLifetime() const
+    {
+        return m_lifetime;
+    }
+
+    float getScale() const
+    {
+        return m_scale;
+    }
+
+    glm::vec3 getPosition() const
+    {
+        return m_position;
+    }
+
+    glm::vec3 getVelocity() const
+    {
+        return m_velocity;
+    }
+
+    bool isAlive() const
+    {
+        return m_lifetime > 0;
+    }
+
+    virtual glm::mat4 getModelMatrix() const
+    {
+        return glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(m_scale)), m_position);
+    }
+
+    void setLifetime(float lifetime)
+    {
+        m_lifetime = lifetime;
+    }
+
+    void setScale(float scale)
+    {
+        m_scale = scale;
+    }
+
+    void setPosition(glm::vec3 position)
+    {
+        m_position = position;
+    }
+
+    void setVelocity(glm::vec3 velocity)
+    {
+        m_velocity = velocity;
+    }
+
+    void kill()
+    {
+        m_lifetime = 0.0f;
+    }
+
+private:
+    glm::vec3 m_position;
+    glm::vec3 m_velocity;
+    float m_scale;
+    float m_lifetime;
+};
+
+template <class TParticle>
+class AbstractParticleAttributeGenerator
+{
+public:
+    virtual void generate(TParticle* particle) = 0;
+};
+
+template <class TParticle>
+class AbstractParticleEmitter
+{
+public:
+    virtual void emit(TParticle* particle) = 0;
+};
+
+template <class TParticle>
+class AbstractParticleAffector
+{
+public:
+    virtual void affect(TParticle* particle, float deltaTime) = 0;
+};
+
+template <class TParticle>
+class AbstractParticleRenderer
+{
+public:
+    virtual void beforeDraw(std::vector<std::shared_ptr<TParticle>> particles, glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {};
+
+    virtual void draw(std::vector<std::shared_ptr<TParticle>> particles, glm::mat4 projectionMatrix, glm::mat4 viewMatrix) = 0;
+};
+
+template <class TParticle>
+class ParticleSystem
+{
+public:
+    ParticleSystem(
+        unsigned int amount,
+        std::unique_ptr<AbstractParticleEmitter<TParticle>> emitter,
+        std::vector<std::shared_ptr<AbstractParticleAffector<TParticle>>> affectors,
+        std::unique_ptr<AbstractParticleRenderer<TParticle>> renderer
+    ) :
+        m_amount(amount),
+        m_emitter(std::move(emitter)),
+        m_renderer(std::move(renderer)),
+        m_affectors(affectors)
+    {
+        m_particles.reserve(m_amount);
+
+        for (auto i = 0; i < m_amount; ++i)
+        {
+            m_particles.push_back(std::make_shared<TParticle>());
+        }
+    }
+
+    void update(float deltaTime)
+    {
+        for (auto& particle : m_particles)
+        {
+            if (!particle->isAlive())
+            {
+                m_emitter->emit(particle.get());
+                continue;
+            }
+
+            for (auto& affector : m_affectors)
+            {
+                affector->affect(particle.get(), deltaTime);
+            }
+        }
+    }
+
+    void draw(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
+    {
+        m_renderer->beforeDraw(m_particles, projectionMatrix, viewMatrix);
+        m_renderer->draw(m_particles, projectionMatrix, viewMatrix);
+    }
+
+private:
+    std::vector<std::shared_ptr<TParticle>> m_particles;
+    unsigned int m_amount;
+
+    std::unique_ptr<AbstractParticleEmitter<TParticle>> m_emitter;
+    std::unique_ptr<AbstractParticleRenderer<TParticle>> m_renderer;
+    std::vector<std::shared_ptr<AbstractParticleAffector<TParticle>>> m_affectors;
+};
+
+class SimpleParticle : public Particle
+{
+public:
+    SimpleParticle() : Particle(), m_mass(0.0f), m_rotation(0.0f) {}
+
+    float getMass() const
+    {
+        return m_mass;
+    }
+
+    float getRotation() const
+    {
+        return m_rotation;
+    }
+
+    glm::mat4 getModelMatrix() const override
+    {
+        return glm::translate(
+            glm::rotate(
+                glm::scale(glm::mat4(1.0f), glm::vec3(getScale())),
+                glm::radians(m_rotation),
+                glm::vec3(0.0f, 0.0f, 1.0f)
+            ),
+            getPosition()
+        );
+    }
+
+    void setMass(float mass)
+    {
+        m_mass = mass;
+    }
+
+    void setRotation(float rotation)
+    {
+        m_rotation = rotation;
+    }
+
+private:
+    float m_mass;
+    float m_rotation;
+};
+
+class SimpleParticleEmitter : public AbstractParticleEmitter<SimpleParticle>
+{
+public:
+    SimpleParticleEmitter(
+        float lifetime,
+        glm::vec3 position,
+        glm::vec3 velocity,
+        float scale,
+        float mass
+    ) :
+        m_lifetime(lifetime),
+        m_origin(position),
+        m_velocity(velocity),
+        m_scale(scale),
+        m_mass(mass)
+    {}
+
+    void emit(SimpleParticle* particle) override
+    {
+        particle->setLifetime(m_lifetime * static_cast<float>((std::rand() % 473) / 473.0f));
+        particle->setPosition(m_origin);
+        particle->setVelocity(glm::normalize(m_velocity) * static_cast<float>((std::rand() % 439) / 439.0f));
+        particle->setMass(m_mass * static_cast<float>((std::rand() % 173) / 173.0f));
+        particle->setRotation(glm::radians(glm::pi<float>() * 0.5f));
+        particle->setScale(m_scale * static_cast<float>((std::rand() % 93) / 93.0f));
+    }
+
+private:
+    glm::vec3 m_velocity;
+    glm::vec3 m_origin;
+    float m_lifetime;
+    float m_mass;
+    float m_scale;
+};
+
+class SimpleParticleAffector : public AbstractParticleAffector<SimpleParticle>
+{
+public:
+    const glm::vec3 GRAVITY{ 0.0f, -9.8f, 0.0f };
+
+    void affect(SimpleParticle* particle, float deltaTime) override
+    {
+        float speed = bezier<3>(particle->getLifetime(), 0.32f, 0.0f, 1.0f, 0.12f);
+
+        particle->setLifetime(particle->getLifetime() - deltaTime);
+        particle->setVelocity(particle->getVelocity() + speed * particle->getMass() * GRAVITY * deltaTime);
+        particle->setPosition(particle->getPosition() + particle->getVelocity() * deltaTime);
+        particle->setRotation(particle->getRotation() + 2.0f * deltaTime);
+    }
+
+protected:
+    template <unsigned int splineOrder, unsigned int iteration>
+    float bezier(float t, float p_0)
+    {
+        return p_0 * std::powf(1.0f - t, static_cast<float>(splineOrder));
+    }
+
+    /*! \brief Calculate interpolated value using the Bezier curve
+    * \param splineOrder the order of the Bezier curve; 2 for quadratic, 3 for cubic, etc.
+    * \param t the parameter for the Bezier function
+    * \param args the list of points defining the Bezier curve; must be \p splineOrder + 1
+    * \return The function \f$y = B_{splineOrder}(x)\f$ applied to argument \p t
+    */
+    template <unsigned int splineOrder, unsigned int iteration = splineOrder, typename... TArgs>
+    float bezier(float t, float p_i, TArgs... args)
+    {
+        return bezier<splineOrder, iteration - 1>(t, args...);
+    }
+
+    //! Generates polynomial coefficients
+    /*!
+    * \param n total number of polynomial coefficients
+    * \param i current polynomial coefficient index
+    */
+    float polynomial(unsigned int n, unsigned int i)
+    {
+        static std::map<std::pair<unsigned int, unsigned int>, float> cache;
+
+        const auto key = std::make_pair(n, i);
+
+        if (cache.contains(key))
+        {
+            return cache[key];
+        }
+
+        const auto value = factorial(n) / (factorial(i) * factorial(n - i));
+
+        cache[key] = value;
+
+        return value;
+    }
+
+    unsigned int factorial(unsigned int n)
+    {
+        static std::map<unsigned int, unsigned int> cache;
+
+        if (cache.contains(n))
+        {
+            return cache[n];
+        }
+
+        if (n == 0)
+        {
+            return 1;
+        }
+
+        const auto value = n * factorial(n - 1);
+
+        cache[n] = value;
+
+        return value;
+    }
+};
+
+class SimpleParticleRenderer : public AbstractParticleRenderer<SimpleParticle>
+{
+public:
+    SimpleParticleRenderer(std::unique_ptr<Model> model, std::unique_ptr<globjects::Texture> texture) : m_model(std::move(model)), m_texture(std::move(texture))
+    {
+        std::cout << "[INFO] Compiling particle rendering vertex shader...";
+
+        auto particleRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/particle.vert");
+        auto particleRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(particleRenderingVertexShaderSource.get());
+        m_particleRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), particleRenderingVertexShaderTemplate.get());
+
+        if (!m_particleRenderingVertexShader->compile())
+        {
+            std::cerr << "[ERROR] Can not compile particle rendering vertex shader" << std::endl;
+            // TODO: throw an exception?
+        }
+
+        std::cout << "done" << std::endl;
+
+        std::cout << "[INFO] Compiling particle rendering fragment shader...";
+
+        auto particleRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/particle.frag");
+        auto particleRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(particleRenderingFragmentShaderSource.get());
+        m_particleRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), particleRenderingFragmentShaderTemplate.get());
+
+        if (!m_particleRenderingFragmentShader->compile())
+        {
+            std::cerr << "[ERROR] Can not compile particle fragment shader" << std::endl;
+            // TODO: throw an exception?
+        }
+
+        std::cout << "done" << std::endl;
+
+        std::cout << "[INFO] Linking particle rendering shaders...";
+
+        m_particleRenderingProgram = std::make_unique<globjects::Program>();
+        m_particleRenderingProgram->attach(m_particleRenderingVertexShader.get(), m_particleRenderingFragmentShader.get());
+
+        m_transformationMatrixUniform = m_particleRenderingProgram->getUniform<glm::mat4>("transformationMatrix");
+        m_lifetimeUniform = m_particleRenderingProgram->getUniform<float>("lifetime");
+
+        std::cout << "done" << std::endl;
+    }
+
+    void beforeDraw(std::vector<std::shared_ptr<SimpleParticle>> particles, glm::mat4 projectionMatrix, glm::mat4 viewMatrix) override
+    {
+        for (auto i = 0; i < particles.size(); ++i)
+        {
+            const auto particle = particles[i];
+
+            glm::mat4 modelMatrix = particle->getModelMatrix();
+
+            /*
+            * reset the rotation for the particles by replacing the model matrix' top 3x3 sub-matrix, containing the rotation and scale,
+            * with the transposed top 3x3 sub-matrix of the view matrix, as per ThinMatrix' particles tutorial.
+            *
+            * this effectively makes the result of multiplication viewMatrix * modelMatrix have an identity matrix at the top 3x3 sub-matrix.
+            *
+            * hence after the multiplication we have to scale and rotate the model matrix again, this time in the "camera space", so to speak
+            * meaning the particle is already facing camera, so we can scale and rotate it relatively to itself
+            */
+            modelMatrix[0][0] = viewMatrix[0][0];
+            modelMatrix[0][1] = viewMatrix[1][0];
+            modelMatrix[0][2] = viewMatrix[2][0];
+
+            modelMatrix[1][0] = viewMatrix[0][1];
+            modelMatrix[1][1] = viewMatrix[1][1];
+            modelMatrix[1][2] = viewMatrix[2][1];
+
+            modelMatrix[2][0] = viewMatrix[0][2];
+            modelMatrix[2][1] = viewMatrix[1][2];
+            modelMatrix[2][2] = viewMatrix[2][2];
+
+            glm::mat4 modelViewMatrix = viewMatrix * modelMatrix;
+
+            glm::mat4 finalModelMatrix = glm::scale(
+                glm::rotate(
+                    modelViewMatrix,
+                    glm::radians(particle->getRotation()),
+                    glm::vec3(0.0f, 0.0f, 1.0f)
+                ),
+                glm::vec3(particle->getScale())
+            );
+
+            std::string indexStr = std::format("[%s]", i);
+
+            m_particleRenderingProgram->setUniform("transformationMatrices" + indexStr, projectionMatrix * finalModelMatrix);
+            m_particleRenderingProgram->setUniform("lifetimes" + indexStr, particle->getLifetime());
+        }
+    }
+
+    void draw(std::vector<std::shared_ptr<SimpleParticle>> particles, glm::mat4 projectionMatrix, glm::mat4 viewMatrix) override
+    {
+        ::glEnable(GL_BLEND);
+        ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        ::glDepthMask(false);
+
+        m_particleRenderingProgram->use();
+
+        m_model->bind();
+
+        m_texture->bindActive(0);
+
+        m_model->drawInstanced(particles.size());
+
+        m_texture->unbindActive(0);
+
+        m_model->unbind();
+
+        m_particleRenderingProgram->release();
+
+        ::glDisable(GL_BLEND);
+        ::glDepthMask(true);
+    }
+
+private:
+    std::unique_ptr<globjects::Program> m_particleRenderingProgram;
+    globjects::Uniform<glm::mat4>* m_transformationMatrixUniform;
+    globjects::Uniform<float>* m_lifetimeUniform;
+
+    std::unique_ptr<globjects::Shader> m_particleRenderingVertexShader;
+    std::unique_ptr<globjects::Shader> m_particleRenderingFragmentShader;
+
+    std::unique_ptr<Model> m_model;
+    std::unique_ptr<globjects::Texture> m_texture;
+};
+
 int main()
 {
     sf::ContextSettings settings;
@@ -388,7 +846,7 @@ int main()
     auto videoMode = sf::VideoMode(1024, 768);
 #endif
 
-    sf::Window window(videoMode, "Hello, Instance rendering!", sf::Style::Default, settings);
+    sf::Window window(videoMode, "Hello, Instanced particle rendering!", sf::Style::Default, settings);
 
     globjects::init([](const char* name) {
         return sf::Context::getFunction(name);
@@ -541,6 +999,50 @@ int main()
 
     std::cout << "done" << std::endl;
 
+    std::cout << "[DEBUG] Loading particle texture...";
+
+    sf::Image particleTextureImage;
+
+    if (!particleTextureImage.loadFromFile("media/leaf1.png"))
+    {
+        std::cerr << "[ERROR] Can not load texture" << std::endl;
+        return 1;
+    }
+
+    particleTextureImage.flipVertically();
+
+    auto particleTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+
+    particleTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    particleTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+    particleTexture->image2D(
+        0,
+        static_cast<gl::GLenum>(GL_RGBA8),
+        glm::vec2(particleTextureImage.getSize().x, particleTextureImage.getSize().y),
+        0,
+        static_cast<gl::GLenum>(GL_RGBA),
+        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        reinterpret_cast<const gl::GLvoid*>(particleTextureImage.getPixelsPtr()));
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Creating particle emitter...";
+
+    auto particleModel = Model::fromAiNode(quadScene, quadScene->mRootNode);
+
+    auto particleEmitter = std::make_unique<SimpleParticleEmitter>(5.0f, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, 0.01f);
+    auto particleAffector = std::make_shared<SimpleParticleAffector>();
+    auto particleRenderer = std::make_unique<SimpleParticleRenderer>(std::move(particleModel), std::move(particleTexture));
+    auto particleSystem = std::make_unique<ParticleSystem<SimpleParticle>>(
+        100,
+        std::move(particleEmitter),
+        std::vector<std::shared_ptr<AbstractParticleAffector<SimpleParticle>>>{ particleAffector },
+        std::move(particleRenderer)
+        );
+
+    std::cout << "done" << std::endl;
+
     std::cout << "[DEBUG] Initializing framebuffers...";
 
     std::cout << "[DEBUG] Initializing shadowMapTexture...";
@@ -604,7 +1106,7 @@ int main()
         }
 #endif
 
-        sf::Event event {};
+        sf::Event event{};
 
         // measure time since last frame, in seconds
         float deltaTime = static_cast<float>(clock.restart().asSeconds());
@@ -684,7 +1186,7 @@ int main()
             }
         }
 
-        glm::mat4 cameraProjection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
+        glm::mat4 cameraProjection = glm::perspective(glm::radians(fov), (float)window.getSize().x / (float)window.getSize().y, 0.1f, 100.0f);
 
         glm::mat4 cameraView = glm::lookAt(
             cameraPos,
@@ -753,8 +1255,6 @@ int main()
 
         shadowRenderingLightPositionUniform->set(lightPosition);
         shadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
-        // ambientColorUniform->set(glm::vec3(1.0f, 1.0f, 1.0f));
-        // materialSpecularUniform->set(12.0f);
         shadowRenderingCameraPositionUniform->set(cameraPos);
 
         shadowRenderingProjectionTransformationUniform->set(cameraProjection);
@@ -787,6 +1287,9 @@ int main()
         shadowMapTexture->unbindActive(0);
 
         shadowRenderingProgram->release();
+
+        particleSystem->update(deltaTime);
+        particleSystem->draw(cameraProjection, cameraView);
 
         // done rendering the frame
 
