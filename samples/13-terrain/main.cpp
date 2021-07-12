@@ -140,7 +140,7 @@ public:
         m_vao->unbind();
     }
 
-// private:
+protected:
     std::unique_ptr<globjects::VertexArray> m_vao;
 
     std::unique_ptr<globjects::Buffer> m_vertexBuffer;
@@ -1027,11 +1027,7 @@ int main()
         // the ground plane will get culled, we don't want that
         glDisable(GL_CULL_FACE);
 
-        shadowMappingModelTransformationUniform->set(quadModel->getTransformation());
-
-        /*quadModel->bind();
-        quadModel->draw();
-        quadModel->unbind();*/
+        shadowMappingModelTransformationUniform->set(terrainModel->getTransformation());
 
         terrainModel->bind();
         terrainModel->draw();
@@ -1073,14 +1069,9 @@ int main()
         chickenModel->draw();
         chickenModel->unbind();
 
-        // shadowRenderingModelTransformationUniform->set(quadModel->getTransformation());
         shadowRenderingModelTransformationUniform->set(terrainModel->getTransformation());
 
         defaultTexture->bindActive(1);
-
-        /*quadModel->bind();
-        quadModel->draw();
-        quadModel->unbind();*/
 
         terrainModel->bind();
         terrainModel->draw();
