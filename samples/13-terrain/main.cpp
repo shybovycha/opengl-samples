@@ -575,34 +575,37 @@ public:
     {
     }
 
-    static std::unique_ptr<Terrain> flat(unsigned int size, float step = 0.5f)
+    static std::unique_ptr<Terrain> fromHeightmap(sf::Image heightmap, float step = 0.5f)
     {
+        const auto width = heightmap.getSize().x;
+        const auto height = heightmap.getSize().y;
+
         std::vector<glm::vec3> vertices;
         std::vector<glm::vec3> normals;
         std::vector<glm::vec2> uvs;
         std::vector<unsigned int> indices;
 
-        for (auto i = 0; i < size; ++i)
+        for (auto i = 0; i < height; ++i)
         {
-            for (auto t = 0; t < size; ++t)
+            for (auto t = 0; t < width; ++t)
             {
+                const auto color = heightmap.getPixel(t, i);
+
                 float x = t * step;
-                float y = 0.0f;
+                float y = color.r / 255.0f;
                 float z = i * step;
 
                 glm::vec3 position(x, y, z);
-                glm::vec3 normal(0.0f, 1.0f, 0.0f);
-                glm::vec2 uv(i / static_cast<float>(size - 1), t / static_cast<float>(size - 1));
+                glm::vec2 uv(i / static_cast<float>(width - 1), t / static_cast<float>(height - 1));
 
                 vertices.push_back(position);
-                normals.push_back(normal);
                 uvs.push_back(uv);
             }
         }
 
-        for (auto i = 0; i < size - 1; ++i)
+        for (auto i = 0; i < height - 1; ++i)
         {
-            for (auto t = 0; t < size - 1; ++t)
+            for (auto t = 0; t < width - 1; ++t)
             {
                 /*
                 * [(i+1)*size + t] [(i+1)*size+t+1]
@@ -612,9 +615,9 @@ public:
                 * |\.
                 * x-x
                 */
-                indices.push_back(((i + 1) *size) + t);
-                indices.push_back((i * size) + t + 1);
-                indices.push_back((i * size) + t);
+                indices.push_back(((i + 1) * width) + t);
+                indices.push_back((i * width) + t + 1);
+                indices.push_back((i * width) + t);
 
                 /*
                 *
@@ -622,10 +625,37 @@ public:
                 * .\|
                 * x.x
                 */
-                indices.push_back(((i + 1) * size) + t);
-                indices.push_back(((i + 1) * size) + t + 1);
-                indices.push_back((i * size) + t + 1);
+                indices.push_back(((i + 1) * width) + t);
+                indices.push_back(((i + 1) * width) + t + 1);
+                indices.push_back((i * width) + t + 1);
+
+                glm::vec3 v0 = vertices[i * width + t];
+                glm::vec3 v1 = vertices[(i + 1) * width + t];
+                glm::vec3 v2 = vertices[i * width + t + 1];
+
+                glm::vec3 normal = glm::cross(v1 - v0, v2 - v0);
+                normals.push_back(normal);
             }
+
+            // last vertex of the row
+            {
+                glm::vec3 v0 = vertices[i * width + width - 1];
+                glm::vec3 v1 = vertices[(i + 1) * width + width - 1];
+                glm::vec3 v2 = vertices[i * width + width - 1 + 1];
+
+                glm::vec3 normal = glm::cross(v2 - v0, v1 - v0);
+                normals.push_back(normal);
+            }
+        }
+
+        // last vertex of the last row and last column
+        {
+            glm::vec3 v0 = vertices[height * width - 1];
+            glm::vec3 v1 = vertices[(height - 1) * width - 1];
+            glm::vec3 v2 = vertices[height * width - 2];
+
+            glm::vec3 normal = glm::cross(v2 - v0, v1 - v0);
+            normals.push_back(normal);
         }
 
         auto mesh = AbstractMesh::builder()
@@ -637,33 +667,6 @@ public:
 
         return std::make_unique<Terrain>(std::move(mesh));
     }
-
-    /*static std::unique_ptr<Terrain> fromHeightmap(sf::Image heightmap)
-    {
-        auto mesh = std::make_unique<AbstractMesh>(
-            vertices,
-            normals,
-            uvs,
-            indices,
-            std::move(vao),
-            std::move(textures),
-            std::move(vertexBuffer),
-            std::move(indexBuffer),
-            std::move(normalBuffer),
-            std::move(uvBuffer)
-        );
-
-        return std::make_unique<Terrain>(mesh);
-    }*/
-
-    /*void draw() override
-    {
-        m_mesh->m_vao->drawElements(
-            static_cast<gl::GLenum>(GL_LINES),
-            m_mesh->m_indices.size(),
-            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
-            nullptr);
-    }*/
 };
 
 int main()
@@ -797,7 +800,15 @@ int main()
     // INFO: this transformation is hard-coded specifically for Chicken.3ds model
     chickenModel->setTransformation(glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));
 
-    auto terrainModel = Terrain::flat(10, 1.0f);
+    sf::Image heightmapImage;
+
+    if (!heightmapImage.loadFromFile("media/australia_heightmap.jpg"))
+    {
+        std::cerr << "[ERROR] Can not load heightmap" << std::endl;
+        return 1;
+    }
+
+    auto terrainModel = Terrain::fromHeightmap(heightmapImage, 0.01f);
 
     sf::Image textureImage;
 
