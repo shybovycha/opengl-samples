@@ -585,6 +585,11 @@ public:
         std::vector<glm::vec2> uvs;
         std::vector<unsigned int> indices;
 
+        vertices.reserve(width * height);
+        normals.reserve(width * height);
+        uvs.reserve(width * height);
+        indices.reserve(6 * (width - 1) * (height - 1));
+
         for (auto i = 0; i < height; ++i)
         {
             for (auto t = 0; t < width; ++t)
@@ -592,7 +597,7 @@ public:
                 const auto color = heightmap.getPixel(t, i);
 
                 float x = t * step;
-                float y = color.r / 255.0f;
+                float y = color.r / 255.0f; // heightmaps are greyscale so all the components (r, g & b) of each pixel will have the same value
                 float z = i * step;
 
                 glm::vec3 position(x, y, z);
@@ -892,14 +897,6 @@ int main()
 
     while (window.isOpen())
     {
-#ifdef WIN32
-        if (!window.hasFocus())
-        {
-            clock.restart();
-            continue;
-        }
-#endif
-
         sf::Event event{};
 
         // measure time since last frame, in seconds
@@ -913,6 +910,13 @@ int main()
                 break;
             }
         }
+
+#ifdef WIN32
+        if (!window.hasFocus())
+        {
+            continue;
+        }
+#endif
 
         glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
 
