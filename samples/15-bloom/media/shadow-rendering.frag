@@ -1,6 +1,7 @@
 #version 410
 
 layout (location = 0) out vec4 fragmentColor;
+layout (location = 1) out vec4 brightColor;
 
 in VS_OUT {
     vec3 fragmentPosition;
@@ -11,13 +12,22 @@ in VS_OUT {
 
 uniform sampler2D shadowMap;
 uniform sampler2D diffuseTexture;
+uniform sampler2D specularMapTexture;
+uniform sampler2D emissionMapTexture;
 
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
+uniform vec3 cameraPosition;
+
+// TODO: make these params uniforms
 // uniform vec3 ambientColor;
 // uniform vec3 diffuseColor;
 // uniform float materialSpecular;
-uniform vec3 cameraPosition;
+uniform vec3 emissionColor;
+
+float attenuation_constant = 1.0;
+float attenuation_linear = 0.09;
+float attenuation_quadratic = 0.032;
 
 float shadowCalculation(vec3 normal, vec3 lightDirection)
 {
@@ -70,10 +80,26 @@ void main()
     float spec = pow(max(dot(normal, halfwayDirection), 0.0), 64.0);
     vec3 specular = spec * lightColor;
 
-    // calculate shadow
+    // attenuation
+    float distance = length(lightPosition - fsIn.fragmentPosition);
+    float attenuation = 1.0 / (attenuation_constant + attenuation_linear * distance + attenuation_quadratic * (distance * distance));
+
+    // calculate shadow; this represents a global directional light, like Sun
     float shadow = shadowCalculation(normal, lightDirection);
 
-    vec3 lighting = ((shadow * (diffuse + specular)) + ambient) * color;
+    // these are the multipliers from different light maps (read from corresponding textures)
+    float specularCoefficient = texture(specularMapTexture, fsIn.textureCoord).r;
+    float emissionCoefficient = texture(emissionMapTexture, fsIn.textureCoord).r;
+
+    vec3 lighting = (1 - emissionCoefficient) * ((shadow * ((diffuse * attenuation) + (specular * specularCoefficient * attenuation))) + (ambient * attenuation)) * color + (emissionColor * emissionCoefficient);
+
+    float brightness = dot(lighting, vec3(0.2126, 0.7152, 0.0722));
+
+    if (brightness > 1.0) {
+        brightColor = vec4(lighting, 1.0);
+    } else {
+        brightColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
 
     fragmentColor = vec4(lighting, 1.0);
 }
