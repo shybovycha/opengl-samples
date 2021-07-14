@@ -1356,6 +1356,7 @@ int main()
         bloomBlurProgram->use();
 
         // bloomBlurProgram->setUniform("projection", cameraProjection);
+        bloomBlurProgram->setUniform("blurInput", 0);
 
         const auto blurPasses = 10;
 
@@ -1416,6 +1417,7 @@ int main()
         bloomOutputProgram->use();
 
         bloomBlurTexture2->bindActive(0);
+        bloomOutputProgram->setUniform("blurOutput", 0);
 
         quadModel->bind();
         quadModel->draw();
