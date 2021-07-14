@@ -1054,6 +1054,9 @@ int main()
 
     bloomFramebuffer->attachRenderBuffer(static_cast<gl::GLenum>(GL_DEPTH_STENCIL_ATTACHMENT), renderBuffer.get());
 
+    // tell framebuffer it actually needs to render to **BOTH** textures, but does not have to output anywhere (last NONE argument, iirc)
+    bloomFramebuffer->setDrawBuffers({ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT1), static_cast<gl::GLenum>(GL_NONE) });
+
     bloomFramebuffer->printStatus(true);
 
     auto bloomBlurTexture1 = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
