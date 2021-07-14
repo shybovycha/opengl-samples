@@ -22,7 +22,7 @@ uniform vec3 cameraPosition;
 // uniform vec3 ambientColor;
 // uniform vec3 diffuseColor;
 // uniform float materialSpecular;
-uniform vec3 emissionColor; // = vec3(0.807, 0.671, 0.175);
+uniform vec3 emissionColor;
 
 float attenuation_constant = 1.0;
 float attenuation_linear = 0.09;
