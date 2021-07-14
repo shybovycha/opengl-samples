@@ -1043,10 +1043,16 @@ int main()
         static_cast<gl::GLenum>(GL_FLOAT),
         nullptr);
 
+    auto renderBuffer = std::make_unique<globjects::Renderbuffer>();
+
+    renderBuffer->storage(static_cast<gl::GLenum>(GL_DEPTH24_STENCIL8), window.getSize().x, window.getSize().y);
+
     auto bloomFramebuffer = std::make_unique<globjects::Framebuffer>();
 
     bloomFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), bloomColorTexture.get());
     bloomFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT1), bloomBrightnessTexture.get());
+
+    bloomFramebuffer->attachRenderBuffer(static_cast<gl::GLenum>(GL_DEPTH_STENCIL_ATTACHMENT), renderBuffer.get());
 
     bloomFramebuffer->printStatus(true);
 
@@ -1414,14 +1420,24 @@ int main()
 
         // fourth pass - render the result onto the quad and to the viewport
 
+        ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
+        ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         bloomOutputProgram->use();
 
-        bloomBlurTexture2->bindActive(0);
-        bloomOutputProgram->setUniform("blurOutput", 0);
+        bloomColorTexture->bindActive(0);
+        bloomBlurTexture2->bindActive(1);
+
+        bloomOutputProgram->setUniform("colorOutput", 0);
+        bloomOutputProgram->setUniform("blurOutput", 1);
 
         quadModel->bind();
         quadModel->draw();
         quadModel->unbind();
+
+        bloomColorTexture->unbindActive(0);
+        bloomBlurTexture2->unbindActive(1);
 
         bloomOutputProgram->release();
 

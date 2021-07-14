@@ -23,7 +23,7 @@ void main()
 {
     vsOut.fragmentPosition = vec3(model * vec4(vertexPosition, 1.0));
     vsOut.normal = vertexNormal;
-    vsOut.textureCoord = vertexTextureCoord;
+    vsOut.textureCoord = vec2(1.0 - vertexTextureCoord.x, vertexTextureCoord.y);
 
     gl_Position = vec4(vertexPosition, 1.0);
 }
