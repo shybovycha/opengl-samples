@@ -11,15 +11,19 @@ in VS_OUT {
 
 uniform sampler2D shadowMap;
 uniform sampler2D diffuseTexture;
+uniform sampler2D specularMapTexture;
+uniform sampler2D emissionMapTexture;
 
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
-// uniform vec3 ambientColor;
-// uniform vec3 diffuseColor;
-// uniform float materialSpecular;
 uniform vec3 cameraPosition;
 
 // TODO: make these params uniforms
+// uniform vec3 ambientColor;
+// uniform vec3 diffuseColor;
+// uniform float materialSpecular;
+uniform vec3 emissionColor; // = vec3(0.807, 0.671, 0.175);
+
 float attenuation_constant = 1.0;
 float attenuation_linear = 0.09;
 float attenuation_quadratic = 0.032;
@@ -82,7 +86,11 @@ void main()
     // calculate shadow; this represents a global directional light, like Sun
     float shadow = shadowCalculation(normal, lightDirection);
 
-    vec3 lighting = ((shadow * ((diffuse * attenuation) + (specular * attenuation))) + (ambient * attenuation)) * color;
+    // these are the multipliers from different light maps (read from corresponding textures)
+    float specularCoefficient = texture(specularMapTexture, fsIn.textureCoord).r;
+    float emissionCoefficient = texture(emissionMapTexture, fsIn.textureCoord).r;
+
+    vec3 lighting = ((shadow * ((diffuse * attenuation) + (specular * specularCoefficient * attenuation))) + (ambient * attenuation)) * color + (emissionColor * emissionCoefficient);
 
     fragmentColor = vec4(lighting, 1.0);
 }

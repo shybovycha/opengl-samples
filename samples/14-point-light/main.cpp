@@ -852,6 +852,56 @@ int main()
 
     lanternModel->setTransformation(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.75f, 3.85f, -0.75f)), glm::vec3(0.5f)));
 
+    // TODO: extract this to material class
+    sf::Image lanternEmissionMapImage;
+
+    if (!lanternEmissionMapImage.loadFromFile("media/lantern_emission.png"))
+    {
+        std::cerr << "[ERROR] Can not load texture" << std::endl;
+        return 1;
+    }
+
+    lanternEmissionMapImage.flipVertically();
+
+    auto lanternEmissionMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+
+    lanternEmissionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    lanternEmissionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+    lanternEmissionMapTexture->image2D(
+        0,
+        static_cast<gl::GLenum>(GL_RGBA8),
+        glm::vec2(lanternEmissionMapImage.getSize().x, lanternEmissionMapImage.getSize().y),
+        0,
+        static_cast<gl::GLenum>(GL_RGBA),
+        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        reinterpret_cast<const gl::GLvoid*>(lanternEmissionMapImage.getPixelsPtr()));
+
+    // TODO: extract this to material class
+    sf::Image lanternSpecularMapImage;
+
+    if (!lanternSpecularMapImage.loadFromFile("media/lantern_specular.png"))
+    {
+        std::cerr << "[ERROR] Can not load texture" << std::endl;
+        return 1;
+    }
+
+    lanternSpecularMapImage.flipVertically();
+
+    auto lanternSpecularMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+
+    lanternSpecularMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    lanternSpecularMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+    lanternSpecularMapTexture->image2D(
+        0,
+        static_cast<gl::GLenum>(GL_RGBA8),
+        glm::vec2(lanternSpecularMapImage.getSize().x, lanternSpecularMapImage.getSize().y),
+        0,
+        static_cast<gl::GLenum>(GL_RGBA),
+        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        reinterpret_cast<const gl::GLvoid*>(lanternSpecularMapImage.getPixelsPtr()));
+
     auto scrollScene = importer.ReadFile("media/scroll.obj", 0);
 
     if (!scrollScene)
@@ -927,7 +977,7 @@ int main()
     std::cout << "[INFO] Done initializing" << std::endl;
 
     // taken from lantern position
-    glm::vec3 lightPosition = glm::vec3(-1.75f, 4.5f, -0.75f);
+    glm::vec3 lightPosition = glm::vec3(-1.75f, 6.5f, -0.75f);
 
     const float fov = 45.0f;
 
@@ -1153,9 +1203,22 @@ int main()
 
         shadowRenderingModelTransformationUniform->set(lanternModel->getTransformation());
 
+        shadowRenderingProgram->setUniform("emissionColor", glm::vec3(0.807f, 0.671f, 0.175f));
+
+        lanternSpecularMapTexture->bindActive(2);
+        lanternEmissionMapTexture->bindActive(3);
+
+        shadowRenderingProgram->setUniform("specularMapTexture", 2);
+        shadowRenderingProgram->setUniform("emissionMapTexture", 3);
+
         lanternModel->bind();
         lanternModel->draw();
         lanternModel->unbind();
+
+        lanternSpecularMapTexture->unbindActive(2);
+        lanternEmissionMapTexture->unbindActive(3);
+
+        // shadowRenderingProgram->setUniform("emissionColor", glm::vec3(0.0f, 0.0f, 0.0f));
 
         shadowRenderingModelTransformationUniform->set(scrollModel->getTransformation());
 
