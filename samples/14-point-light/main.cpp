@@ -926,6 +926,9 @@ int main()
 
     std::cout << "[INFO] Done initializing" << std::endl;
 
+    // taken from lantern position
+    glm::vec3 lightPosition = glm::vec3(-1.75f, 4.5f, -0.75f);
+
     const float fov = 45.0f;
 
     const float cameraMoveSpeed = 1.0f;
@@ -1039,8 +1042,6 @@ int main()
             cameraPos,
             cameraPos + cameraForward,
             cameraUp);
-
-        glm::vec3 lightPosition = glm::vec3(0.0f, 3.0f, 4.0f); // cameraPos;
 
         const float nearPlane = 0.1f;
         const float farPlane = 10.0f;

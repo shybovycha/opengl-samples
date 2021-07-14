@@ -19,6 +19,11 @@ uniform vec3 lightColor;
 // uniform float materialSpecular;
 uniform vec3 cameraPosition;
 
+// TODO: make these params uniforms
+float attenuation_constant = 1.0;
+float attenuation_linear = 0.09;
+float attenuation_quadratic = 0.032;
+
 float shadowCalculation(vec3 normal, vec3 lightDirection)
 {
     vec3 shadowMapCoord = (fsIn.fragmentPositionInLightSpace.xyz / fsIn.fragmentPositionInLightSpace.w) * 0.5 + 0.5;
@@ -70,10 +75,14 @@ void main()
     float spec = pow(max(dot(normal, halfwayDirection), 0.0), 64.0);
     vec3 specular = spec * lightColor;
 
-    // calculate shadow
+    // attenuation
+    float distance = length(lightPosition - fsIn.fragmentPosition);
+    float attenuation = 1.0 / (attenuation_constant + attenuation_linear * distance + attenuation_quadratic * (distance * distance));
+
+    // calculate shadow; this represents a global directional light, like Sun
     float shadow = shadowCalculation(normal, lightDirection);
 
-    vec3 lighting = ((shadow * (diffuse + specular)) + ambient) * color;
+    vec3 lighting = ((shadow * ((diffuse * attenuation) + (specular * attenuation))) + (ambient * attenuation)) * color;
 
     fragmentColor = vec4(lighting, 1.0);
 }
