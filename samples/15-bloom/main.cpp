@@ -1364,13 +1364,12 @@ int main()
 
         bloomBlurProgram->use();
 
-        // bloomBlurProgram->setUniform("projection", cameraProjection);
-        bloomBlurProgram->setUniform("blurInput", 0);
-
         const auto blurPasses = 10;
 
         // for the initial blur pass, use the texture from the bloomFramebuffer as an input
         bloomBrightnessTexture->bindActive(0);
+
+        bloomBlurProgram->setUniform("blurInput", 0);
 
         for (auto i = 0; i < blurPasses; ++i)
         {
@@ -1386,7 +1385,8 @@ int main()
                 // bind the new target framebuffer to write blur results to
                 bloomBlurFramebuffer1->bind();
                 // bind the texture from the previous blur pass to read input data for this stage from
-                bloomBlurTexture2->bindActive(0);
+                if (i > 0)
+                    bloomBlurTexture2->bindActive(0);
                 // tell shader that we want to use horizontal blur
                 bloomBlurProgram->setUniform("isHorizontalBlur", true);
             }
@@ -1395,7 +1395,8 @@ int main()
                 // bind the new target framebuffer to write blur results to
                 bloomBlurFramebuffer2->bind();
                 // bind the texture from the previous blur pass to read input data for this stage from
-                bloomBlurTexture1->bindActive(0);
+                if (i > 0)
+                    bloomBlurTexture1->bindActive(0);
                 // tell shader that we want to use vertical blur
                 bloomBlurProgram->setUniform("isHorizontalBlur", false);
             }
