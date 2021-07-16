@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-project(16-skybox VERSION 1.0.2 LANGUAGES CXX)
+project(17-skybox VERSION 1.0.2 LANGUAGES CXX)
 
-set(EXECUTABLE_NAME 16-skybox)
+set(EXECUTABLE_NAME 17-skybox)
 set(SOURCES "main.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})

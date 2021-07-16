@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-project(17-reflection VERSION 1.0.2 LANGUAGES CXX)
+project(18-reflection VERSION 1.0.2 LANGUAGES CXX)
 
-set(EXECUTABLE_NAME 17-reflection)
+set(EXECUTABLE_NAME 18-reflection)
 set(SOURCES "main.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
