@@ -854,7 +854,6 @@ int main()
 
     std::cout << "[DEBUG] Loading skybox texture...";
 
-#ifdef LOAD_SKYBOX_CUBEMAP_TEXTURES_SEPARATELY
     std::map<gl::GLenum, std::string> skyboxTexturePaths{
         { static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X), "media/skybox-right.png" },
         { static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP_NEGATIVE_X), "media/skybox-left.png" },
@@ -904,47 +903,9 @@ int main()
             static_cast<::GLenum>(GL_RGBA),
             static_cast<::GLenum>(GL_UNSIGNED_BYTE),
             reinterpret_cast<const ::GLvoid*>(skyboxTextureImage.getPixelsPtr()));
-
-        /*skyboxTexture->cubeMapImage(
-            kv.first,
-            static_cast<gl::GLenum>(GL_RGBA8),
-            glm::vec2(skyboxTextureImage.getSize().x, skyboxTextureImage.getSize().y),
-            0,
-            static_cast<gl::GLenum>(GL_RGBA),
-            static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-            reinterpret_cast<const gl::GLvoid*>(skyboxTextureImage.getPixelsPtr()));*/
     }
 
     skyboxTexture->unbindActive(static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP));
-#else
-    auto skyboxTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP));
-
-    skyboxTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-    skyboxTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
-
-    skyboxTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<GLint>(GL_CLAMP_TO_EDGE));
-    skyboxTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<GLint>(GL_CLAMP_TO_EDGE));
-    skyboxTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_R), static_cast<GLint>(GL_CLAMP_TO_EDGE));
-
-    sf::Image skyboxTextureImage;
-
-    if (!skyboxTextureImage.loadFromFile("media/skybox-texture-2.png"))
-    {
-        std::cerr << "[ERROR] Can not load texture" << std::endl;
-        return 1;
-    }
-
-    const auto skyboxFaceSize = 256;
-
-    skyboxTexture->cubeMapImage(
-        0,
-        static_cast<gl::GLenum>(GL_RGBA8),
-        glm::vec2(skyboxFaceSize, skyboxFaceSize),
-        0,
-        static_cast<gl::GLenum>(GL_RGBA),
-        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-        reinterpret_cast<const gl::GLvoid*>(skyboxTextureImage.getPixelsPtr()));
-#endif
 
     sf::Image textureImage;
 
