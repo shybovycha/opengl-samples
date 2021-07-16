@@ -999,13 +999,6 @@ int main()
 
     while (window.isOpen())
     {
-#ifdef WIN32
-        if (!window.hasFocus())
-        {
-            continue;
-        }
-#endif
-
         sf::Event event{};
 
         // measure time since last frame, in seconds
@@ -1019,6 +1012,13 @@ int main()
                 break;
             }
         }
+
+#ifdef WIN32
+        if (!window.hasFocus())
+        {
+            continue;
+        }
+#endif
 
         glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
 
