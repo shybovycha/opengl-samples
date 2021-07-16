@@ -690,7 +690,7 @@ int main()
     auto videoMode = sf::VideoMode(1024, 768);
 #endif
 
-    sf::Window window(videoMode, "Hello, Bloom!", sf::Style::Default, settings);
+    sf::Window window(videoMode, "Hello, Anti-aliasing!", sf::Style::Default, settings);
 
     globjects::init([](const char* name) {
         return sf::Context::getFunction(name);
