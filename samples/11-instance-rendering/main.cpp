@@ -817,6 +817,8 @@ public:
 
         m_texture->bindActive(0);
 
+        // last `3` refers to the binding point defined in the shader by passing the `binding = 3` param to `layout` definition of a uniform buffer:
+        // layout (std430, binding = 3) buffer ParticleData { Particle[] particles; };
         m_sharedStorageBufferObject->bindBase(GL_SHADER_STORAGE_BUFFER, 3);
 
         m_model->drawInstanced(particles.size());
