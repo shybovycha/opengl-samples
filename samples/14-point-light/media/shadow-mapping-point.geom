@@ -5,19 +5,17 @@ layout (triangles) in;
 // we emit 6 triangles for one input triangle - to be written to 6 textures of the cubemap
 layout (triangle_strip, max_vertices = 18) out;
 
-// uniform mat4 pointLightProjectionViewMatrices[6];
+struct PointLight
+{
+   vec3 lightPosition;
+   float farPlane;
+   mat4 projectionViewMatrices[6];
+};
 
-// struct PointLight
-// {
-//    vec3 lightPosition;
-//    float farPlane;
-    uniform mat4 projectionViewMatrices[6];
-// };
-
-// layout (std430, binding = 5) buffer pointLightData
-// {
-//    PointLight pointLight;
-// };
+layout (std430, binding = 5) buffer pointLightData
+{
+   PointLight pointLight;
+};
 
 out vec4 fragmentPosition;
 
@@ -30,7 +28,7 @@ void main()
         for (int vertex = 0; vertex < 3; ++vertex)
         {
             fragmentPosition = gl_in[vertex].gl_Position;
-            gl_Position = projectionViewMatrices[face] * fragmentPosition;
+            gl_Position = pointLight.projectionViewMatrices[face] * fragmentPosition;
             EmitVertex();
         }
 

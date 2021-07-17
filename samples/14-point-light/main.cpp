@@ -588,7 +588,7 @@ protected:
     }
 };
 
-class Skybox;
+/*class Skybox;
 
 class AbstractSkyboxBuilder
 {
@@ -875,7 +875,7 @@ public:
     Skybox(std::unique_ptr<AbstractMesh> mesh) : SingleMeshModel(std::move(mesh))
     {
     }
-};
+};*/
 
 struct alignas(16) PointLightData
 {
@@ -1051,12 +1051,11 @@ int main()
     auto pointShadowMappingProgram = std::make_unique<globjects::Program>();
     pointShadowMappingProgram->attach(pointShadowMappingVertexShader.get(), pointShadowMappingGeometryShader.get(), pointShadowMappingFragmentShader.get());
 
-    // auto pointShadowMappingLightSpaceUniform = pointShadowMappingProgram->getUniform<std::vector<glm::mat4>>("lightSpaceMatrices");
     auto pointShadowMappingModelTransformationUniform = pointShadowMappingProgram->getUniform<glm::mat4>("modelTransformation");
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling point skybox rendering vertex shader...";
+    /*std::cout << "[INFO] Compiling point skybox rendering vertex shader...";
 
     auto skyboxRenderingVertexSource = globjects::Shader::sourceFromFile("media/skybox.vert");
     auto skyboxRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(skyboxRenderingVertexSource.get());
@@ -1091,7 +1090,7 @@ int main()
 
     auto skyboxRenderingModelTransformationUniform = skyboxRenderingProgram->getUniform<glm::mat4>("modelTransformation");
 
-    std::cout << "done" << std::endl;
+    std::cout << "done" << std::endl;*/
 
     std::cout << "[INFO] Compiling point shadow rendering vertex shader...";
 
@@ -1129,9 +1128,7 @@ int main()
     auto pointShadowRenderingModelTransformationUniform = pointShadowRenderingProgram->getUniform<glm::mat4>("model");
     auto pointShadowRenderingViewTransformationUniform = pointShadowRenderingProgram->getUniform<glm::mat4>("view");
     auto pointShadowRenderingProjectionTransformationUniform = pointShadowRenderingProgram->getUniform<glm::mat4>("projection");
-    // auto pointShadowRenderingLightSpaceMatrixUniform = pointShadowRenderingProgram->getUniform<glm::mat4>("lightSpaceMatrix");
 
-    // auto pointShadowRenderingLightPositionUniform = pointShadowRenderingProgram->getUniform<glm::vec3>("lightPosition");
     auto pointShadowRenderingLightColorUniform = pointShadowRenderingProgram->getUniform<glm::vec3>("lightColor");
     auto pointShadowRenderingCameraPositionUniform = pointShadowRenderingProgram->getUniform<glm::vec3>("cameraPosition");
 
@@ -1142,7 +1139,6 @@ int main()
     Assimp::Importer importer;
 
     auto houseScene = importer.ReadFile("media/house1.obj", 0);
-    // auto houseScene = importer.ReadFile("media/skybox.obj", 0);
 
     if (!houseScene)
     {
@@ -1241,7 +1237,7 @@ int main()
 
     scrollModel->setTransformation(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.85f, 0.0f)), glm::vec3(0.5f)));
 
-    sf::Image textureImage;
+    /*sf::Image textureImage;
 
     if (!textureImage.loadFromFile("media/texture.jpg"))
     {
@@ -1263,7 +1259,7 @@ int main()
         0,
         static_cast<gl::GLenum>(GL_RGBA),
         static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-        reinterpret_cast<const gl::GLvoid*>(textureImage.getPixelsPtr()));
+        reinterpret_cast<const gl::GLvoid*>(textureImage.getPixelsPtr()));*/
 
     std::cout << "done" << std::endl;
 
@@ -1334,7 +1330,7 @@ int main()
 
     pointShadowMapTexture->unbind();
 
-    auto skybox = Skybox::builder()
+    /*auto skybox = Skybox::builder()
         ->top("media/skybox-top.png")
         ->bottom("media/skybox-bottom.png")
         ->left("media/skybox-left.png")
@@ -1343,7 +1339,7 @@ int main()
         ->back("media/skybox-back.png")
         // Skybox::fromCubemap(pointShadowMapTexture.get())
             ->size(20.0f)
-            ->build();
+            ->build();*/
 
     std::cout << "done" << std::endl;
 
@@ -1489,9 +1485,9 @@ int main()
             pointLightProjection * glm::lookAt(pointLightPosition, pointLightPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
         };
 
-        // PointLightData pointLightData{ pointLightPosition, farPlane, pointLightProjectionViewMatrices };
+        PointLightData pointLightData{ pointLightPosition, farPlane, pointLightProjectionViewMatrices };
 
-        // pointLightDataBuffer->setData(pointLightData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
+        pointLightDataBuffer->setData(pointLightData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
 
         ::glViewport(0, 0, shadowMapSize, shadowMapSize);
 
@@ -1499,12 +1495,10 @@ int main()
 
         pointShadowMappingFramebuffer->bind();
 
-        // pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
+        pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
 
         ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
         ::glClear(GL_DEPTH_BUFFER_BIT);
-
-        //pointShadowMappingFramebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -1514,17 +1508,14 @@ int main()
 
         pointShadowMappingProgram->use();
 
-        pointShadowMappingProgram->setUniform("lightPosition", pointLightPosition);
+        /*pointShadowMappingProgram->setUniform("lightPosition", pointLightPosition);
         pointShadowMappingProgram->setUniform("farPlane", farPlane);
         pointShadowMappingProgram->setUniform("projectionViewMatrices[0]", pointLightProjectionViewMatrices[0]);
         pointShadowMappingProgram->setUniform("projectionViewMatrices[1]", pointLightProjectionViewMatrices[1]);
         pointShadowMappingProgram->setUniform("projectionViewMatrices[2]", pointLightProjectionViewMatrices[2]);
         pointShadowMappingProgram->setUniform("projectionViewMatrices[3]", pointLightProjectionViewMatrices[3]);
         pointShadowMappingProgram->setUniform("projectionViewMatrices[4]", pointLightProjectionViewMatrices[4]);
-        pointShadowMappingProgram->setUniform("projectionViewMatrices[5]", pointLightProjectionViewMatrices[5]);
-
-        // TODO: set a vector of 6 matrices
-        // pointShadowMappingLightSpaceUniform->set(pointLightProjectionViewMatrices);
+        pointShadowMappingProgram->setUniform("projectionViewMatrices[5]", pointLightProjectionViewMatrices[5]);*/
 
         pointShadowMappingModelTransformationUniform->set(houseModel->getTransformation());
 
@@ -1555,7 +1546,7 @@ int main()
 
         glEnable(GL_CULL_FACE);
 
-        // pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
+        pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
 
         pointShadowMappingFramebuffer->unbind();
 
@@ -1572,9 +1563,8 @@ int main()
 
         pointShadowRenderingProgram->use();
 
-        // pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
+        pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
 
-        // pointShadowRenderingLightPositionUniform->set(pointLightPosition);
         pointShadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
         pointShadowRenderingCameraPositionUniform->set(cameraPos);
 
@@ -1583,14 +1573,6 @@ int main()
 
         pointShadowRenderingProgram->setUniform("lightPosition", pointLightPosition);
         pointShadowRenderingProgram->setUniform("farPlane", farPlane);
-        /*pointShadowRenderingProgram->setUniform("projectionViewMatrices[0]", pointLightProjectionViewMatrices[0]);
-        pointShadowRenderingProgram->setUniform("projectionViewMatrices[1]", pointLightProjectionViewMatrices[1]);
-        pointShadowRenderingProgram->setUniform("projectionViewMatrices[2]", pointLightProjectionViewMatrices[2]);
-        pointShadowRenderingProgram->setUniform("projectionViewMatrices[3]", pointLightProjectionViewMatrices[3]);
-        pointShadowRenderingProgram->setUniform("projectionViewMatrices[4]", pointLightProjectionViewMatrices[4]);
-        pointShadowRenderingProgram->setUniform("projectionViewMatrices[5]", pointLightProjectionViewMatrices[5]);*/
-
-        // pointShadowRenderingLightSpaceMatrixUniform->set(pointLightSpaceMatrix);
 
         // draw the scene
 
@@ -1638,10 +1620,12 @@ int main()
 
         glEnable(GL_CULL_FACE);
 
-        // pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
+        pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
 
         pointShadowMapTexture->unbindActive(0);
-        pointShadowMapTexture->bindActive(0);
+
+        /*
+        // pointShadowMapTexture->bindActive(0);
 
         glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
         glDepthFunc(GL_LEQUAL);
@@ -1652,15 +1636,13 @@ int main()
         skyboxRenderingProgram->setUniform("view", cameraView);
         skyboxRenderingProgram->setUniform("cubeMap", 0);
 
-        // pointShadowMapTexture->bindActive(1);
-
         skybox->bind();
         skybox->draw();
         skybox->unbind();
 
-        pointShadowMapTexture->unbindActive(0);
+        // pointShadowMapTexture->unbindActive(0);
 
-        skyboxRenderingProgram->release();
+        skyboxRenderingProgram->release();*/
 
         // done rendering the frame
 

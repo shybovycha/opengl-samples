@@ -14,20 +14,17 @@ uniform sampler2D diffuseTexture;
 uniform sampler2D specularMapTexture;
 uniform sampler2D emissionMapTexture;
 
-// uniform vec3 lightPosition;
-// uniform float farPlane;
+struct PointLight
+{
+    vec3 lightPosition;
+    float farPlane;
+    mat4 projectionViewMatrices[6];
+};
 
-//struct PointLight
-//{
-uniform vec3 lightPosition;
-uniform float farPlane;
-//    mat4 projectionViewMatrices[6];
-//};
-
-//layout (std430, binding = 5) buffer pointLightData
-//{
-//    PointLight pointLight;
-//};
+layout (std430, binding = 5) buffer pointLightData
+{
+    PointLight pointLight;
+};
 
 uniform vec3 lightColor;
 uniform vec3 cameraPosition;
@@ -42,34 +39,38 @@ float attenuation_constant = 1.0;
 float attenuation_linear = 0.09;
 float attenuation_quadratic = 0.032;
 
+const int pcfSamples = 20;
+vec3 pcfSampleOffsetDirections[pcfSamples] = vec3[]
+(
+   vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
+   vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
+   vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
+   vec3(1, 0, 1), vec3(-1, 0, 1), vec3(1, 0, -1), vec3(-1, 0, -1),
+   vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3(0, 1, -1)
+);
+
 float shadowCalculation(vec3 normal)
 {
-    vec3 fragmentToLight = fsIn.fragmentPosition - lightPosition;
-    float occluderDepth = texture(shadowMap, fragmentToLight).r * farPlane;
+    vec3 fragmentToLight = fsIn.fragmentPosition - pointLight.lightPosition;
+    float occluderDepth = texture(shadowMap, fragmentToLight).r * pointLight.farPlane;
     float thisDepth = length(fragmentToLight);
 
-    /*if (thisDepth > 1.0)
-    {
-        return 0.0;
-    }*/
-
-    float bias = 0.05; //max(0.05 * (1.0 - dot(normal, fragmentToLight)), 0.005);
+    float bias = 0.15;
 
     // PCF
     /*float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    float viewDistance = length(fsIn.fragmentPosition - cameraPosition);
+    float diskRadius = (1.0 + (viewDistance / farPlane)) / 50.0;
 
-    for (int x = -1; x <= 1; ++x)
+    for (int i = 0; i < pcfSamples; ++i)
     {
-        for (int y = -1; y <= 1; ++y)
-        {
-            float pcfDepth = texture(shadowMap, shadowMapCoord.xy + vec2(x, y) * texelSize).r;
+        float closestDepth = texture(shadowMap, fragmentToLight + pcfSampleOffsetDirections[i] * diskRadius).r * farPlane;
 
-            shadow += thisDepth - bias < pcfDepth ? 1.0 : 0.0;
-        }
+        if (thisDepth - bias < closestDepth)
+            shadow += 1.0;
     }
 
-    shadow /= 9.0;*/
+    shadow /= float(pcfSamples);*/
 
     float shadow = (thisDepth - bias) < occluderDepth ? 1.0 : 0.0;
 
@@ -85,7 +86,7 @@ void main()
     vec3 ambient = 0.3 * color;
 
     // diffuse
-    vec3 lightDirection = normalize(lightPosition - fsIn.fragmentPosition);
+    vec3 lightDirection = normalize(pointLight.lightPosition - fsIn.fragmentPosition);
     float diff = max(dot(lightDirection, normal), 0.0);
     vec3 diffuse = diff * lightColor;
 
@@ -97,7 +98,7 @@ void main()
 
     // attenuation
     float lightRadius = 10.0;
-    float distance = length(lightPosition - fsIn.fragmentPosition) / lightRadius;
+    float distance = length(pointLight.lightPosition - fsIn.fragmentPosition) / lightRadius;
     float attenuation = 1.0 / (attenuation_constant + attenuation_linear * distance + attenuation_quadratic * (distance * distance));
 
     // calculate shadow; this represents a global directional light, like Sun
