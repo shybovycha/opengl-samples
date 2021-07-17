@@ -568,112 +568,6 @@ protected:
     }
 };
 
-class Terrain : public SingleMeshModel
-{
-public:
-    Terrain(std::unique_ptr<AbstractMesh> mesh) : SingleMeshModel(std::move(mesh))
-    {
-    }
-
-    static std::unique_ptr<Terrain> fromHeightmap(sf::Image heightmap, float step = 0.5f)
-    {
-        const auto width = heightmap.getSize().x;
-        const auto height = heightmap.getSize().y;
-
-        std::vector<glm::vec3> vertices;
-        std::vector<glm::vec3> normals;
-        std::vector<glm::vec2> uvs;
-        std::vector<unsigned int> indices;
-
-        vertices.reserve(width * height);
-        normals.reserve(width * height);
-        uvs.reserve(width * height);
-        indices.reserve(6 * (width - 1) * (height - 1));
-
-        for (auto i = 0; i < height; ++i)
-        {
-            for (auto t = 0; t < width; ++t)
-            {
-                const auto color = heightmap.getPixel(t, i);
-
-                float x = t * step;
-                float y = color.r / 255.0f; // heightmaps are greyscale so all the components (r, g & b) of each pixel will have the same value
-                float z = i * step;
-
-                glm::vec3 position(x, y, z);
-                glm::vec2 uv(i / static_cast<float>(width - 1), t / static_cast<float>(height - 1));
-
-                vertices.push_back(position);
-                uvs.push_back(uv);
-            }
-        }
-
-        for (auto i = 0; i < height - 1; ++i)
-        {
-            for (auto t = 0; t < width - 1; ++t)
-            {
-                /*
-                * [(i+1)*size + t] [(i+1)*size+t+1]
-                * [i*size + t]     [i*size + t + 1]
-                *
-                * x.x
-                * |\.
-                * x-x
-                */
-                indices.push_back(((i + 1) * width) + t);
-                indices.push_back((i * width) + t + 1);
-                indices.push_back((i * width) + t);
-
-                /*
-                *
-                * x-x
-                * .\|
-                * x.x
-                */
-                indices.push_back(((i + 1) * width) + t);
-                indices.push_back(((i + 1) * width) + t + 1);
-                indices.push_back((i * width) + t + 1);
-
-                glm::vec3 v0 = vertices[i * width + t];
-                glm::vec3 v1 = vertices[(i + 1) * width + t];
-                glm::vec3 v2 = vertices[i * width + t + 1];
-
-                glm::vec3 normal = glm::cross(v1 - v0, v2 - v0);
-                normals.push_back(normal);
-            }
-
-            // last vertex of the row
-            {
-                glm::vec3 v0 = vertices[i * width + width - 1];
-                glm::vec3 v1 = vertices[(i + 1) * width + width - 1];
-                glm::vec3 v2 = vertices[i * width + width - 1 + 1];
-
-                glm::vec3 normal = glm::cross(v2 - v0, v1 - v0);
-                normals.push_back(normal);
-            }
-        }
-
-        // last vertex of the last row and last column
-        {
-            glm::vec3 v0 = vertices[height * width - 1];
-            glm::vec3 v1 = vertices[(height - 1) * width - 1];
-            glm::vec3 v2 = vertices[height * width - 2];
-
-            glm::vec3 normal = glm::cross(v2 - v0, v1 - v0);
-            normals.push_back(normal);
-        }
-
-        auto mesh = AbstractMesh::builder()
-            ->addVertices(vertices)
-            ->addIndices(indices)
-            ->addNormals(normals)
-            ->addUVs(uvs)
-            ->build();
-
-        return std::make_unique<Terrain>(std::move(mesh));
-    }
-};
-
 int main()
 {
     sf::ContextSettings settings;
@@ -706,85 +600,85 @@ int main()
 
     std::cout << "[INFO] Creating shaders..." << std::endl;
 
-    std::cout << "[INFO] Compiling shadow mapping vertex shader...";
+    std::cout << "[INFO] Compiling directional shadow mapping vertex shader...";
 
-    auto shadowMappingVertexSource = globjects::Shader::sourceFromFile("media/shadow-mapping.vert");
-    auto shadowMappingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowMappingVertexSource.get());
-    auto shadowMappingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowMappingVertexShaderTemplate.get());
+    auto directionalShadowMappingVertexSource = globjects::Shader::sourceFromFile("media/shadow-mapping-directional.vert");
+    auto directionalShadowMappingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(directionalShadowMappingVertexSource.get());
+    auto directionalShadowMappingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), directionalShadowMappingVertexShaderTemplate.get());
 
-    if (!shadowMappingVertexShader->compile())
+    if (!directionalShadowMappingVertexShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile vertex shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile directional shadow mapping vertex shader" << std::endl;
         return 1;
     }
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling shadow mapping fragment shader...";
+    std::cout << "[INFO] Compiling directional shadow mapping fragment shader...";
 
-    auto shadowMappingFragmentSource = globjects::Shader::sourceFromFile("media/shadow-mapping.frag");
-    auto shadowMappingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowMappingFragmentSource.get());
-    auto shadowMappingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowMappingFragmentShaderTemplate.get());
+    auto directionalShadowMappingFragmentSource = globjects::Shader::sourceFromFile("media/shadow-mapping-directional.frag");
+    auto directionalShadowMappingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(directionalShadowMappingFragmentSource.get());
+    auto directionalShadowMappingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), directionalShadowMappingFragmentShaderTemplate.get());
 
-    if (!shadowMappingFragmentShader->compile())
+    if (!directionalShadowMappingFragmentShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile fragment shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile directional shadow mapping fragment shader" << std::endl;
         return 1;
     }
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[DEBUG] Linking shadow mapping shaders..." << std::endl;
+    std::cout << "[DEBUG] Linking directional shadow mapping shaders..." << std::endl;
 
-    auto shadowMappingProgram = std::make_unique<globjects::Program>();
-    shadowMappingProgram->attach(shadowMappingVertexShader.get(), shadowMappingFragmentShader.get());
+    auto directionalShadowMappingProgram = std::make_unique<globjects::Program>();
+    directionalShadowMappingProgram->attach(directionalShadowMappingVertexShader.get(), directionalShadowMappingFragmentShader.get());
 
-    auto shadowMappingLightSpaceUniform = shadowMappingProgram->getUniform<glm::mat4>("lightSpaceMatrix");
-    auto shadowMappingModelTransformationUniform = shadowMappingProgram->getUniform<glm::mat4>("modelTransformation");
+    auto directionalShadowMappingLightSpaceUniform = directionalShadowMappingProgram->getUniform<glm::mat4>("lightSpaceMatrix");
+    auto directionalShadowMappingModelTransformationUniform = directionalShadowMappingProgram->getUniform<glm::mat4>("modelTransformation");
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling shadow rendering vertex shader...";
+    std::cout << "[INFO] Compiling directional shadow rendering vertex shader...";
 
-    auto shadowRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.vert");
-    auto shadowRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowRenderingVertexShaderSource.get());
-    auto shadowRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowRenderingVertexShaderTemplate.get());
+    auto directionalShadowRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering-directional.vert");
+    auto directionalShadowRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(directionalShadowRenderingVertexShaderSource.get());
+    auto directionalShadowRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), directionalShadowRenderingVertexShaderTemplate.get());
 
-    if (!shadowRenderingVertexShader->compile())
+    if (!directionalShadowRenderingVertexShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile shadow rendering vertex shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile directional shadow rendering vertex shader" << std::endl;
         return 1;
     }
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling shadow rendering fragment shader...";
+    std::cout << "[INFO] Compiling directional shadow rendering fragment shader...";
 
-    auto shadowRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering.frag");
-    auto shadowRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowRenderingFragmentShaderSource.get());
-    auto shadowRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowRenderingFragmentShaderTemplate.get());
+    auto directionalShadowRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering-directional.frag");
+    auto directionalShadowRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(directionalShadowRenderingFragmentShaderSource.get());
+    auto directionalShadowRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), directionalShadowRenderingFragmentShaderTemplate.get());
 
-    if (!shadowRenderingFragmentShader->compile())
+    if (!directionalShadowRenderingFragmentShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile chicken fragment shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile directional shadow rendering fragment shader" << std::endl;
         return 1;
     }
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Linking shadow rendering shader...";
+    std::cout << "[INFO] Linking directional shadow rendering shader...";
 
-    auto shadowRenderingProgram = std::make_unique<globjects::Program>();
-    shadowRenderingProgram->attach(shadowRenderingVertexShader.get(), shadowRenderingFragmentShader.get());
+    auto directionalShadowRenderingProgram = std::make_unique<globjects::Program>();
+    directionalShadowRenderingProgram->attach(directionalShadowRenderingVertexShader.get(), directionalShadowRenderingFragmentShader.get());
 
-    auto shadowRenderingModelTransformationUniform = shadowRenderingProgram->getUniform<glm::mat4>("model");
-    auto shadowRenderingViewTransformationUniform = shadowRenderingProgram->getUniform<glm::mat4>("view");
-    auto shadowRenderingProjectionTransformationUniform = shadowRenderingProgram->getUniform<glm::mat4>("projection");
-    auto shadowRenderingLightSpaceMatrixUniform = shadowRenderingProgram->getUniform<glm::mat4>("lightSpaceMatrix");
+    auto directionalShadowRenderingModelTransformationUniform = directionalShadowRenderingProgram->getUniform<glm::mat4>("model");
+    auto directionalShadowRenderingViewTransformationUniform = directionalShadowRenderingProgram->getUniform<glm::mat4>("view");
+    auto directionalShadowRenderingProjectionTransformationUniform = directionalShadowRenderingProgram->getUniform<glm::mat4>("projection");
+    auto directionalShadowRenderingLightSpaceMatrixUniform = directionalShadowRenderingProgram->getUniform<glm::mat4>("lightSpaceMatrix");
 
-    auto shadowRenderingLightPositionUniform = shadowRenderingProgram->getUniform<glm::vec3>("lightPosition");
-    auto shadowRenderingLightColorUniform = shadowRenderingProgram->getUniform<glm::vec3>("lightColor");
-    auto shadowRenderingCameraPositionUniform = shadowRenderingProgram->getUniform<glm::vec3>("cameraPosition");
+    auto directionalShadowRenderingLightPositionUniform = directionalShadowRenderingProgram->getUniform<glm::vec3>("lightPosition");
+    auto directionalShadowRenderingLightColorUniform = directionalShadowRenderingProgram->getUniform<glm::vec3>("lightColor");
+    auto directionalShadowRenderingCameraPositionUniform = directionalShadowRenderingProgram->getUniform<glm::vec3>("cameraPosition");
 
     std::cout << "done" << std::endl;
 
@@ -942,19 +836,19 @@ int main()
 
     std::cout << "[DEBUG] Initializing framebuffers...";
 
-    std::cout << "[DEBUG] Initializing shadowMapTexture...";
+    std::cout << "[DEBUG] Initializing directionalShadowMapTexture...";
 
-    auto shadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+    auto directionalShadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
+    directionalShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
+    directionalShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
 
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+    directionalShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+    directionalShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
 
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    directionalShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-    shadowMapTexture->image2D(
+    directionalShadowMapTexture->image2D(
         0,
         static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
         glm::vec2(2048, 2048),
@@ -968,7 +862,7 @@ int main()
     std::cout << "[DEBUG] Initializing frame buffer...";
 
     auto framebuffer = std::make_unique<globjects::Framebuffer>();
-    framebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), shadowMapTexture.get());
+    framebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), directionalShadowMapTexture.get());
 
     framebuffer->printStatus(true);
 
@@ -1117,29 +1011,29 @@ int main()
         // cull front faces to prevent peter panning the generated shadow map
         glCullFace(GL_FRONT);
 
-        shadowMappingProgram->use();
+        directionalShadowMappingProgram->use();
 
-        shadowMappingLightSpaceUniform->set(lightSpaceMatrix);
+        directionalShadowMappingLightSpaceUniform->set(lightSpaceMatrix);
 
-        shadowMappingModelTransformationUniform->set(houseModel->getTransformation());
+        directionalShadowMappingModelTransformationUniform->set(houseModel->getTransformation());
 
         houseModel->bind();
         houseModel->draw();
         houseModel->unbind();
 
-        shadowMappingModelTransformationUniform->set(tableModel->getTransformation());
+        directionalShadowMappingModelTransformationUniform->set(tableModel->getTransformation());
 
         tableModel->bind();
         tableModel->draw();
         tableModel->unbind();
 
-        shadowMappingModelTransformationUniform->set(lanternModel->getTransformation());
+        directionalShadowMappingModelTransformationUniform->set(lanternModel->getTransformation());
 
         lanternModel->bind();
         lanternModel->draw();
         lanternModel->unbind();
 
-        shadowMappingModelTransformationUniform->set(scrollModel->getTransformation());
+        directionalShadowMappingModelTransformationUniform->set(scrollModel->getTransformation());
 
         // scroll model needs culling to be disabled since this is a modified plane, so...
         glDisable(GL_CULL_FACE);
@@ -1153,7 +1047,7 @@ int main()
         // the ground plane will get culled, we don't want that
         /*glDisable(GL_CULL_FACE);
 
-        shadowMappingModelTransformationUniform->set(terrainModel->getTransformation());
+        directionalShadowMappingModelTransformationUniform->set(terrainModel->getTransformation());
 
         terrainModel->bind();
         terrainModel->draw();
@@ -1161,7 +1055,7 @@ int main()
 
         framebuffer->unbind();
 
-        shadowMappingProgram->release();
+        directionalShadowMappingProgram->release();
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
@@ -1172,44 +1066,44 @@ int main()
         ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shadowRenderingProgram->use();
+        directionalShadowRenderingProgram->use();
 
-        shadowRenderingLightPositionUniform->set(lightPosition);
-        shadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
-        shadowRenderingCameraPositionUniform->set(cameraPos);
+        directionalShadowRenderingLightPositionUniform->set(lightPosition);
+        directionalShadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
+        directionalShadowRenderingCameraPositionUniform->set(cameraPos);
 
-        shadowRenderingProjectionTransformationUniform->set(cameraProjection);
-        shadowRenderingViewTransformationUniform->set(cameraView);
-        shadowRenderingLightSpaceMatrixUniform->set(lightSpaceMatrix);
+        directionalShadowRenderingProjectionTransformationUniform->set(cameraProjection);
+        directionalShadowRenderingViewTransformationUniform->set(cameraView);
+        directionalShadowRenderingLightSpaceMatrixUniform->set(lightSpaceMatrix);
 
         // draw chicken
 
-        shadowMapTexture->bindActive(0);
+        directionalShadowMapTexture->bindActive(0);
 
-        shadowRenderingProgram->setUniform("shadowMap", 0);
-        shadowRenderingProgram->setUniform("diffuseTexture", 1);
+        directionalShadowRenderingProgram->setUniform("directionalShadowMap", 0);
+        directionalShadowRenderingProgram->setUniform("diffuseTexture", 1);
 
-        shadowRenderingModelTransformationUniform->set(houseModel->getTransformation());
+        directionalShadowRenderingModelTransformationUniform->set(houseModel->getTransformation());
 
         houseModel->bind();
         houseModel->draw();
         houseModel->unbind();
 
-        shadowRenderingModelTransformationUniform->set(tableModel->getTransformation());
+        directionalShadowRenderingModelTransformationUniform->set(tableModel->getTransformation());
 
         tableModel->bind();
         tableModel->draw();
         tableModel->unbind();
 
-        shadowRenderingModelTransformationUniform->set(lanternModel->getTransformation());
+        directionalShadowRenderingModelTransformationUniform->set(lanternModel->getTransformation());
 
-        shadowRenderingProgram->setUniform("emissionColor", glm::vec3(0.807f, 0.671f, 0.175f));
+        directionalShadowRenderingProgram->setUniform("emissionColor", glm::vec3(0.807f, 0.671f, 0.175f));
 
         lanternSpecularMapTexture->bindActive(2);
         lanternEmissionMapTexture->bindActive(3);
 
-        shadowRenderingProgram->setUniform("specularMapTexture", 2);
-        shadowRenderingProgram->setUniform("emissionMapTexture", 3);
+        directionalShadowRenderingProgram->setUniform("specularMapTexture", 2);
+        directionalShadowRenderingProgram->setUniform("emissionMapTexture", 3);
 
         lanternModel->bind();
         lanternModel->draw();
@@ -1218,9 +1112,9 @@ int main()
         lanternSpecularMapTexture->unbindActive(2);
         lanternEmissionMapTexture->unbindActive(3);
 
-        // shadowRenderingProgram->setUniform("emissionColor", glm::vec3(0.0f, 0.0f, 0.0f));
+        // directionalShadowRenderingProgram->setUniform("emissionColor", glm::vec3(0.0f, 0.0f, 0.0f));
 
-        shadowRenderingModelTransformationUniform->set(scrollModel->getTransformation());
+        directionalShadowRenderingModelTransformationUniform->set(scrollModel->getTransformation());
 
         glDisable(GL_CULL_FACE);
 
@@ -1230,7 +1124,7 @@ int main()
 
         glEnable(GL_CULL_FACE);
 
-        /*shadowRenderingModelTransformationUniform->set(terrainModel->getTransformation());
+        /*directionalShadowRenderingModelTransformationUniform->set(terrainModel->getTransformation());
 
         defaultTexture->bindActive(1);
 
@@ -1240,9 +1134,9 @@ int main()
 
         defaultTexture->unbindActive(1);*/
 
-        shadowMapTexture->unbindActive(0);
+        directionalShadowMapTexture->unbindActive(0);
 
-        shadowRenderingProgram->release();
+        directionalShadowRenderingProgram->release();
 
         // done rendering the frame
 
