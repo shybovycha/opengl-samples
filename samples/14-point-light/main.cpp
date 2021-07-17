@@ -568,6 +568,13 @@ protected:
     }
 };
 
+struct alignas(16) PointLightData
+{
+    glm::vec3 lightPosition;
+    float farPlane;
+    std::array<glm::mat4, 6> projectionViewMatrices;
+};
+
 int main()
 {
     sf::ContextSettings settings;
@@ -600,7 +607,7 @@ int main()
 
     std::cout << "[INFO] Creating shaders..." << std::endl;
 
-    std::cout << "[INFO] Compiling directional shadow mapping vertex shader...";
+    /*std::cout << "[INFO] Compiling directional shadow mapping vertex shader...";
 
     auto directionalShadowMappingVertexSource = globjects::Shader::sourceFromFile("media/shadow-mapping-directional.vert");
     auto directionalShadowMappingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(directionalShadowMappingVertexSource.get());
@@ -680,34 +687,113 @@ int main()
     auto directionalShadowRenderingLightColorUniform = directionalShadowRenderingProgram->getUniform<glm::vec3>("lightColor");
     auto directionalShadowRenderingCameraPositionUniform = directionalShadowRenderingProgram->getUniform<glm::vec3>("cameraPosition");
 
+    std::cout << "done" << std::endl;*/
+
+    std::cout << "[INFO] Compiling point shadow data buffer...";
+
+    auto pointLightDataBuffer = std::make_unique<globjects::Buffer>();
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling point shadow mapping vertex shader...";
+
+    auto pointShadowMappingVertexSource = globjects::Shader::sourceFromFile("media/shadow-mapping-point.vert");
+    auto pointShadowMappingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(pointShadowMappingVertexSource.get());
+    auto pointShadowMappingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), pointShadowMappingVertexShaderTemplate.get());
+
+    if (!pointShadowMappingVertexShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile point shadow mapping vertex shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling point shadow mapping geometry shader...";
+
+    auto pointShadowMappingGeometrySource = globjects::Shader::sourceFromFile("media/shadow-mapping-point.geom");
+    auto pointShadowMappingGeometryShaderTemplate = globjects::Shader::applyGlobalReplacements(pointShadowMappingGeometrySource.get());
+    auto pointShadowMappingGeometryShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_GEOMETRY_SHADER), pointShadowMappingGeometryShaderTemplate.get());
+
+    if (!pointShadowMappingGeometryShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile point shadow mapping fragment shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling point shadow mapping fragment shader...";
+
+    auto pointShadowMappingFragmentSource = globjects::Shader::sourceFromFile("media/shadow-mapping-point.frag");
+    auto pointShadowMappingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(pointShadowMappingFragmentSource.get());
+    auto pointShadowMappingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), pointShadowMappingFragmentShaderTemplate.get());
+
+    if (!pointShadowMappingFragmentShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile point shadow mapping fragment shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[DEBUG] Linking point shadow mapping shaders..." << std::endl;
+
+    auto pointShadowMappingProgram = std::make_unique<globjects::Program>();
+    pointShadowMappingProgram->attach(pointShadowMappingVertexShader.get(), pointShadowMappingGeometryShader.get(), pointShadowMappingFragmentShader.get());
+
+    // auto pointShadowMappingLightSpaceUniform = pointShadowMappingProgram->getUniform<std::vector<glm::mat4>>("lightSpaceMatrices");
+    auto pointShadowMappingModelTransformationUniform = pointShadowMappingProgram->getUniform<glm::mat4>("modelTransformation");
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling point shadow rendering vertex shader...";
+
+    auto pointShadowRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering-point.vert");
+    auto pointShadowRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(pointShadowRenderingVertexShaderSource.get());
+    auto pointShadowRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), pointShadowRenderingVertexShaderTemplate.get());
+
+    if (!pointShadowRenderingVertexShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile point shadow rendering vertex shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling point shadow rendering fragment shader...";
+
+    auto pointShadowRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering-point.frag");
+    auto pointShadowRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(pointShadowRenderingFragmentShaderSource.get());
+    auto pointShadowRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), pointShadowRenderingFragmentShaderTemplate.get());
+
+    if (!pointShadowRenderingFragmentShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile point shadow rendering fragment shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Linking point shadow rendering shader...";
+
+    auto pointShadowRenderingProgram = std::make_unique<globjects::Program>();
+    pointShadowRenderingProgram->attach(pointShadowRenderingVertexShader.get(), pointShadowRenderingFragmentShader.get());
+
+    auto pointShadowRenderingModelTransformationUniform = pointShadowRenderingProgram->getUniform<glm::mat4>("model");
+    auto pointShadowRenderingViewTransformationUniform = pointShadowRenderingProgram->getUniform<glm::mat4>("view");
+    auto pointShadowRenderingProjectionTransformationUniform = pointShadowRenderingProgram->getUniform<glm::mat4>("projection");
+    // auto pointShadowRenderingLightSpaceMatrixUniform = pointShadowRenderingProgram->getUniform<glm::mat4>("lightSpaceMatrix");
+
+    // auto pointShadowRenderingLightPositionUniform = pointShadowRenderingProgram->getUniform<glm::vec3>("lightPosition");
+    auto pointShadowRenderingLightColorUniform = pointShadowRenderingProgram->getUniform<glm::vec3>("lightColor");
+    auto pointShadowRenderingCameraPositionUniform = pointShadowRenderingProgram->getUniform<glm::vec3>("cameraPosition");
+
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Loading 3D model...";
 
     Assimp::Importer importer;
-
-    /*auto chickenScene = importer.ReadFile("media/Chicken.3ds", 0);
-
-    if (!chickenScene)
-    {
-        std::cerr << "failed: " << importer.GetErrorString() << std::endl;
-        return 1;
-    }
-
-    auto chickenModel = AssimpModel::fromAiNode(chickenScene, chickenScene->mRootNode, { "media" });
-
-    // INFO: this transformation is hard-coded specifically for Chicken.3ds model
-    chickenModel->setTransformation(glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)), glm::radians(-90.0f), glm::vec3(1.0f, 0, 0)));*/
-
-    /*sf::Image heightmapImage;
-
-    if (!heightmapImage.loadFromFile("media/australia_heightmap.jpg"))
-    {
-        std::cerr << "[ERROR] Can not load heightmap" << std::endl;
-        return 1;
-    }
-
-    auto terrainModel = Terrain::fromHeightmap(heightmapImage, 0.01f);*/
 
     auto houseScene = importer.ReadFile("media/house1.1.obj", 0);
 
@@ -836,7 +922,7 @@ int main()
 
     std::cout << "[DEBUG] Initializing framebuffers...";
 
-    std::cout << "[DEBUG] Initializing directionalShadowMapTexture...";
+    /*std::cout << "[DEBUG] Initializing directionalShadowMapTexture...";
 
     auto directionalShadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
@@ -859,19 +945,62 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[DEBUG] Initializing frame buffer...";
+    std::cout << "[DEBUG] Initializing directional shadow mapping frame buffer...";
 
-    auto framebuffer = std::make_unique<globjects::Framebuffer>();
-    framebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), directionalShadowMapTexture.get());
+    auto directionalShadowMappingFramebuffer = std::make_unique<globjects::Framebuffer>();
+    directionalShadowMappingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), directionalShadowMapTexture.get());
 
-    framebuffer->printStatus(true);
+    directionalShadowMappingFramebuffer->printStatus(true);
+
+    std::cout << "done" << std::endl;*/
+
+    std::cout << "[DEBUG] Initializing pointShadowMapTexture...";
+
+    auto pointShadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP));
+
+    pointShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
+    pointShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
+
+    pointShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+    pointShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+
+    pointShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+    pointShadowMapTexture->bind();
+
+    const auto shadowMapSize = 2048;
+
+    for (auto i = 0; i < 6; ++i)
+    {
+        ::glTexImage2D(
+            static_cast<::GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i),
+            0,
+            GL_DEPTH_COMPONENT,
+            shadowMapSize,
+            shadowMapSize,
+            0,
+            GL_DEPTH_COMPONENT,
+            GL_FLOAT,
+            nullptr);
+    }
+
+    pointShadowMapTexture->unbind();
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[DEBUG] Initializing point shadow mapping frame buffer...";
+
+    auto pointShadowMappingFramebuffer = std::make_unique<globjects::Framebuffer>();
+    pointShadowMappingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), pointShadowMapTexture.get());
+
+    pointShadowMappingFramebuffer->printStatus(true);
 
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Done initializing" << std::endl;
 
     // taken from lantern position
-    glm::vec3 lightPosition = glm::vec3(-1.75f, 6.5f, -0.75f);
+    glm::vec3 pointLightPosition = glm::vec3(-1.75f, 6.85f, 2.75f);
 
     const float fov = 45.0f;
 
@@ -989,21 +1118,34 @@ int main()
 
         const float nearPlane = 0.1f;
         const float farPlane = 10.0f;
-        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
 
-        glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 pointLightProjection = glm::perspective(glm::radians(90.0f), static_cast<float>(shadowMapSize / shadowMapSize), nearPlane, farPlane);
 
-        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+        std::array<glm::mat4, 6> pointLightProjectionViewMatrices{
+            pointLightProjection * glm::lookAt(pointLightPosition, pointLightPosition + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+            pointLightProjection * glm::lookAt(pointLightPosition, pointLightPosition + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+            pointLightProjection * glm::lookAt(pointLightPosition, pointLightPosition + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+            pointLightProjection * glm::lookAt(pointLightPosition, pointLightPosition + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+            pointLightProjection * glm::lookAt(pointLightPosition, pointLightPosition + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+            pointLightProjection * glm::lookAt(pointLightPosition, pointLightPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        };
+
+        PointLightData pointLightData{ pointLightPosition, farPlane, pointLightProjectionViewMatrices };
+
+        pointLightDataBuffer->setData(pointLightData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
 
         ::glViewport(0, 0, 2048, 2048);
 
         // first render pass - shadow mapping
 
-        framebuffer->bind();
+        pointShadowMappingFramebuffer->bind();
+
+        pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 1);
 
         ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
         ::glClear(GL_DEPTH_BUFFER_BIT);
-        framebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
+
+        // pointShadowMappingFramebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -1011,29 +1153,30 @@ int main()
         // cull front faces to prevent peter panning the generated shadow map
         glCullFace(GL_FRONT);
 
-        directionalShadowMappingProgram->use();
+        pointShadowMappingProgram->use();
 
-        directionalShadowMappingLightSpaceUniform->set(lightSpaceMatrix);
+        // TODO: set a vector of 6 matrices
+        // pointShadowMappingLightSpaceUniform->set(pointLightProjectionViewMatrices);
 
-        directionalShadowMappingModelTransformationUniform->set(houseModel->getTransformation());
+        pointShadowMappingModelTransformationUniform->set(houseModel->getTransformation());
 
         houseModel->bind();
         houseModel->draw();
         houseModel->unbind();
 
-        directionalShadowMappingModelTransformationUniform->set(tableModel->getTransformation());
+        pointShadowMappingModelTransformationUniform->set(tableModel->getTransformation());
 
         tableModel->bind();
         tableModel->draw();
         tableModel->unbind();
 
-        directionalShadowMappingModelTransformationUniform->set(lanternModel->getTransformation());
+        pointShadowMappingModelTransformationUniform->set(lanternModel->getTransformation());
 
         lanternModel->bind();
         lanternModel->draw();
         lanternModel->unbind();
 
-        directionalShadowMappingModelTransformationUniform->set(scrollModel->getTransformation());
+        pointShadowMappingModelTransformationUniform->set(scrollModel->getTransformation());
 
         // scroll model needs culling to be disabled since this is a modified plane, so...
         glDisable(GL_CULL_FACE);
@@ -1044,18 +1187,11 @@ int main()
 
         glEnable(GL_CULL_FACE);
 
-        // the ground plane will get culled, we don't want that
-        /*glDisable(GL_CULL_FACE);
+        pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 1);
 
-        directionalShadowMappingModelTransformationUniform->set(terrainModel->getTransformation());
+        pointShadowMappingFramebuffer->unbind();
 
-        terrainModel->bind();
-        terrainModel->draw();
-        terrainModel->unbind();*/
-
-        framebuffer->unbind();
-
-        directionalShadowMappingProgram->release();
+        pointShadowMappingProgram->release();
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
@@ -1066,44 +1202,48 @@ int main()
         ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        directionalShadowRenderingProgram->use();
+        pointShadowRenderingProgram->use();
 
-        directionalShadowRenderingLightPositionUniform->set(lightPosition);
-        directionalShadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
-        directionalShadowRenderingCameraPositionUniform->set(cameraPos);
+        pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 1);
 
-        directionalShadowRenderingProjectionTransformationUniform->set(cameraProjection);
-        directionalShadowRenderingViewTransformationUniform->set(cameraView);
-        directionalShadowRenderingLightSpaceMatrixUniform->set(lightSpaceMatrix);
+        // pointShadowRenderingLightPositionUniform->set(pointLightPosition);
+        pointShadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
+        pointShadowRenderingCameraPositionUniform->set(cameraPos);
 
-        // draw chicken
+        pointShadowRenderingProjectionTransformationUniform->set(cameraProjection);
+        pointShadowRenderingViewTransformationUniform->set(cameraView);
 
-        directionalShadowMapTexture->bindActive(0);
+        // pointShadowRenderingLightSpaceMatrixUniform->set(pointLightSpaceMatrix);
 
-        directionalShadowRenderingProgram->setUniform("directionalShadowMap", 0);
-        directionalShadowRenderingProgram->setUniform("diffuseTexture", 1);
+        // draw the scene
 
-        directionalShadowRenderingModelTransformationUniform->set(houseModel->getTransformation());
+        pointShadowMapTexture->bindActive(0);
 
+        pointShadowRenderingProgram->setUniform("pointShadowMap", 0);
+        pointShadowRenderingProgram->setUniform("diffuseTexture", 1);
+
+        pointShadowRenderingModelTransformationUniform->set(houseModel->getTransformation());
+
+        // TODO: instead of a house model, draw skybox model and use the shadow map as its texture to debug
         houseModel->bind();
         houseModel->draw();
         houseModel->unbind();
 
-        directionalShadowRenderingModelTransformationUniform->set(tableModel->getTransformation());
+        pointShadowRenderingModelTransformationUniform->set(tableModel->getTransformation());
 
         tableModel->bind();
         tableModel->draw();
         tableModel->unbind();
 
-        directionalShadowRenderingModelTransformationUniform->set(lanternModel->getTransformation());
+        pointShadowRenderingModelTransformationUniform->set(lanternModel->getTransformation());
 
-        directionalShadowRenderingProgram->setUniform("emissionColor", glm::vec3(0.807f, 0.671f, 0.175f));
+        pointShadowRenderingProgram->setUniform("emissionColor", glm::vec3(0.807f, 0.671f, 0.175f));
 
         lanternSpecularMapTexture->bindActive(2);
         lanternEmissionMapTexture->bindActive(3);
 
-        directionalShadowRenderingProgram->setUniform("specularMapTexture", 2);
-        directionalShadowRenderingProgram->setUniform("emissionMapTexture", 3);
+        pointShadowRenderingProgram->setUniform("specularMapTexture", 2);
+        pointShadowRenderingProgram->setUniform("emissionMapTexture", 3);
 
         lanternModel->bind();
         lanternModel->draw();
@@ -1112,9 +1252,7 @@ int main()
         lanternSpecularMapTexture->unbindActive(2);
         lanternEmissionMapTexture->unbindActive(3);
 
-        // directionalShadowRenderingProgram->setUniform("emissionColor", glm::vec3(0.0f, 0.0f, 0.0f));
-
-        directionalShadowRenderingModelTransformationUniform->set(scrollModel->getTransformation());
+        pointShadowRenderingModelTransformationUniform->set(scrollModel->getTransformation());
 
         glDisable(GL_CULL_FACE);
 
@@ -1124,19 +1262,11 @@ int main()
 
         glEnable(GL_CULL_FACE);
 
-        /*directionalShadowRenderingModelTransformationUniform->set(terrainModel->getTransformation());
+        pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 1);
 
-        defaultTexture->bindActive(1);
+        pointShadowMapTexture->unbindActive(0);
 
-        terrainModel->bind();
-        terrainModel->draw();
-        terrainModel->unbind();
-
-        defaultTexture->unbindActive(1);*/
-
-        directionalShadowMapTexture->unbindActive(0);
-
-        directionalShadowRenderingProgram->release();
+        pointShadowRenderingProgram->release();
 
         // done rendering the frame
 
