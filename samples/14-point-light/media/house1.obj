@@ -1,6 +1,6 @@
 # Blender v2.93.1 OBJ File: 'house1.blend'
 # www.blender.org
-mtllib house1.1.mtl
+mtllib house1.mtl
 o walls_Cube
 v 12.164633 -0.712629 -12.164633
 v 12.164633 -1.000000 -12.164633

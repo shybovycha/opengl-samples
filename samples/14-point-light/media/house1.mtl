@@ -10,7 +10,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd roof.png
+map_Kd C:\\Users\\shybo\\Documents\\blender\\room2\\roof.png
 
 newmtl support_wood
 Ns 225.000000
@@ -21,7 +21,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 1
-map_Kd support_wood.png
+map_Kd C:\\Users\\shybo\\Documents\\blender\\room2\\support_wood.png
 
 newmtl walls
 Ns 323.999994
@@ -32,4 +32,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd walls.png
+map_Kd C:\\Users\\shybo\\Documents\\blender\\room2\\walls.png

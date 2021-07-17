@@ -67,7 +67,7 @@ public:
         std::vector<glm::vec3> normals,
         std::vector<glm::vec2> uvs,
         std::vector<unsigned int> indices,
-        std::vector<std::unique_ptr<globjects::Texture>> textures,
+        std::vector<globjects::Texture*> textures,
         std::unique_ptr<globjects::VertexArray> vao,
         std::unique_ptr<globjects::Buffer> vertexBuffer,
         std::unique_ptr<globjects::Buffer> indexBuffer,
@@ -79,7 +79,7 @@ public:
         m_indices(std::move(indices)),
         m_uvs(std::move(uvs)),
         m_normals(std::move(normals)),
-        m_textures(std::move(textures)),
+        m_textures(textures),
         m_vao(std::move(vao)),
         m_vertexBuffer(std::move(vertexBuffer)),
         m_indexBuffer(std::move(indexBuffer)),
@@ -148,7 +148,7 @@ protected:
     std::unique_ptr<globjects::Buffer> m_normalBuffer;
     std::unique_ptr<globjects::Buffer> m_uvBuffer;
 
-    std::vector<std::unique_ptr<globjects::Texture>> m_textures;
+    std::vector<globjects::Texture*> m_textures;
 
     std::vector<unsigned int> m_indices;
     std::vector<glm::vec3> m_vertices;
@@ -195,14 +195,34 @@ public:
 
     AbstractMeshBuilder* addTexture(std::unique_ptr<globjects::Texture> texture)
     {
-        m_textures.push_back(std::move(texture));
+        m_textures.push_back(texture.get());
+
+        return this;
+    }
+
+    AbstractMeshBuilder* addTexture(globjects::Texture* texture)
+    {
+        m_textures.push_back(texture);
 
         return this;
     }
 
     AbstractMeshBuilder* addTextures(std::vector<std::unique_ptr<globjects::Texture>> textures)
     {
-        m_textures.insert(m_textures.end(), std::make_move_iterator(textures.begin()), std::make_move_iterator(textures.end()));
+        for (auto& texture : textures)
+        {
+            m_textures.push_back(texture.get());
+        }
+
+        return this;
+    }
+
+    AbstractMeshBuilder* addTextures(std::vector<globjects::Texture*> textures)
+    {
+        for (auto& texture : textures)
+        {
+            m_textures.push_back(texture);
+        }
 
         return this;
     }
@@ -293,7 +313,7 @@ private:
     std::vector<glm::vec3> m_normals;
     std::vector<glm::vec2> m_uvs;
     std::vector<unsigned int> m_indices;
-    std::vector<std::unique_ptr<globjects::Texture>> m_textures;
+    std::vector<globjects::Texture*> m_textures;
 
     std::unique_ptr<globjects::VertexArray> m_vao;
     std::unique_ptr<globjects::Buffer> m_vertexBuffer;
@@ -494,7 +514,7 @@ protected:
 
         std::cout << "[INFO] Loading textures...";
 
-        std::vector<std::unique_ptr<globjects::Texture>> textures;
+        std::vector<globjects::Texture*> textures;
 
         if (mesh->mMaterialIndex >= 0)
         {
@@ -536,7 +556,7 @@ protected:
 
                 textureImage.flipVertically();
 
-                auto texture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+                auto texture = new globjects::Texture(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
                 texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
                 texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
@@ -550,7 +570,7 @@ protected:
                     static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
                     reinterpret_cast<const gl::GLvoid*>(textureImage.getPixelsPtr()));
 
-                textures.push_back(std::move(texture));
+                textures.push_back(texture);
             }
 
             // TODO: also handle aiTextureType_DIFFUSE and aiTextureType_SPECULAR
@@ -563,8 +583,297 @@ protected:
             ->addIndices(indices)
             ->addNormals(normals)
             ->addUVs(uvs)
-            ->addTextures(std::move(textures))
+            ->addTextures(textures)
             ->build();
+    }
+};
+
+class Skybox;
+
+class AbstractSkyboxBuilder
+{
+    friend class Skybox;
+
+public:
+    AbstractSkyboxBuilder* size(float size)
+    {
+        m_size = size;
+        return this;
+    }
+
+    std::unique_ptr<Skybox> build()
+    {
+        std::vector<glm::vec3> vertices{
+            { -1.0f, 1.0f, 1.0f },
+            { -1.0f, -1.0f, 1.0f },
+            { 1.0f, -1.0f, 1.0f },
+            { 1.0f, 1.0f, 1.0f },
+            { -1.0f, 1.0f, 1.0f },
+            { -1.0f, -1.0f, 1.0f },
+            { -1.0f, -1.0f, -1.0f },
+            { -1.0f, 1.0f, -1.0f },
+            { 1.0f, 1.0f, 1.0f },
+            { 1.0f, -1.0f, 1.0f },
+            { 1.0f, -1.0f, -1.0f },
+            { 1.0f, 1.0f, -1.0f },
+            { -1.0f, 1.0f, -1.0f },
+            { -1.0f, -1.0f, -1.0f },
+            { 1.0f, -1.0f, -1.0f },
+            { 1.0f, 1.0f, -1.0f },
+            { -1.0f, 1.0f, -1.0f },
+            { -1.0f, 1.0f, 1.0f },
+            { 1.0f, 1.0f, 1.0f },
+            { 1.0f, 1.0f, -1.0f },
+            { -1.0f, -1.0f, -1.0f },
+            { -1.0f, -1.0f, 1.0f },
+            { 1.0f, -1.0f, 1.0f },
+            { 1.0f, -1.0f, -1.0f },
+        };
+
+        std::vector<glm::vec3> normals{
+            { 0.0f, 1.0f, 0.0f },
+            { 0.0f, 1.0f, 0.0f },
+            { 0.0f, 1.0f, 0.0f },
+
+            { 0.0f, -1.0f, 0.0f },
+            { 0.0f, -1.0f, 0.0f },
+            { 0.0f, -1.0f, 0.0f },
+
+            { -1.0f, 0.0f, 0.0f },
+            { -1.0f, 0.0f, 0.0f },
+            { -1.0f, 0.0f, 0.0f },
+
+            { 0.0f, 0.0f, -1.0f },
+            { 0.0f, 0.0f, -1.0f },
+            { 0.0f, 0.0f, -1.0f },
+
+            { 1.0f, 0.0f, 0.0f },
+            { 1.0f, 0.0f, 0.0f },
+            { 1.0f, 0.0f, 0.0f },
+
+            { 0.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f, 1.0f },
+
+            { 0.0f, 1.0f, 0.0f },
+            { 0.0f, 1.0f, 0.0f },
+            { 0.0f, 1.0f, 0.0f },
+
+            { 0.0f, -1.0f, 0.0f },
+            { 0.0f, -1.0f, 0.0f },
+            { 0.0f, -1.0f, 0.0f },
+
+            { -1.0f, 0.0f, 0.0f },
+            { -1.0f, 0.0f, 0.0f },
+            { -1.0f, 0.0f, 0.0f },
+
+            { 0.0f, 0.0f, -1.0f },
+            { 0.0f, 0.0f, -1.0f },
+            { 0.0f, 0.0f, -1.0f },
+
+            { 1.0f, 0.0f, 0.0f },
+            { 1.0f, 0.0f, 0.0f },
+            { 1.0f, 0.0f, 0.0f },
+
+            { 0.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f, 1.0f },
+        };
+
+        std::transform(vertices.begin(), vertices.end(), vertices.begin(), [&](glm::vec3 p) { return p * m_size; });
+
+        std::vector<unsigned int> indices{
+            2, 1, 0,
+            2, 0, 3,
+            4, 5, 6,
+            7, 4, 6,
+            10, 9, 8,
+            10, 8, 11,
+            12, 13, 14,
+            15, 12, 14,
+            18, 17, 16,
+            18, 16, 19,
+            20, 21, 22,
+            23, 20, 22,
+        };
+
+        std::vector<glm::vec2> uvs{
+            { 0.333333f, 0.500000f },
+            { 0.333333f, 0.000000f },
+            { 0.000000f, 0.000000f },
+            { 0.000000f, 0.500000f },
+            { 0.000000f, 1.000000f },
+            { 0.000000f, 0.500000f },
+            { 0.333333f, 0.500000f },
+            { 0.333333f, 1.000000f },
+            { 1.000000f, 1.000000f },
+            { 1.000000f, 0.500000f },
+            { 0.666666f, 0.500000f },
+            { 0.666666f, 1.000000f },
+            { 0.333333f, 1.000000f },
+            { 0.333333f, 0.500000f },
+            { 0.666666f, 0.500000f },
+            { 0.666666f, 1.000000f },
+            { 0.340000f, 0.500000f },
+            { 0.666666f, 0.500000f },
+            { 0.666666f, 0.000000f },
+            { 0.340000f, 0.000000f },
+            { 0.666666f, 0.500000f },
+            { 0.666666f, 0.000000f },
+            { 1.000000f, 0.000000f },
+            { 1.000000f, 0.500000f },
+        };
+
+        auto mesh = AbstractMesh::builder()
+            ->addVertices(vertices)
+            ->addIndices(indices)
+            ->addNormals(normals)
+            ->addUVs(uvs)
+            ->addTexture(getTexture())
+            ->build();
+
+        return std::make_unique<Skybox>(std::move(mesh));
+    }
+
+protected:
+    virtual globjects::Texture* getTexture() = 0;
+
+    float m_size = 1.0f;
+};
+
+class CubemapSkyboxBuilder : public AbstractSkyboxBuilder
+{
+public:
+    CubemapSkyboxBuilder(std::unique_ptr<globjects::Texture> texture) : m_texture(texture.get()), AbstractSkyboxBuilder(){}
+
+    CubemapSkyboxBuilder(globjects::Texture* texture) : m_texture(texture), AbstractSkyboxBuilder(){}
+
+protected:
+    globjects::Texture* getTexture() override
+    {
+        return m_texture;
+    }
+
+private:
+    globjects::Texture* m_texture;
+};
+
+class SimpleSkyboxBuilder : public AbstractSkyboxBuilder
+{
+public:
+    SimpleSkyboxBuilder() : AbstractSkyboxBuilder() {}
+
+    SimpleSkyboxBuilder* top(std::string filename)
+    {
+        m_top.loadFromFile(filename);
+        return this;
+    }
+
+    SimpleSkyboxBuilder* bottom(std::string filename)
+    {
+        m_bottom.loadFromFile(filename);
+        return this;
+    }
+
+    SimpleSkyboxBuilder* left(std::string filename)
+    {
+        m_left.loadFromFile(filename);
+        return this;
+    }
+
+    SimpleSkyboxBuilder* right(std::string filename)
+    {
+        m_right.loadFromFile(filename);
+        return this;
+    }
+
+    SimpleSkyboxBuilder* front(std::string filename)
+    {
+        m_front.loadFromFile(filename);
+        return this;
+    }
+
+    SimpleSkyboxBuilder* back(std::string filename)
+    {
+        m_back.loadFromFile(filename);
+        return this;
+    }
+
+protected:
+    globjects::Texture* getTexture() override
+    {
+        std::map<gl::GLenum, sf::Image> skyboxTextures{
+            { static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X), m_right },
+            { static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP_NEGATIVE_X), m_left },
+            { static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_Y), m_top },
+            { static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y), m_bottom },
+            { static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_Z), m_back },
+            { static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z), m_front },
+        };
+
+        auto skyboxTexture = new globjects::Texture(static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP));
+
+        skyboxTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+        skyboxTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+        skyboxTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<GLint>(GL_CLAMP_TO_EDGE));
+        skyboxTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<GLint>(GL_CLAMP_TO_EDGE));
+        skyboxTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_R), static_cast<GLint>(GL_CLAMP_TO_EDGE));
+
+        skyboxTexture->bind();
+
+        for (auto& kv : skyboxTextures)
+        {
+            const auto target = kv.first;
+            auto image = kv.second;
+
+            if (target == gl::GL_TEXTURE_CUBE_MAP_POSITIVE_Y || target == gl::GL_TEXTURE_CUBE_MAP_NEGATIVE_Y)
+            {
+                image.flipVertically();
+            }
+            else
+            {
+                image.flipHorizontally();
+            }
+
+            ::glTexImage2D(
+                static_cast<::GLenum>(target),
+                0,
+                static_cast<::GLenum>(GL_RGBA8),
+                static_cast<::GLsizei>(image.getSize().x),
+                static_cast<::GLsizei>(image.getSize().y),
+                0,
+                static_cast<::GLenum>(GL_RGBA),
+                static_cast<::GLenum>(GL_UNSIGNED_BYTE),
+                reinterpret_cast<const ::GLvoid*>(image.getPixelsPtr()));
+        }
+
+        skyboxTexture->unbind();
+
+        return skyboxTexture;
+    }
+
+private:
+    sf::Image m_top, m_bottom, m_left, m_right, m_front, m_back;
+};
+
+class Skybox : public SingleMeshModel
+{
+    friend class SkyboxBuilder;
+
+public:
+    static SimpleSkyboxBuilder* builder()
+    {
+        return new SimpleSkyboxBuilder();
+    }
+
+    static CubemapSkyboxBuilder* fromCubemap(globjects::Texture* cubemapTexture)
+    {
+        return new CubemapSkyboxBuilder(cubemapTexture);
+    }
+
+    Skybox(std::unique_ptr<AbstractMesh> mesh) : SingleMeshModel(std::move(mesh))
+    {
     }
 };
 
@@ -747,6 +1056,43 @@ int main()
 
     std::cout << "done" << std::endl;
 
+    std::cout << "[INFO] Compiling point skybox rendering vertex shader...";
+
+    auto skyboxRenderingVertexSource = globjects::Shader::sourceFromFile("media/skybox.vert");
+    auto skyboxRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(skyboxRenderingVertexSource.get());
+    auto skyboxRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), skyboxRenderingVertexShaderTemplate.get());
+
+    if (!skyboxRenderingVertexShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile point skybox rendering vertex shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling point skybox rendering fragment shader...";
+
+    auto skyboxRenderingFragmentSource = globjects::Shader::sourceFromFile("media/skybox.frag");
+    auto skyboxRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(skyboxRenderingFragmentSource.get());
+    auto skyboxRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), skyboxRenderingFragmentShaderTemplate.get());
+
+    if (!skyboxRenderingFragmentShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile point skybox rendering fragment shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[DEBUG] Linking point skybox rendering shaders..." << std::endl;
+
+    auto skyboxRenderingProgram = std::make_unique<globjects::Program>();
+    skyboxRenderingProgram->attach(skyboxRenderingVertexShader.get(), skyboxRenderingFragmentShader.get());
+
+    auto skyboxRenderingModelTransformationUniform = skyboxRenderingProgram->getUniform<glm::mat4>("modelTransformation");
+
+    std::cout << "done" << std::endl;
+
     std::cout << "[INFO] Compiling point shadow rendering vertex shader...";
 
     auto pointShadowRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/shadow-rendering-point.vert");
@@ -795,7 +1141,8 @@ int main()
 
     Assimp::Importer importer;
 
-    auto houseScene = importer.ReadFile("media/house1.1.obj", 0);
+    auto houseScene = importer.ReadFile("media/house1.obj", 0);
+    // auto houseScene = importer.ReadFile("media/skybox.obj", 0);
 
     if (!houseScene)
     {
@@ -963,6 +1310,7 @@ int main()
 
     pointShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
     pointShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+    pointShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_R), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
 
     pointShadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
@@ -986,6 +1334,17 @@ int main()
 
     pointShadowMapTexture->unbind();
 
+    auto skybox = Skybox::builder()
+        ->top("media/skybox-top.png")
+        ->bottom("media/skybox-bottom.png")
+        ->left("media/skybox-left.png")
+        ->right("media/skybox-right.png")
+        ->front("media/skybox-front.png")
+        ->back("media/skybox-back.png")
+        // Skybox::fromCubemap(pointShadowMapTexture.get())
+            ->size(20.0f)
+            ->build();
+
     std::cout << "done" << std::endl;
 
     std::cout << "[DEBUG] Initializing point shadow mapping frame buffer...";
@@ -1000,7 +1359,7 @@ int main()
     std::cout << "[INFO] Done initializing" << std::endl;
 
     // taken from lantern position
-    glm::vec3 pointLightPosition = glm::vec3(-1.75f, 6.85f, 2.75f);
+    glm::vec3 pointLightPosition = glm::vec3(-1.75f, 6.85f, -2.75f);
 
     const float fov = 45.0f;
 
@@ -1130,22 +1489,22 @@ int main()
             pointLightProjection * glm::lookAt(pointLightPosition, pointLightPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
         };
 
-        PointLightData pointLightData{ pointLightPosition, farPlane, pointLightProjectionViewMatrices };
+        // PointLightData pointLightData{ pointLightPosition, farPlane, pointLightProjectionViewMatrices };
 
-        pointLightDataBuffer->setData(pointLightData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
+        // pointLightDataBuffer->setData(pointLightData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
 
-        ::glViewport(0, 0, 2048, 2048);
+        ::glViewport(0, 0, shadowMapSize, shadowMapSize);
 
         // first render pass - shadow mapping
 
         pointShadowMappingFramebuffer->bind();
 
-        pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 1);
+        // pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
 
         ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
         ::glClear(GL_DEPTH_BUFFER_BIT);
 
-        // pointShadowMappingFramebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
+        //pointShadowMappingFramebuffer->clearBuffer(static_cast<gl::GLenum>(GL_DEPTH), 0, glm::vec4(1.0f));
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -1154,6 +1513,15 @@ int main()
         glCullFace(GL_FRONT);
 
         pointShadowMappingProgram->use();
+
+        pointShadowMappingProgram->setUniform("lightPosition", pointLightPosition);
+        pointShadowMappingProgram->setUniform("farPlane", farPlane);
+        pointShadowMappingProgram->setUniform("projectionViewMatrices[0]", pointLightProjectionViewMatrices[0]);
+        pointShadowMappingProgram->setUniform("projectionViewMatrices[1]", pointLightProjectionViewMatrices[1]);
+        pointShadowMappingProgram->setUniform("projectionViewMatrices[2]", pointLightProjectionViewMatrices[2]);
+        pointShadowMappingProgram->setUniform("projectionViewMatrices[3]", pointLightProjectionViewMatrices[3]);
+        pointShadowMappingProgram->setUniform("projectionViewMatrices[4]", pointLightProjectionViewMatrices[4]);
+        pointShadowMappingProgram->setUniform("projectionViewMatrices[5]", pointLightProjectionViewMatrices[5]);
 
         // TODO: set a vector of 6 matrices
         // pointShadowMappingLightSpaceUniform->set(pointLightProjectionViewMatrices);
@@ -1187,7 +1555,7 @@ int main()
 
         glEnable(GL_CULL_FACE);
 
-        pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 1);
+        // pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
 
         pointShadowMappingFramebuffer->unbind();
 
@@ -1199,12 +1567,12 @@ int main()
         // second pass - switch to normal shader and render picture with depth information to the viewport
 
         ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
-        ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
+        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         pointShadowRenderingProgram->use();
 
-        pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 1);
+        // pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
 
         // pointShadowRenderingLightPositionUniform->set(pointLightPosition);
         pointShadowRenderingLightColorUniform->set(glm::vec3(1.0, 1.0, 1.0));
@@ -1213,18 +1581,26 @@ int main()
         pointShadowRenderingProjectionTransformationUniform->set(cameraProjection);
         pointShadowRenderingViewTransformationUniform->set(cameraView);
 
+        pointShadowRenderingProgram->setUniform("lightPosition", pointLightPosition);
+        pointShadowRenderingProgram->setUniform("farPlane", farPlane);
+        /*pointShadowRenderingProgram->setUniform("projectionViewMatrices[0]", pointLightProjectionViewMatrices[0]);
+        pointShadowRenderingProgram->setUniform("projectionViewMatrices[1]", pointLightProjectionViewMatrices[1]);
+        pointShadowRenderingProgram->setUniform("projectionViewMatrices[2]", pointLightProjectionViewMatrices[2]);
+        pointShadowRenderingProgram->setUniform("projectionViewMatrices[3]", pointLightProjectionViewMatrices[3]);
+        pointShadowRenderingProgram->setUniform("projectionViewMatrices[4]", pointLightProjectionViewMatrices[4]);
+        pointShadowRenderingProgram->setUniform("projectionViewMatrices[5]", pointLightProjectionViewMatrices[5]);*/
+
         // pointShadowRenderingLightSpaceMatrixUniform->set(pointLightSpaceMatrix);
 
         // draw the scene
 
         pointShadowMapTexture->bindActive(0);
 
-        pointShadowRenderingProgram->setUniform("pointShadowMap", 0);
+        pointShadowRenderingProgram->setUniform("shadowMap", 0);
         pointShadowRenderingProgram->setUniform("diffuseTexture", 1);
 
         pointShadowRenderingModelTransformationUniform->set(houseModel->getTransformation());
 
-        // TODO: instead of a house model, draw skybox model and use the shadow map as its texture to debug
         houseModel->bind();
         houseModel->draw();
         houseModel->unbind();
@@ -1262,11 +1638,29 @@ int main()
 
         glEnable(GL_CULL_FACE);
 
-        pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 1);
+        // pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
+
+        pointShadowMapTexture->unbindActive(0);
+        pointShadowMapTexture->bindActive(0);
+
+        glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
+        glDepthFunc(GL_LEQUAL);
+        glDisable(GL_CULL_FACE);
+
+        skyboxRenderingProgram->use();
+        skyboxRenderingProgram->setUniform("projection", cameraProjection);
+        skyboxRenderingProgram->setUniform("view", cameraView);
+        skyboxRenderingProgram->setUniform("cubeMap", 0);
+
+        // pointShadowMapTexture->bindActive(1);
+
+        skybox->bind();
+        skybox->draw();
+        skybox->unbind();
 
         pointShadowMapTexture->unbindActive(0);
 
-        pointShadowRenderingProgram->release();
+        skyboxRenderingProgram->release();
 
         // done rendering the frame
 

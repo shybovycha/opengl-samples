@@ -2,26 +2,28 @@
 
 in vec4 fragmentPosition;
 
+// out float fragmentDepth;
+
 // uniform vec3 lightPosition;
 // uniform float farPlane;
 
-struct PointLight
-{
-    vec3 lightPosition;
-    float farPlane;
-    mat4 projectionViewMatrices[6];
-};
+//struct PointLight
+//{
+    uniform vec3 lightPosition;
+    uniform float farPlane;
+//    mat4 projectionViewMatrices[6];
+//};
 
-layout (std430, binding = 1) buffer pointLightData
-{
-    PointLight pointLight;
-};
+//layout (std430, binding = 5) buffer pointLightData
+//{
+//    PointLight pointLight;
+//};
 
 void main()
 {
-    float distance = length(fragmentPosition.xyz - pointLight.lightPosition);
+    float distance = length(fragmentPosition.xyz - lightPosition);
 
-    distance /= pointLight.farPlane;
+    distance /= farPlane;
 
     gl_FragDepth = distance;
 }

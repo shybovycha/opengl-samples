@@ -17,17 +17,17 @@ uniform sampler2D emissionMapTexture;
 // uniform vec3 lightPosition;
 // uniform float farPlane;
 
-struct PointLight
-{
-    vec3 lightPosition;
-    float farPlane;
-    mat4 projectionViewMatrices[6];
-};
+//struct PointLight
+//{
+uniform vec3 lightPosition;
+uniform float farPlane;
+//    mat4 projectionViewMatrices[6];
+//};
 
-layout (std430, binding = 1) buffer pointLightData
-{
-    PointLight pointLight;
-};
+//layout (std430, binding = 5) buffer pointLightData
+//{
+//    PointLight pointLight;
+//};
 
 uniform vec3 lightColor;
 uniform vec3 cameraPosition;
@@ -44,16 +44,16 @@ float attenuation_quadratic = 0.032;
 
 float shadowCalculation(vec3 normal)
 {
-    vec3 shadowMapCoord = fsIn.fragmentPosition - pointLight.lightPosition;
-    float occluderDepth = texture(shadowMap, shadowMapCoord).r * pointLight.farPlane;
-    float thisDepth = shadowMapCoord.z;
+    vec3 fragmentToLight = fsIn.fragmentPosition - lightPosition;
+    float occluderDepth = texture(shadowMap, fragmentToLight).r * farPlane;
+    float thisDepth = length(fragmentToLight);
 
-    if (thisDepth > 1.0)
+    /*if (thisDepth > 1.0)
     {
         return 0.0;
-    }
+    }*/
 
-    float bias = max(0.05 * (1.0 - dot(normal, shadowMapCoord)), 0.005);
+    float bias = 0.05; //max(0.05 * (1.0 - dot(normal, fragmentToLight)), 0.005);
 
     // PCF
     /*float shadow = 0.0;
@@ -71,7 +71,7 @@ float shadowCalculation(vec3 normal)
 
     shadow /= 9.0;*/
 
-    float shadow = (thisDepth - bias) < length(shadowMapCoord) ? 1.0 : 0.0;
+    float shadow = (thisDepth - bias) < occluderDepth ? 1.0 : 0.0;
 
     return shadow;
 }
@@ -85,7 +85,7 @@ void main()
     vec3 ambient = 0.3 * color;
 
     // diffuse
-    vec3 lightDirection = normalize(pointLight.lightPosition - fsIn.fragmentPosition);
+    vec3 lightDirection = normalize(lightPosition - fsIn.fragmentPosition);
     float diff = max(dot(lightDirection, normal), 0.0);
     vec3 diffuse = diff * lightColor;
 
@@ -97,7 +97,7 @@ void main()
 
     // attenuation
     float lightRadius = 10.0;
-    float distance = length(pointLight.lightPosition - fsIn.fragmentPosition) / lightRadius;
+    float distance = length(lightPosition - fsIn.fragmentPosition) / lightRadius;
     float attenuation = 1.0 / (attenuation_constant + attenuation_linear * distance + attenuation_quadratic * (distance * distance));
 
     // calculate shadow; this represents a global directional light, like Sun
