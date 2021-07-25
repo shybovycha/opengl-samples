@@ -1,18 +1,19 @@
 #version 430
 
-in VS_OUT
+in GS_OUT
 {
-    vec3 fragmentPosition;
+    vec4 vertexPosition;
+    vec4 fragmentPosition;
     vec3 normal;
     vec2 textureCoords;
 } fsIn;
 
 uniform sampler2D diffuseTexture;
 
-// uniform mat4 projectionViewMatrices[6];
-// uniform mat4 modelPosition;
-
 void main()
 {
-    gl_FragColor = texture(diffuseTexture, fsIn.textureCoords);
+    vec4 color = texture(diffuseTexture, fsIn.textureCoords);
+
+    // TODO: add lighting component here
+    gl_FragColor = color;
 }

@@ -6,6 +6,7 @@ layout (location = 2) in vec2 vertexTextureCoords;
 
 out VS_OUT
 {
+    vec4 vertexPosition;
     vec3 fragmentPosition;
     vec3 normal;
     vec2 textureCoords;
@@ -19,9 +20,10 @@ uniform mat4 modelTransformation;
 
 void main()
 {
+    vsOut.vertexPosition = modelTransformation * vec4(vertexPosition, 1.0);
     vsOut.fragmentPosition = vec3(modelTransformation * vec4(vertexPosition, 1.0));
     vsOut.normal = vertexNormal;
     vsOut.textureCoords = vertexTextureCoords;
 
-    gl_Position = modelTransformation * vec4(vertexPosition, 1.0);
+    gl_Position = vsOut.vertexPosition;
 }

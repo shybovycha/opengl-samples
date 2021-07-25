@@ -588,7 +588,7 @@ protected:
     }
 };
 
-/*class Skybox;
+class Skybox;
 
 class AbstractSkyboxBuilder
 {
@@ -875,7 +875,7 @@ public:
     Skybox(std::unique_ptr<AbstractMesh> mesh) : SingleMeshModel(std::move(mesh))
     {
     }
-};*/
+};
 
 struct alignas(16) PointLightData
 {
@@ -916,13 +916,7 @@ int main()
 
     std::cout << "[INFO] Creating shaders..." << std::endl;
 
-    std::cout << "[INFO] Compiling point shadow data buffer...";
-
-    auto pointLightDataBuffer = std::make_unique<globjects::Buffer>();
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling point shadow mapping vertex shader...";
+    std::cout << "[INFO] Compiling reflection mapping vertex shader...";
 
     auto reflectionMappingVertexSource = globjects::Shader::sourceFromFile("media/reflection-mapping.vert");
     auto reflectionMappingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(reflectionMappingVertexSource.get());
@@ -930,13 +924,13 @@ int main()
 
     if (!reflectionMappingVertexShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile point shadow mapping vertex shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile reflection mapping vertex shader" << std::endl;
         return 1;
     }
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling point shadow mapping geometry shader...";
+    std::cout << "[INFO] Compiling reflection mapping geometry shader...";
 
     auto reflectionMappingGeometrySource = globjects::Shader::sourceFromFile("media/reflection-mapping.geom");
     auto reflectionMappingGeometryShaderTemplate = globjects::Shader::applyGlobalReplacements(reflectionMappingGeometrySource.get());
@@ -944,13 +938,13 @@ int main()
 
     if (!reflectionMappingGeometryShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile point shadow mapping fragment shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile reflection mapping fragment shader" << std::endl;
         return 1;
     }
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling point shadow mapping fragment shader...";
+    std::cout << "[INFO] Compiling reflection mapping fragment shader...";
 
     auto reflectionMappingFragmentSource = globjects::Shader::sourceFromFile("media/reflection-mapping.frag");
     auto reflectionMappingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(reflectionMappingFragmentSource.get());
@@ -958,13 +952,13 @@ int main()
 
     if (!reflectionMappingFragmentShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile point shadow mapping fragment shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile reflection mapping fragment shader" << std::endl;
         return 1;
     }
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[DEBUG] Linking point shadow mapping shaders..." << std::endl;
+    std::cout << "[DEBUG] Linking reflection mapping shaders..." << std::endl;
 
     auto reflectionMappingProgram = std::make_unique<globjects::Program>();
     reflectionMappingProgram->attach(reflectionMappingVertexShader.get(), reflectionMappingGeometryShader.get(), reflectionMappingFragmentShader.get());
@@ -973,7 +967,44 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    /*std::cout << "[INFO] Compiling point skybox rendering vertex shader...";
+    std::cout << "[INFO] Compiling simple rendering vertex shader...";
+
+    auto simpleRenderingVertexSource = globjects::Shader::sourceFromFile("media/simple-rendering.vert");
+    auto simpleRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(simpleRenderingVertexSource.get());
+    auto simpleRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), simpleRenderingVertexShaderTemplate.get());
+
+    if (!simpleRenderingVertexShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile simple rendering mapping vertex shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling simple rendering fragment shader...";
+
+    auto simpleRenderingFragmentSource = globjects::Shader::sourceFromFile("media/simple-rendering.frag");
+    auto simpleRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(simpleRenderingFragmentSource.get());
+    auto simpleRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), simpleRenderingFragmentShaderTemplate.get());
+
+    if (!simpleRenderingFragmentShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile simple rendering fragment shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[DEBUG] Linking simple rendering shaders..." << std::endl;
+
+    auto simpleRenderingProgram = std::make_unique<globjects::Program>();
+    simpleRenderingProgram->attach(simpleRenderingVertexShader.get(), simpleRenderingFragmentShader.get());
+
+    auto simpleRenderingModelTransformationUniform = simpleRenderingProgram->getUniform<glm::mat4>("model");
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling skybox rendering vertex shader...";
 
     auto skyboxRenderingVertexSource = globjects::Shader::sourceFromFile("media/skybox.vert");
     auto skyboxRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(skyboxRenderingVertexSource.get());
@@ -1008,9 +1039,9 @@ int main()
 
     auto skyboxRenderingModelTransformationUniform = skyboxRenderingProgram->getUniform<glm::mat4>("modelTransformation");
 
-    std::cout << "done" << std::endl;*/
+    std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling point shadow rendering vertex shader...";
+    std::cout << "[INFO] Compiling reflection rendering vertex shader...";
 
     auto reflectionRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/reflection-rendering.vert");
     auto reflectionRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(reflectionRenderingVertexShaderSource.get());
@@ -1018,13 +1049,13 @@ int main()
 
     if (!reflectionRenderingVertexShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile point shadow rendering vertex shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile reflection rendering vertex shader" << std::endl;
         return 1;
     }
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling point shadow rendering fragment shader...";
+    std::cout << "[INFO] Compiling reflection rendering fragment shader...";
 
     auto reflectionRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/reflection-rendering.frag");
     auto reflectionRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(reflectionRenderingFragmentShaderSource.get());
@@ -1032,13 +1063,13 @@ int main()
 
     if (!reflectionRenderingFragmentShader->compile())
     {
-        std::cerr << "[ERROR] Can not compile point shadow rendering fragment shader" << std::endl;
+        std::cerr << "[ERROR] Can not compile reflection rendering fragment shader" << std::endl;
         return 1;
     }
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Linking point shadow rendering shader...";
+    std::cout << "[INFO] Linking reflection rendering shader...";
 
     auto reflectionRenderingProgram = std::make_unique<globjects::Program>();
     reflectionRenderingProgram->attach(reflectionRenderingVertexShader.get(), reflectionRenderingFragmentShader.get());
@@ -1165,7 +1196,14 @@ int main()
 
     auto inkBottleModel = AssimpModel::fromAiNode(inkBottleScene, inkBottleScene->mRootNode, { "media" });
 
-    inkBottleModel->setTransformation(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.75f, 3.85f, -0.75f)), glm::vec3(0.5f)));
+    // TODO: encapsulate position and rotation in model class instead of just exposing transformation
+    // this constant here is taken from ink bottle position
+    glm::vec3 reflectiveModelPosition = glm::vec3(-1.75f, 3.85f, 1.05f);
+
+    inkBottleModel->setTransformation(
+        glm::translate(reflectiveModelPosition) *
+        glm::scale(glm::vec3(0.5f))
+    );
 
     auto penScene = importer.ReadFile("media/pen-lowpoly.obj", 0);
 
@@ -1177,7 +1215,13 @@ int main()
 
     auto penModel = AssimpModel::fromAiNode(penScene, penScene->mRootNode, { "media" });
 
-    penModel->setTransformation(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.75f, 3.85f, -0.75f)), glm::vec3(0.5f)));
+    // rotate -> scale -> translate; can be done as series of matrix multiplications M_translation * M_scale * M_rotation
+    // each of the components, in turn, can also be a series of matrix multiplications: M_rotation = M_rotate_z * M_rotate_y * M_rotate_x
+    penModel->setTransformation(
+        glm::translate(glm::vec3(0.35f, 3.95f, -0.75f)) *
+        glm::scale(glm::vec3(0.05f)) *
+        (glm::rotate(glm::radians(12.5f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)))
+    );
 
     std::cout << "done" << std::endl;
 
@@ -1187,18 +1231,18 @@ int main()
 
     auto reflectionMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP));
 
-    /*reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
+    reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
     reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
 
     reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
     reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-    reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_R), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));*/
+    reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_R), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
 
     reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     reflectionMapTexture->bind();
 
-    const auto reflectionMapSize = 512;
+    const auto reflectionMapSize = 2048;
 
     for (auto i = 0; i < 6; ++i)
     {
@@ -1216,27 +1260,56 @@ int main()
 
     reflectionMapTexture->unbind();
 
-    /*auto skybox = Skybox::builder()
+    auto reflectionMapDepthTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP));
+
+    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
+    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
+
+    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_R), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
+
+    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+
+    reflectionMapDepthTexture->bind();
+
+    for (auto i = 0; i < 6; ++i)
+    {
+        ::glTexImage2D(
+            static_cast<::GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i),
+            0,
+            GL_DEPTH_COMPONENT,
+            reflectionMapSize,
+            reflectionMapSize,
+            0,
+            GL_DEPTH_COMPONENT,
+            GL_FLOAT,
+            nullptr);
+    }
+
+    reflectionMapDepthTexture->unbind();
+
+    /*auto skybox = Skybox::fromCubemap(reflectionMapTexture.get())
+        ->size(40.0f)
+        ->build();*/
+
+    auto skybox = Skybox::builder()
         ->top("media/skybox-top.png")
         ->bottom("media/skybox-bottom.png")
         ->left("media/skybox-left.png")
         ->right("media/skybox-right.png")
         ->front("media/skybox-front.png")
         ->back("media/skybox-back.png")
-        // Skybox::fromCubemap(reflectionMapTexture.get())
-            ->size(20.0f)
-            ->build();*/
+        ->size(40.0f)
+        ->build();
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[DEBUG] Initializing point shadow mapping frame buffer...";
+    std::cout << "[DEBUG] Initializing reflection mapping frame buffer...";
 
     auto reflectionMappingFramebuffer = std::make_unique<globjects::Framebuffer>();
     reflectionMappingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), reflectionMapTexture.get());
-
-    auto renderBuffer = std::make_unique<globjects::Renderbuffer>();
-    renderBuffer->storage(static_cast<gl::GLenum>(GL_DEPTH24_STENCIL8), reflectionMapSize, reflectionMapSize);
-    reflectionMappingFramebuffer->attachRenderBuffer(static_cast<gl::GLenum>(GL_DEPTH_STENCIL_ATTACHMENT), renderBuffer.get());
+    reflectionMappingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), reflectionMapDepthTexture.get());
 
     // tell framebuffer it actually needs to render to **BOTH** textures, but does not have to output anywhere (last NONE argument, iirc)
     reflectionMappingFramebuffer->setDrawBuffers({ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), static_cast<gl::GLenum>(GL_NONE) });
@@ -1246,9 +1319,6 @@ int main()
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Done initializing" << std::endl;
-
-    // taken from ink bottle position
-    glm::vec3 reflectiveModelPosition = glm::vec3(-1.75f, 6.85f, -2.75f);
 
     const float fov = 45.0f;
 
@@ -1367,33 +1437,35 @@ int main()
         const float nearPlane = 0.1f;
         const float farPlane = 10.0f;
 
-        glm::mat4 reflectionProjection = glm::perspective(glm::radians(90.0f), static_cast<float>(reflectionMapSize / reflectionMapSize), nearPlane, farPlane);
+        // this is a cubemap, hence aspect ratio **must** be 1:1
+        glm::mat4 reflectionProjection = glm::perspective(glm::radians(90.0f), 1.0f, nearPlane, farPlane);
 
-        reflectionMappingProgram->setUniform("reflectionProjectionViewMatrices[0]", reflectionProjection * glm::lookAt(reflectiveModelPosition, reflectiveModelPosition + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-        reflectionMappingProgram->setUniform("reflectionProjectionViewMatrices[1]", reflectionProjection * glm::lookAt(reflectiveModelPosition, reflectiveModelPosition + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-        reflectionMappingProgram->setUniform("reflectionProjectionViewMatrices[2]", reflectionProjection * glm::lookAt(reflectiveModelPosition, reflectiveModelPosition + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-        reflectionMappingProgram->setUniform("reflectionProjectionViewMatrices[3]", reflectionProjection * glm::lookAt(reflectiveModelPosition, reflectiveModelPosition + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
-        reflectionMappingProgram->setUniform("reflectionProjectionViewMatrices[4]", reflectionProjection * glm::lookAt(reflectiveModelPosition, reflectiveModelPosition + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-        reflectionMappingProgram->setUniform("reflectionProjectionViewMatrices[5]", reflectionProjection * glm::lookAt(reflectiveModelPosition, reflectiveModelPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+        // TODO: technically, this should be calculated as AABB / 2
+        const auto reflectionOffset = glm::vec3(0.0f, 0.05f, 0.0f);
 
-        ::glViewport(0, 0, reflectionMapSize, reflectionMapSize);
+        reflectionMappingProgram->setUniform("projectionViewMatrices[0]", reflectionProjection * glm::lookAt(reflectiveModelPosition + reflectionOffset, reflectiveModelPosition + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+        reflectionMappingProgram->setUniform("projectionViewMatrices[1]", reflectionProjection * glm::lookAt(reflectiveModelPosition + reflectionOffset, reflectiveModelPosition + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+        reflectionMappingProgram->setUniform("projectionViewMatrices[2]", reflectionProjection * glm::lookAt(reflectiveModelPosition + reflectionOffset, reflectiveModelPosition + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+        reflectionMappingProgram->setUniform("projectionViewMatrices[3]", reflectionProjection * glm::lookAt(reflectiveModelPosition + reflectionOffset, reflectiveModelPosition + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+        reflectionMappingProgram->setUniform("projectionViewMatrices[4]", reflectionProjection * glm::lookAt(reflectiveModelPosition + reflectionOffset, reflectiveModelPosition + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+        reflectionMappingProgram->setUniform("projectionViewMatrices[5]", reflectionProjection * glm::lookAt(reflectiveModelPosition + reflectionOffset, reflectiveModelPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
 
         // first render pass - shadow mapping
-
         reflectionMappingFramebuffer->bind();
 
-        reflectionMappingProgram->setUniform("diffuseTexture", 1);
-
-        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
+        ::glViewport(0, 0, reflectionMapSize, reflectionMapSize);
+        ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
         ::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
         // cull front faces to prevent peter panning the generated shadow map
-        glCullFace(GL_FRONT);
+        glCullFace(GL_BACK);
 
         reflectionMappingProgram->use();
+
+        reflectionMappingProgram->setUniform("diffuseTexture", 1);
 
         reflectionMappingModelTransformationUniform->set(houseModel->getTransformation());
 
@@ -1443,39 +1515,88 @@ int main()
         ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
+        glDepthFunc(GL_LEQUAL);
+        glDisable(GL_CULL_FACE);
+
+        skyboxRenderingProgram->use();
+        skyboxRenderingProgram->setUniform("projection", cameraProjection);
+        skyboxRenderingProgram->setUniform("view", glm::mat4(glm::mat3(cameraView)));
+
+#ifndef _DEBUG
+        reflectionMapTexture->bindActive(0);
+        skyboxRenderingProgram->setUniform("cubeMap", 0);
+#else
+        skyboxRenderingProgram->setUniform("cubeMap", 1);
+#endif
+
+        skybox->bind();
+        skybox->draw();
+        skybox->unbind();
+
+        reflectionMapTexture->unbindActive(0);
+
+        skyboxRenderingProgram->release();
+
+        // render object with reflective material
+
         reflectionRenderingProgram->use();
 
-        reflectionRenderingCameraPositionUniform->set(cameraPos);
+        reflectionRenderingProgram->setUniform("projection", cameraProjection);
+        reflectionRenderingProgram->setUniform("view", cameraView);
+        reflectionRenderingProgram->setUniform("model", inkBottleModel->getTransformation());
 
-        reflectionRenderingProjectionTransformationUniform->set(cameraProjection);
-        reflectionRenderingViewTransformationUniform->set(cameraView);
-
-        // draw the scene
+        reflectionRenderingProgram->setUniform("cameraPosition", cameraPos);
 
         reflectionMapTexture->bindActive(0);
 
         reflectionRenderingProgram->setUniform("reflectionMap", 0);
         reflectionRenderingProgram->setUniform("diffuseTexture", 1);
 
-        reflectionRenderingModelTransformationUniform->set(houseModel->getTransformation());
+        inkBottleModel->bind();
+        inkBottleModel->draw();
+        inkBottleModel->unbind();
 
+        reflectionMapTexture->unbindActive(0);
+
+        reflectionRenderingProgram->release();
+
+        // draw the scene
+
+        simpleRenderingProgram->use();
+
+        simpleRenderingProgram->setUniform("projection", cameraProjection);
+        simpleRenderingProgram->setUniform("view", cameraView);
+
+        simpleRenderingProgram->setUniform("diffuseTexture", 1);
+
+        simpleRenderingModelTransformationUniform->set(houseModel->getTransformation());
+
+#ifdef _DEBUG
         houseModel->bind();
         houseModel->draw();
         houseModel->unbind();
+#endif
 
-        reflectionRenderingModelTransformationUniform->set(tableModel->getTransformation());
+        simpleRenderingModelTransformationUniform->set(tableModel->getTransformation());
 
         tableModel->bind();
         tableModel->draw();
         tableModel->unbind();
 
-        reflectionRenderingModelTransformationUniform->set(lanternModel->getTransformation());
+        simpleRenderingModelTransformationUniform->set(lanternModel->getTransformation());
 
         lanternModel->bind();
         lanternModel->draw();
         lanternModel->unbind();
 
-        reflectionRenderingModelTransformationUniform->set(scrollModel->getTransformation());
+        simpleRenderingModelTransformationUniform->set(penModel->getTransformation());
+
+        penModel->bind();
+        penModel->draw();
+        penModel->unbind();
+
+        simpleRenderingModelTransformationUniform->set(scrollModel->getTransformation());
 
         glDisable(GL_CULL_FACE);
 
@@ -1485,29 +1606,7 @@ int main()
 
         glEnable(GL_CULL_FACE);
 
-        pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
-
-        reflectionMapTexture->unbindActive(0);
-
-        /*
-        // reflectionMapTexture->bindActive(0);
-
-        glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
-        glDepthFunc(GL_LEQUAL);
-        glDisable(GL_CULL_FACE);
-
-        skyboxRenderingProgram->use();
-        skyboxRenderingProgram->setUniform("projection", cameraProjection);
-        skyboxRenderingProgram->setUniform("view", cameraView);
-        skyboxRenderingProgram->setUniform("cubeMap", 0);
-
-        skybox->bind();
-        skybox->draw();
-        skybox->unbind();
-
-        // reflectionMapTexture->unbindActive(0);
-
-        skyboxRenderingProgram->release();*/
+        simpleRenderingProgram->release();
 
         // done rendering the frame
 
