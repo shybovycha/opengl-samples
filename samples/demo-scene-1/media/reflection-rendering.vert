@@ -24,7 +24,7 @@ uniform vec3 cameraPosition;
 void main()
 {
     vsOut.fragmentPosition = vec3(model * vec4(vertexPosition, 1.0));
-    vsOut.normal = mat3(transpose(inverse(model))) * vertexNormal;
+    vsOut.normal = vertexNormal;
     vsOut.textureCoords = vertexTextureCoord;
 
     gl_Position = projection * view * model * vec4(vertexPosition, 1.0);
