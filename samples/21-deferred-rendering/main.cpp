@@ -975,11 +975,11 @@ public:
     }
 };
 
-struct alignas(16) PointLightData
+struct alignas(16) PointLightDescriptor
 {
-    glm::vec3 lightPosition;
-    float farPlane;
-    std::array<glm::mat4, 6> projectionViewMatrices;
+    glm::vec3 position;
+    float strength;
+    glm::vec4 color;
 };
 
 int main()
@@ -1121,6 +1121,41 @@ int main()
 
     std::cout << "done" << std::endl;
 
+    std::cout << "[INFO] Compiling simple vertex shader...";
+
+    auto simpleVertexSource = globjects::Shader::sourceFromFile("media/simple-rendering.vert");
+    auto simpleVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(simpleVertexSource.get());
+    auto simpleVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), simpleVertexShaderTemplate.get());
+
+    if (!simpleVertexShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile simple vertex shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Compiling simple fragment shader...";
+
+    auto simpleFragmentSource = globjects::Shader::sourceFromFile("media/simple-rendering.frag");
+    auto simpleFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(simpleFragmentSource.get());
+    auto simpleFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), simpleFragmentShaderTemplate.get());
+
+    if (!simpleFragmentShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile simple fragment shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[DEBUG] Linking simple shaders..." << std::endl;
+
+    auto simpleProgram = std::make_unique<globjects::Program>();
+    simpleProgram->attach(simpleVertexShader.get(), simpleFragmentShader.get());
+
+    std::cout << "done" << std::endl;
+
     std::cout << "[INFO] Loading 3D model...";
 
     Assimp::Importer importer;
@@ -1221,6 +1256,54 @@ int main()
         static_cast<gl::GLenum>(GL_RGBA),
         static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
         reinterpret_cast<const gl::GLvoid*>(lanternSpecularMapImage.getPixelsPtr()));
+
+    sf::Image penNormalMapImage;
+
+    if (!penNormalMapImage.loadFromFile("media/pen-normal.png"))
+    {
+        std::cerr << "[ERROR] Can not load texture" << std::endl;
+        return 1;
+    }
+
+    penNormalMapImage.flipVertically();
+
+    auto penNormalMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+
+    penNormalMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    penNormalMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+    penNormalMapTexture->image2D(
+        0,
+        static_cast<gl::GLenum>(GL_RGBA8),
+        glm::vec2(penNormalMapImage.getSize().x, penNormalMapImage.getSize().y),
+        0,
+        static_cast<gl::GLenum>(GL_RGBA),
+        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        reinterpret_cast<const gl::GLvoid*>(penNormalMapImage.getPixelsPtr()));
+
+    sf::Image inkBottleNormalMapImage;
+
+    if (!inkBottleNormalMapImage.loadFromFile("media/ink-bottle-normal.png"))
+    {
+        std::cerr << "[ERROR] Can not load texture" << std::endl;
+        return 1;
+    }
+
+    inkBottleNormalMapImage.flipVertically();
+
+    auto inkBottleNormalMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+
+    inkBottleNormalMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    inkBottleNormalMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+    inkBottleNormalMapTexture->image2D(
+        0,
+        static_cast<gl::GLenum>(GL_RGBA8),
+        glm::vec2(inkBottleNormalMapImage.getSize().x, inkBottleNormalMapImage.getSize().y),
+        0,
+        static_cast<gl::GLenum>(GL_RGBA),
+        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        reinterpret_cast<const gl::GLvoid*>(inkBottleNormalMapImage.getPixelsPtr()));
 
     auto scrollScene = importer.ReadFile("media/scroll.obj", 0);
 
@@ -1360,6 +1443,16 @@ int main()
     });
 
     deferredRenderingFramebuffer->printStatus(true);
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[INFO] Preparing data buffers...";
+
+    std::vector<PointLightDescriptor> pointLights{ { glm::vec3(-1.75f, 3.85f, -0.75f), 0.5f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) } };
+
+    auto pointLightDataBuffer = std::make_unique<globjects::Buffer>();
+
+    pointLightDataBuffer->setData(pointLights, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
 
     std::cout << "done" << std::endl;
 
@@ -1512,6 +1605,7 @@ int main()
             deferredRenderingPrePassProgram->setUniform("view", cameraView);
 
             deferredRenderingPrePassProgram->setUniform("diffuseTexture", 1);
+            deferredRenderingPrePassProgram->setUniform("normalMapTexture", 2);
 
             deferredRenderingPrePassProgram->setUniform("model", houseModel->getTransformation());
 
@@ -1533,15 +1627,23 @@ int main()
 
             deferredRenderingPrePassProgram->setUniform("model", penModel->getTransformation());
 
+            penNormalMapTexture->bindActive(2);
+
             penModel->bind();
             penModel->draw();
             penModel->unbind();
 
+            penNormalMapTexture->unbindActive(2);
+
             deferredRenderingPrePassProgram->setUniform("model", inkBottleModel->getTransformation());
+
+            inkBottleNormalMapTexture->bindActive(2);
 
             inkBottleModel->bind();
             inkBottleModel->draw();
             inkBottleModel->unbind();
+
+            inkBottleNormalMapTexture->unbindActive(2);
 
             deferredRenderingPrePassProgram->setUniform("model", scrollModel->getTransformation());
 
@@ -1558,13 +1660,31 @@ int main()
             deferredRenderingFramebuffer->unbind();
         }
 
+        /*{
+            ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
+            ::glClearColor(static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            simpleProgram->use();
+
+            deferredFragmentNormalTexture->bindActive(0);
+
+            simpleProgram->setUniform("diffuseTexture", 0);
+
+            quadModel->bind();
+            quadModel->draw();
+            quadModel->unbind();
+
+            deferredFragmentNormalTexture->unbindActive(0);
+
+            simpleProgram->release();
+        }*/
+
         // second render pass - merge textures from the deferred rendering pre-pass into a final frame
         {
             ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
             ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            // glDisable(GL_CULL_FACE);
 
             deferredRenderingFinalPassProgram->use();
 
@@ -1572,13 +1692,19 @@ int main()
             deferredFragmentNormalTexture->bindActive(3);
             deferredFragmentAlbedoTexture->bindActive(4);
 
+            pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
+
             deferredRenderingFinalPassProgram->setUniform("positionTexture", 2);
             deferredRenderingFinalPassProgram->setUniform("normalTexture", 3);
             deferredRenderingFinalPassProgram->setUniform("albedoTexture", 4);
 
+            deferredRenderingFinalPassProgram->setUniform("cameraPosition", cameraPos);
+
             quadModel->bind();
             quadModel->draw();
             quadModel->unbind();
+
+            pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
 
             deferredFragmentPositionTexture->unbindActive(2);
             deferredFragmentNormalTexture->unbindActive(3);

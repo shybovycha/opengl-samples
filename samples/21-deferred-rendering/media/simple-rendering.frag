@@ -8,20 +8,20 @@ in VS_OUT {
     vec2 textureCoord;
 } fsIn;
 
-uniform sampler2D unusedTexture; // TODO: shadow map goes here, but omitting it for now
+// uniform sampler2D unusedTexture; // TODO: shadow map goes here, but omitting it for now
 uniform sampler2D diffuseTexture;
 
-uniform vec3 lightPosition;
-uniform vec3 lightColor;
+// uniform vec3 lightPosition;
+// uniform vec3 lightColor;
 // uniform vec3 ambientColor;
 // uniform vec3 diffuseColor;
 // uniform float materialSpecular;
-uniform vec3 cameraPosition;
+// uniform vec3 cameraPosition;
 
 void main()
 {
-    vec3 color = texture(diffuseTexture, fsIn.textureCoord).rgb;
-    vec3 normal = normalize(fsIn.normal);
+    vec4 color = texture(diffuseTexture, fsIn.textureCoord);
+    /*vec3 normal = normalize(fsIn.normal);
 
     // ambient
     vec3 ambient = 0.3 * color;
@@ -37,7 +37,7 @@ void main()
     float spec = pow(max(dot(normal, halfwayDirection), 0.0), 64.0);
     vec3 specular = spec * lightColor;
 
-    vec3 lighting = ((diffuse + specular) + ambient) * color;
+    vec3 lighting = ((diffuse + specular) + ambient) * color;*/
 
-    fragmentColor = vec4(color, 1.0);
+    fragmentColor = color;
 }
