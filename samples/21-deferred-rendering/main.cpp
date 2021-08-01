@@ -65,6 +65,8 @@ public:
     AbstractMesh(
         std::vector<glm::vec3> vertices,
         std::vector<glm::vec3> normals,
+        std::vector<glm::vec3> tangents,
+        std::vector<glm::vec3> bitangents,
         std::vector<glm::vec2> uvs,
         std::vector<unsigned int> indices,
         std::vector<globjects::Texture*> textures,
@@ -72,6 +74,8 @@ public:
         std::unique_ptr<globjects::Buffer> vertexBuffer,
         std::unique_ptr<globjects::Buffer> indexBuffer,
         std::unique_ptr<globjects::Buffer> normalBuffer,
+        std::unique_ptr<globjects::Buffer> tangentBuffer,
+        std::unique_ptr<globjects::Buffer> bitangentBuffer,
         std::unique_ptr<globjects::Buffer> uvBuffer
     ) :
 
@@ -79,11 +83,15 @@ public:
         m_indices(std::move(indices)),
         m_uvs(std::move(uvs)),
         m_normals(std::move(normals)),
+        m_tangents(std::move(tangents)),
+        m_bitangents(std::move(bitangents)),
         m_textures(textures),
         m_vao(std::move(vao)),
         m_vertexBuffer(std::move(vertexBuffer)),
         m_indexBuffer(std::move(indexBuffer)),
         m_normalBuffer(std::move(normalBuffer)),
+        m_tangentBuffer(std::move(tangentBuffer)),
+        m_bitangentBuffer(std::move(bitangentBuffer)),
         m_uvBuffer(std::move(uvBuffer)),
         m_transformation(1.0f)
     {
@@ -146,6 +154,8 @@ protected:
     std::unique_ptr<globjects::Buffer> m_vertexBuffer;
     std::unique_ptr<globjects::Buffer> m_indexBuffer;
     std::unique_ptr<globjects::Buffer> m_normalBuffer;
+    std::unique_ptr<globjects::Buffer> m_tangentBuffer;
+    std::unique_ptr<globjects::Buffer> m_bitangentBuffer;
     std::unique_ptr<globjects::Buffer> m_uvBuffer;
 
     std::vector<globjects::Texture*> m_textures;
@@ -153,6 +163,8 @@ protected:
     std::vector<unsigned int> m_indices;
     std::vector<glm::vec3> m_vertices;
     std::vector<glm::vec3> m_normals;
+    std::vector<glm::vec3> m_tangents;
+    std::vector<glm::vec3> m_bitangents;
     std::vector<glm::vec2> m_uvs;
 
     glm::mat4 m_transformation;
@@ -161,7 +173,12 @@ protected:
 class AbstractMeshBuilder
 {
 public:
-    AbstractMeshBuilder() : m_positionAttributeIndex(0), m_normalAttributeIndex(1), m_uvAttributeIndex(2)
+    AbstractMeshBuilder() :
+        m_positionAttributeIndex(0),
+        m_normalAttributeIndex(1),
+        m_tangentAttributeIndex(3),
+        m_bitangentAttributeIndex(4),
+        m_uvAttributeIndex(2)
     {
     }
 
@@ -182,6 +199,14 @@ public:
     AbstractMeshBuilder* addNormals(std::vector<glm::vec3> normals)
     {
         m_normals.insert(m_normals.end(), std::make_move_iterator(normals.begin()), std::make_move_iterator(normals.end()));
+
+        return this;
+    }
+
+    AbstractMeshBuilder* addTangentsBitangents(std::vector<glm::vec3> tangents, std::vector<glm::vec3> bitangents)
+    {
+        m_tangents.insert(m_tangents.end(), std::make_move_iterator(tangents.begin()), std::make_move_iterator(tangents.end()));
+        m_bitangents.insert(m_bitangents.end(), std::make_move_iterator(bitangents.begin()), std::make_move_iterator(bitangents.end()));
 
         return this;
     }
@@ -234,6 +259,20 @@ public:
         return this;
     }
 
+    AbstractMeshBuilder* setTangentAttributerIndex(unsigned int tangentAttributeIndex)
+    {
+        m_tangentAttributeIndex = tangentAttributeIndex;
+
+        return this;
+    }
+
+    AbstractMeshBuilder* setBitangentAttributerIndex(unsigned int bitangentAttributeIndex)
+    {
+        m_bitangentAttributeIndex = bitangentAttributeIndex;
+
+        return this;
+    }
+
     AbstractMeshBuilder* setNormalAttributerIndex(unsigned int normalAttributeIndex)
     {
         m_normalAttributeIndex = normalAttributeIndex;
@@ -262,10 +301,10 @@ public:
 
         m_vao->bindElementBuffer(m_indexBuffer.get());
 
-        m_vao->binding(0)->setAttribute(0);
-        m_vao->binding(0)->setBuffer(m_vertexBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
-        m_vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-        m_vao->enable(0);
+        m_vao->binding(m_positionAttributeIndex)->setAttribute(m_positionAttributeIndex);
+        m_vao->binding(m_positionAttributeIndex)->setBuffer(m_vertexBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_positionAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(m_positionAttributeIndex);
 
         m_normalBuffer = std::make_unique<globjects::Buffer>();
 
@@ -295,9 +334,39 @@ public:
             // TODO: enable the corresponding shader sections (those which require UV data)
         }
 
+        m_tangentBuffer = std::make_unique<globjects::Buffer>();
+
+        if (!m_tangents.empty())
+        {
+            m_tangentBuffer->setData(m_tangents, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+            m_vao->binding(m_tangentAttributeIndex)->setAttribute(m_tangentAttributeIndex);
+            m_vao->binding(m_tangentAttributeIndex)->setBuffer(m_tangentBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+            m_vao->binding(m_tangentAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+            m_vao->enable(m_tangentAttributeIndex);
+
+            // TODO: enable the corresponding shader sections (those which require tangent data)
+        }
+
+        m_bitangentBuffer = std::make_unique<globjects::Buffer>();
+
+        if (!m_bitangents.empty())
+        {
+            m_bitangentBuffer->setData(m_bitangents, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+            m_vao->binding(m_bitangentAttributeIndex)->setAttribute(m_bitangentAttributeIndex);
+            m_vao->binding(m_bitangentAttributeIndex)->setBuffer(m_bitangentBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+            m_vao->binding(m_bitangentAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+            m_vao->enable(m_bitangentAttributeIndex);
+
+            // TODO: enable the corresponding shader sections (those which require bitangent data)
+        }
+
         return std::make_unique<AbstractMesh>(
             m_vertices,
             m_normals,
+            m_tangents,
+            m_bitangents,
             m_uvs,
             m_indices,
             std::move(m_textures),
@@ -305,12 +374,16 @@ public:
             std::move(m_vertexBuffer),
             std::move(m_indexBuffer),
             std::move(m_normalBuffer),
+            std::move(m_tangentBuffer),
+            std::move(m_bitangentBuffer),
             std::move(m_uvBuffer));
     }
 
 private:
     std::vector<glm::vec3> m_vertices;
     std::vector<glm::vec3> m_normals;
+    std::vector<glm::vec3> m_tangents;
+    std::vector<glm::vec3> m_bitangents;
     std::vector<glm::vec2> m_uvs;
     std::vector<unsigned int> m_indices;
     std::vector<globjects::Texture*> m_textures;
@@ -320,10 +393,14 @@ private:
     std::unique_ptr<globjects::Buffer> m_indexBuffer;
 
     std::unique_ptr<globjects::Buffer> m_normalBuffer;
+    std::unique_ptr<globjects::Buffer> m_tangentBuffer;
+    std::unique_ptr<globjects::Buffer> m_bitangentBuffer;
     std::unique_ptr<globjects::Buffer> m_uvBuffer;
 
     unsigned int m_positionAttributeIndex;
     unsigned int m_normalAttributeIndex;
+    unsigned int m_tangentAttributeIndex;
+    unsigned int m_bitangentAttributeIndex;
     unsigned int m_uvAttributeIndex;
 };
 
@@ -464,6 +541,8 @@ protected:
 
         std::vector<glm::vec3> vertices;
         std::vector<glm::vec3> normals;
+        std::vector<glm::vec3> tangents;
+        std::vector<glm::vec3> bitangents;
         std::vector<glm::vec2> uvs;
 
         std::vector<GLuint> indices;
@@ -487,6 +566,24 @@ protected:
                     mesh->mNormals[i].z);
 
                 normals.push_back(normal);
+            }
+
+            if (mesh->HasTangentsAndBitangents())
+            {
+                glm::vec3 tangent(
+                    mesh->mTangents[i].x,
+                    mesh->mTangents[i].y,
+                    mesh->mTangents[i].z
+                );
+
+                glm::vec3 bitangent(
+                    mesh->mBitangents[i].x,
+                    mesh->mBitangents[i].y,
+                    mesh->mBitangents[i].z
+                );
+
+                tangents.push_back(tangent);
+                bitangents.push_back(bitangent);
             }
 
             if (mesh->HasTextureCoords(0))
@@ -582,6 +679,7 @@ protected:
             ->addVertices(vertices)
             ->addIndices(indices)
             ->addNormals(normals)
+            ->addTangentsBitangents(tangents, bitangents)
             ->addUVs(uvs)
             ->addTextures(textures)
             ->build();
@@ -916,57 +1014,6 @@ int main()
 
     std::cout << "[INFO] Creating shaders..." << std::endl;
 
-    std::cout << "[INFO] Compiling reflection mapping vertex shader...";
-
-    auto reflectionMappingVertexSource = globjects::Shader::sourceFromFile("media/reflection-mapping.vert");
-    auto reflectionMappingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(reflectionMappingVertexSource.get());
-    auto reflectionMappingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), reflectionMappingVertexShaderTemplate.get());
-
-    if (!reflectionMappingVertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile reflection mapping vertex shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling reflection mapping geometry shader...";
-
-    auto reflectionMappingGeometrySource = globjects::Shader::sourceFromFile("media/reflection-mapping.geom");
-    auto reflectionMappingGeometryShaderTemplate = globjects::Shader::applyGlobalReplacements(reflectionMappingGeometrySource.get());
-    auto reflectionMappingGeometryShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_GEOMETRY_SHADER), reflectionMappingGeometryShaderTemplate.get());
-
-    if (!reflectionMappingGeometryShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile reflection mapping fragment shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling reflection mapping fragment shader...";
-
-    auto reflectionMappingFragmentSource = globjects::Shader::sourceFromFile("media/reflection-mapping.frag");
-    auto reflectionMappingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(reflectionMappingFragmentSource.get());
-    auto reflectionMappingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), reflectionMappingFragmentShaderTemplate.get());
-
-    if (!reflectionMappingFragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile reflection mapping fragment shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[DEBUG] Linking reflection mapping shaders..." << std::endl;
-
-    auto reflectionMappingProgram = std::make_unique<globjects::Program>();
-    reflectionMappingProgram->attach(reflectionMappingVertexShader.get(), reflectionMappingGeometryShader.get(), reflectionMappingFragmentShader.get());
-
-    auto reflectionMappingModelTransformationUniform = reflectionMappingProgram->getUniform<glm::mat4>("modelTransformation");
-
-    std::cout << "done" << std::endl;
-
     std::cout << "[INFO] Compiling deferred rendering pre-pass vertex shader...";
 
     auto deferredRenderingPrePassVertexSource = globjects::Shader::sourceFromFile("media/deferred-rendering-pre-pass.vert");
@@ -1037,43 +1084,6 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling simple rendering vertex shader...";
-
-    auto simpleRenderingVertexSource = globjects::Shader::sourceFromFile("media/simple-rendering.vert");
-    auto simpleRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(simpleRenderingVertexSource.get());
-    auto simpleRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), simpleRenderingVertexShaderTemplate.get());
-
-    if (!simpleRenderingVertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile simple rendering mapping vertex shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling simple rendering fragment shader...";
-
-    auto simpleRenderingFragmentSource = globjects::Shader::sourceFromFile("media/simple-rendering.frag");
-    auto simpleRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(simpleRenderingFragmentSource.get());
-    auto simpleRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), simpleRenderingFragmentShaderTemplate.get());
-
-    if (!simpleRenderingFragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile simple rendering fragment shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[DEBUG] Linking simple rendering shaders..." << std::endl;
-
-    auto simpleRenderingProgram = std::make_unique<globjects::Program>();
-    simpleRenderingProgram->attach(simpleRenderingVertexShader.get(), simpleRenderingFragmentShader.get());
-
-    auto simpleRenderingModelTransformationUniform = simpleRenderingProgram->getUniform<glm::mat4>("model");
-
-    std::cout << "done" << std::endl;
-
     std::cout << "[INFO] Compiling skybox rendering vertex shader...";
 
     auto skyboxRenderingVertexSource = globjects::Shader::sourceFromFile("media/skybox.vert");
@@ -1111,53 +1121,11 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling reflection rendering vertex shader...";
-
-    auto reflectionRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/reflection-rendering.vert");
-    auto reflectionRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(reflectionRenderingVertexShaderSource.get());
-    auto reflectionRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), reflectionRenderingVertexShaderTemplate.get());
-
-    if (!reflectionRenderingVertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile reflection rendering vertex shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling reflection rendering fragment shader...";
-
-    auto reflectionRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/reflection-rendering.frag");
-    auto reflectionRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(reflectionRenderingFragmentShaderSource.get());
-    auto reflectionRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), reflectionRenderingFragmentShaderTemplate.get());
-
-    if (!reflectionRenderingFragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile reflection rendering fragment shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Linking reflection rendering shader...";
-
-    auto reflectionRenderingProgram = std::make_unique<globjects::Program>();
-    reflectionRenderingProgram->attach(reflectionRenderingVertexShader.get(), reflectionRenderingFragmentShader.get());
-
-    auto reflectionRenderingModelTransformationUniform = reflectionRenderingProgram->getUniform<glm::mat4>("model");
-    auto reflectionRenderingViewTransformationUniform = reflectionRenderingProgram->getUniform<glm::mat4>("view");
-    auto reflectionRenderingProjectionTransformationUniform = reflectionRenderingProgram->getUniform<glm::mat4>("projection");
-
-    // auto reflectionRenderingLightColorUniform = reflectionRenderingProgram->getUniform<glm::vec3>("lightColor");
-    auto reflectionRenderingCameraPositionUniform = reflectionRenderingProgram->getUniform<glm::vec3>("cameraPosition");
-
-    std::cout << "done" << std::endl;
-
     std::cout << "[INFO] Loading 3D model...";
 
     Assimp::Importer importer;
 
-    auto quadScene = importer.ReadFile("media/quad.obj", 0);
+    auto quadScene = importer.ReadFile("media/quad.obj", aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
     if (!quadScene)
     {
@@ -1276,12 +1244,8 @@ int main()
 
     auto inkBottleModel = AssimpModel::fromAiNode(inkBottleScene, inkBottleScene->mRootNode, { "media" });
 
-    // TODO: encapsulate position and rotation in model class instead of just exposing transformation
-    // this constant here is taken from ink bottle position
-    glm::vec3 reflectiveModelPosition = glm::vec3(-1.75f, 3.85f, 1.05f);
-
     inkBottleModel->setTransformation(
-        glm::translate(reflectiveModelPosition) *
+        glm::translate(glm::vec3(-1.75f, 3.85f, 1.05f)) *
         glm::scale(glm::vec3(0.5f))
     );
 
@@ -1307,72 +1271,6 @@ int main()
 
     std::cout << "[DEBUG] Initializing framebuffers...";
 
-    std::cout << "[DEBUG] Initializing reflectionMapTexture...";
-
-    auto reflectionMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP));
-
-    reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
-    reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
-
-    reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-    reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-    reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_R), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-
-    reflectionMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-
-    reflectionMapTexture->bind();
-
-    const auto reflectionMapSize = 2048;
-
-    for (auto i = 0; i < 6; ++i)
-    {
-        ::glTexImage2D(
-            static_cast<::GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i),
-            0,
-            GL_RGBA8,
-            reflectionMapSize,
-            reflectionMapSize,
-            0,
-            GL_RGBA,
-            GL_UNSIGNED_INT,
-            nullptr);
-    }
-
-    reflectionMapTexture->unbind();
-
-    auto reflectionMapDepthTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_CUBE_MAP));
-
-    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
-    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
-
-    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_R), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-
-    reflectionMapDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-
-    reflectionMapDepthTexture->bind();
-
-    for (auto i = 0; i < 6; ++i)
-    {
-        ::glTexImage2D(
-            static_cast<::GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i),
-            0,
-            GL_DEPTH_COMPONENT,
-            reflectionMapSize,
-            reflectionMapSize,
-            0,
-            GL_DEPTH_COMPONENT,
-            GL_FLOAT,
-            nullptr);
-    }
-
-    reflectionMapDepthTexture->unbind();
-
-    /*auto skybox = Skybox::fromCubemap(reflectionMapTexture.get())
-        ->size(40.0f)
-        ->build();*/
-
     auto skybox = Skybox::builder()
         ->top("media/skybox-top.png")
         ->bottom("media/skybox-bottom.png")
@@ -1382,19 +1280,6 @@ int main()
         ->back("media/skybox-back.png")
         ->size(40.0f)
         ->build();
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[DEBUG] Initializing reflection mapping frame buffer...";
-
-    auto reflectionMappingFramebuffer = std::make_unique<globjects::Framebuffer>();
-    reflectionMappingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), reflectionMapTexture.get());
-    reflectionMappingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), reflectionMapDepthTexture.get());
-
-    // tell framebuffer it actually needs to render to **BOTH** textures, but does not have to output anywhere (last NONE argument, iirc)
-    reflectionMappingFramebuffer->setDrawBuffers({ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), static_cast<gl::GLenum>(GL_NONE) });
-
-    reflectionMappingFramebuffer->printStatus(true);
 
     std::cout << "done" << std::endl;
 
@@ -1587,7 +1472,7 @@ int main()
             }
         }
 
-        glm::mat4 cameraProjection = glm::perspective(glm::radians(fov), (float)window.getSize().x / (float)window.getSize().y, 0.1f, 100.0f);
+        glm::mat4 cameraProjection = glm::perspective(glm::radians(fov), static_cast<float>(window.getSize().x) / static_cast<float>(window.getSize().y), 0.1f, 100.0f);
 
         glm::mat4 cameraView = glm::lookAt(
             cameraPos,
@@ -1630,11 +1515,9 @@ int main()
 
             deferredRenderingPrePassProgram->setUniform("model", houseModel->getTransformation());
 
-#ifdef _DEBUG
             houseModel->bind();
             houseModel->draw();
             houseModel->unbind();
-#endif
 
             deferredRenderingPrePassProgram->setUniform("model", tableModel->getTransformation());
 
