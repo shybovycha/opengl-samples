@@ -1,3 +1,4 @@
+#include <any>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -40,12 +41,41 @@
 using namespace gl;
 #endif
 
+class ResourceManager
+{
+public:
+    std::any getResource(std::string resourceName)
+    {
+        return m_resources[resourceName];
+    }
+
+    void registerResource(std::string resourceName, std::any resource)
+    {
+        m_resources[resourceName] = resource;
+    }
+
+    static ResourceManager* singleton()
+    {
+        if (!instance)
+        {
+            instance = new ResourceManager();
+        }
+
+        return instance;
+    }
+
+private:
+    std::map<std::string, std::any> m_resources;
+
+    static ResourceManager* instance;
+};
+
 class Mesh
 {
 public:
     Mesh(
         std::unique_ptr<globjects::VertexArray> vao,
-        std::vector<std::unique_ptr<globjects::Texture>> textures,
+        std::vector<std::shared_ptr<globjects::Texture>> textures,
         std::vector<glm::vec3> vertices,
         std::vector<glm::vec3> normals,
         std::vector<glm::vec2> uvs,
@@ -171,7 +201,7 @@ public:
 
         std::cout << "[INFO] Loading textures...";
 
-        std::vector<std::unique_ptr<globjects::Texture>> textures;
+        std::vector<std::shared_ptr<globjects::Texture>> textures;
 
         if (mesh->mMaterialIndex >= 0)
         {
@@ -181,6 +211,14 @@ public:
             {
                 aiString str;
                 material->GetTexture(aiTextureType_DIFFUSE, i, &str);
+
+                auto textureResource = std::any_cast<std::shared_ptr<globjects::Texture>>(ResourceManager::singleton()->getResource(str.C_Str()));
+
+                if (textureResource)
+                {
+                    textures.push_back(textureResource);
+                    continue;
+                }
 
                 std::string imagePath{ str.C_Str() };
 
@@ -213,7 +251,7 @@ public:
 
                 textureImage.flipVertically();
 
-                auto texture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+                auto texture = std::make_shared<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
                 texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
                 texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
@@ -227,7 +265,9 @@ public:
                     static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
                     reinterpret_cast<const gl::GLvoid*>(textureImage.getPixelsPtr()));
 
-                textures.push_back(std::move(texture));
+                ResourceManager::singleton()->registerResource(str.C_Str(), texture);
+
+                textures.push_back(texture);
             }
 
             // TODO: also handle aiTextureType_DIFFUSE and aiTextureType_SPECULAR
@@ -287,7 +327,7 @@ private:
     std::unique_ptr<globjects::Buffer> m_normalBuffer;
     std::unique_ptr<globjects::Buffer> m_uvBuffer;
 
-    std::vector<std::unique_ptr<globjects::Texture>> m_textures;
+    std::vector<std::shared_ptr<globjects::Texture>> m_textures;
 
     std::vector<unsigned int> m_indices;
     std::vector<glm::vec3> m_vertices;
@@ -392,7 +432,7 @@ int main()
     auto videoMode = sf::VideoMode(1024, 768);
 #endif
 
-    sf::Window window(videoMode, "Hello, Shadow scripting!", sf::Style::Default, settings);
+    sf::Window window(videoMode, "Hello, scripting!", sf::Style::Default, settings);
 
     globjects::init([](const char* name) {
         return sf::Context::getFunction(name);
