@@ -9,8 +9,6 @@ in VS_OUT {
 
 uniform sampler2D diffuseTexture;
 
-uniform vec2 resolution;
-
 #define FXAA_SPAN_MAX 16.0
 #define FXAA_REDUCE_MUL   (1.0 / FXAA_SPAN_MAX)
 #define FXAA_REDUCE_MIN   (1.0 / 128.0)
@@ -18,7 +16,7 @@ uniform vec2 resolution;
 
 vec4 fxaa( sampler2D tex, vec2 uv2 )
 {
-    vec2 res = textureSize(tex, 0).xy;
+    vec2 res = textureSize(tex, 0);
     vec2 rcpFrame = 1. / res;
 
     vec4 uv = vec4( uv2, uv2 - (rcpFrame * (0.5 + FXAA_SUBPIX_SHIFT)));

@@ -1768,7 +1768,6 @@ int main()
             temporaryFramebufferTexture->bindActive(0);
 
             fxaaProgram->setUniform("diffuseTexture", 0);
-            fxaaProgram->setUniform("resolution", glm::vec2(window.getSize().x, window.getSize().y));
 
             quadModel->bind();
             quadModel->draw();
