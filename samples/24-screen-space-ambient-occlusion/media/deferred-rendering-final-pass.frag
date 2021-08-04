@@ -32,6 +32,7 @@ uniform sampler1D ssaoKernelTexture;
 
 uniform vec3 cameraPosition;
 
+uniform mat4 view;
 uniform mat4 projection;
 
 float attenuation_constant = 1.0;
@@ -40,7 +41,7 @@ float attenuation_quadratic = 0.032;
 
 void main()
 {
-    vec3 fragmentPosition = texture(positionTexture, fsIn.textureCoord).rgb;
+    vec3 fragmentPosition = texture(positionTexture, fsIn.textureCoord).xyz;
     vec3 normal = texture(normalTexture, fsIn.textureCoord).rgb;
     vec4 albedoColor = texture(albedoTexture, fsIn.textureCoord);
 
@@ -63,7 +64,7 @@ void main()
     }
 
     // SSAO
-    float radius = 0.1;
+    float radius = 0.5;
     float bias = 0.025;
 
     vec2 screenSize = textureSize(positionTexture, 0);
@@ -82,20 +83,34 @@ void main()
 
     for (int i = 0; i < kernelSize; ++i)
     {
-        vec3 randomNormal = normalize(texture(ssaoKernelTexture, i).xyz);
+        /*vec3 randomNormal = normalize(texture(ssaoKernelTexture, i).xyz);
 
         // point randomNormal towards/inside the geometry
         if (dot(normal, randomNormal) < 0.0)
             randomNormal *= -1.0;
 
-        // scale down the random offset to the subpixel level
-        vec2 sampleOffset = randomNormal.xy * (radius / screenSize);
+        // move the sample off of fragment along the randomNormal by radius, in world space
+        vec3 occluderPosition = fragmentPosition + randomNormal * radius; // / vec3(screenSize, 1.0);
 
-        float sampleDepth = texture(positionTexture, fsIn.textureCoord + sampleOffset).z;
+        // project the world space down to view space
+        vec4 samplePosition = projection * view * vec4(occluderPosition, 1.0);
 
-        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragmentPosition.z - sampleDepth));
+        // normalize the xyz coordinates of samplePosition to be in range of [0.0; 1.0]
+        samplePosition.xyz /= samplePosition.w;
+        samplePosition.xyz = samplePosition.xyz * 0.5 + 0.5;
 
-        occlusion += (sampleDepth >= fragmentPosition.z + bias ? 1.0 : 0.0) * rangeCheck;
+        float sampleDepth = texture(positionTexture, samplePosition.xy).z;*/
+
+        vec3 samplePosition = TBN * texture(ssaoKernelTexture, i).xyz;
+        samplePosition = fragmentPosition + samplePosition * radius;
+        vec4 offsetUV = projection * vec4(samplePosition, 1.0);
+        offsetUV.xyz /= offsetUV.w;
+        offsetUV.xy = offsetUV.xy * 0.5 + 0.5;
+        vec4 offsetPosition = texture(positionTexture, offsetUV.xy);
+
+        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragmentPosition.z - offsetPosition.z));
+
+        occlusion += (samplePosition.z >= offsetPosition.z + bias ? 1.0 : 0.0) * rangeCheck;
     }
 
     occlusion = 1.0 - (occlusion / kernelSize);

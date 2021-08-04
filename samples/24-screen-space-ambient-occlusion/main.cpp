@@ -1437,11 +1437,11 @@ int main()
 
     deferredFragmentPositionTexture->image2D(
         0,
-        static_cast<gl::GLenum>(GL_RGBA8),
+        static_cast<gl::GLenum>(GL_RGB32F),
         glm::vec2(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)),
         0,
-        static_cast<gl::GLenum>(GL_RGBA),
-        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        static_cast<gl::GLenum>(GL_RGB),
+        static_cast<gl::GLenum>(GL_FLOAT),
         nullptr
     );
 
@@ -1452,11 +1452,11 @@ int main()
 
     deferredFragmentNormalTexture->image2D(
         0,
-        static_cast<gl::GLenum>(GL_RGBA8),
+        static_cast<gl::GLenum>(GL_RGB32F),
         glm::vec2(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)),
         0,
-        static_cast<gl::GLenum>(GL_RGBA),
-        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        static_cast<gl::GLenum>(GL_RGB),
+        static_cast<gl::GLenum>(GL_FLOAT),
         nullptr
     );
 
@@ -1826,6 +1826,7 @@ int main()
 
             deferredRenderingFinalPassProgram->setUniform("cameraPosition", cameraPos);
             deferredRenderingFinalPassProgram->setUniform("projection", cameraProjection);
+            deferredRenderingFinalPassProgram->setUniform("view", cameraView);
 
             quadModel->bind();
             quadModel->draw();

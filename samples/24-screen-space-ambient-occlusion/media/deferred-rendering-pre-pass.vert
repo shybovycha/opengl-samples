@@ -23,8 +23,8 @@ uniform mat4 model;
 
 void main()
 {
-    vsOut.fragmentPosition = vec3(model * vec4(vertexPosition, 1.0));
-    vsOut.normal = vertexNormal;
+    vsOut.fragmentPosition = vec3(view * model * vec4(vertexPosition, 1.0));
+    vsOut.normal = transpose(inverse(mat3(view * model))) * vertexNormal;
     vsOut.textureCoord = vertexTextureCoord;
 
     gl_Position = projection * view * model * vec4(vertexPosition, 1.0);
