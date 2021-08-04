@@ -4,7 +4,7 @@ add_requires("vcpkg::globjects ~1.1.0", { alias = "globjects" })
 add_requires("vcpkg::glbinding", { alias = "glbinding" })
 add_requires("vcpkg::assimp", { alias = "assimp" })
 
-target("23-msaa")
+target("22-fast-approximation-anti-aliasing")
   set_kind("binary")
 
   add_packages("sfml", "glm", "globjects", "glbinding", "assimp")

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-project(22-fxaa VERSION 1.0.2 LANGUAGES CXX)
+project(23-multi-sample-anti-aliasing VERSION 1.0.2 LANGUAGES CXX)
 
-set(EXECUTABLE_NAME 22-fxaa)
+set(EXECUTABLE_NAME 23-multi-sample-anti-aliasing)
 set(SOURCES "main.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
