@@ -17,16 +17,20 @@ uniform mat4 projection;
 
 void main()
 {
-    vec2 screenSize = textureSize(positionTexture, 0);
-    float radius = 0.5;
-    float bias = 0.05;
+    vec3 fragmentPosition = texture(positionTexture, fsIn.textureCoord).xyz;
+    vec3 normal = texture(normalTexture, fsIn.textureCoord).rgb;
 
-    vec2 noiseScale = screenSize / textureSize(ssaoNoiseTexture, 0);
+    float radius = 0.5;
+    float bias = 0.025;
+
+    vec2 screenSize = textureSize(positionTexture, 0);
+    vec2 noiseSize = textureSize(ssaoNoiseTexture, 0);
     float kernelSize = textureSize(ssaoKernelTexture, 0);
 
-    vec3 fragPosition = texture(positionTexture, fsIn.textureCoord).xyz;
-    vec3 normal = texture(normalTexture, fsIn.textureCoord).rgb;
-    vec3 randomVec = texture(ssaoNoiseTexture, fsIn.textureCoord * noiseScale).xyz;
+    vec2 noiseScale = screenSize / noiseSize;
+
+    vec3 randomVec = normalize(texture(ssaoNoiseTexture, fsIn.textureCoord * noiseScale).xyz);
+
     vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);
     mat3 TBN = mat3(tangent, bitangent, normal);
@@ -35,23 +39,22 @@ void main()
 
     for (int i = 0; i < kernelSize; ++i)
     {
-        // get sample position
-        vec3 uniformSamplePosition = texture(ssaoKernelTexture, float(i)).xyz;
+        vec3 samplePosition = TBN * texture(ssaoKernelTexture, i).xyz;
 
-        vec3 samplePosition = TBN * uniformSamplePosition; // from tangent to view-space
+        if (dot(samplePosition, normal) < 0.0)
+            samplePosition *= -1.0;
 
-        samplePosition = fragPosition + samplePosition * radius;
+        samplePosition = fragmentPosition + samplePosition * radius;
 
-        vec4 offset = vec4(samplePosition, 1.0);
-        offset = projection * offset; // from view to clip-space
-        offset.xyz /= offset.w; // perspective divide
-        offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range [0.0; 1.0]
+        vec4 offsetUV = projection * vec4(samplePosition, 1.0);
+        offsetUV.xyz /= offsetUV.w;
+        offsetUV.xy = offsetUV.xy * 0.5 + 0.5;
 
-        float sampleDepth = texture(positionTexture, offset.xy).z;
+        vec4 offsetPosition = texture(positionTexture, offsetUV.xy);
 
-        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPosition.z - sampleDepth));
+        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragmentPosition.z - offsetPosition.z));
 
-        occlusion += (sampleDepth >= samplePosition.z + bias ? 1.0 : 0.0) * rangeCheck;
+        occlusion += (samplePosition.z >= offsetPosition.z + bias ? 1.0 : 0.0) * rangeCheck;
     }
 
     occlusion = 1.0 - (occlusion / kernelSize);

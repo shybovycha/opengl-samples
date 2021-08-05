@@ -1132,6 +1132,39 @@ int main()
 
     std::cout << "done" << std::endl;
 
+    std::cout << "[INFO] Compiling SSAO vertex shader...";
+
+    auto blurVertexSource = globjects::Shader::sourceFromFile("media/blur.vert");
+    auto blurVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(blurVertexSource.get());
+    auto blurVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), blurVertexShaderTemplate.get());
+
+    if (!blurVertexShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile blur vertex shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "[INFO] Compiling blur fragment shader...";
+
+    auto blurFragmentSource = globjects::Shader::sourceFromFile("media/blur.frag");
+    auto blurFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(blurFragmentSource.get());
+    auto blurFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), blurFragmentShaderTemplate.get());
+
+    if (!blurFragmentShader->compile())
+    {
+        std::cerr << "[ERROR] Can not compile blur fragment shader" << std::endl;
+        return 1;
+    }
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "[DEBUG] Linking blur shaders..." << std::endl;
+
+    auto blurProgram = std::make_unique<globjects::Program>();
+    blurProgram->attach(blurVertexShader.get(), blurFragmentShader.get());
+
+    std::cout << "done" << std::endl;
+
     std::cout << "[INFO] Compiling point skybox rendering fragment shader...";
 
     auto skyboxRenderingFragmentSource = globjects::Shader::sourceFromFile("media/skybox.frag");
@@ -1402,14 +1435,14 @@ int main()
 
     std::cout << "[DEBUG] Initializing framebuffers...";
 
-    std::cout << "[DEBUG] Initializing temporary frame buffer...";
+    std::cout << "[DEBUG] Initializing temporary frame buffers...";
 
-    auto temporaryFramebufferTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+    auto temporaryTexture1 = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
-    temporaryFramebufferTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-    temporaryFramebufferTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+    temporaryTexture1->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    temporaryTexture1->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
 
-    temporaryFramebufferTexture->image2D(
+    temporaryTexture1->image2D(
         0,
         static_cast<gl::GLenum>(GL_RGBA8),
         glm::vec2(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)),
@@ -1421,10 +1454,32 @@ int main()
 
     auto temporaryFramebuffer = std::make_unique<globjects::Framebuffer>();
 
-    temporaryFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), temporaryFramebufferTexture.get());
+    temporaryFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), temporaryTexture1.get());
     temporaryFramebuffer->setDrawBuffers({ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), static_cast<gl::GLenum>(GL_NONE) });
 
     temporaryFramebuffer->printStatus(true);
+
+    auto temporaryTexture2 = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+
+    temporaryTexture2->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    temporaryTexture2->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+    temporaryTexture2->image2D(
+        0,
+        static_cast<gl::GLenum>(GL_RGBA8),
+        glm::vec2(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)),
+        0,
+        static_cast<gl::GLenum>(GL_RGBA),
+        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        nullptr
+    );
+
+    auto temporaryFramebuffer2 = std::make_unique<globjects::Framebuffer>();
+
+    temporaryFramebuffer2->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), temporaryTexture2.get());
+    temporaryFramebuffer2->setDrawBuffers({ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), static_cast<gl::GLenum>(GL_NONE) });
+
+    temporaryFramebuffer2->printStatus(true);
 
     std::cout << "[DEBUG] done" << std::endl;
 
@@ -1800,7 +1855,124 @@ int main()
             deferredRenderingFramebuffer->unbind();
         }
 
-        // second render pass - merge textures from the deferred rendering pre-pass into a final frame
+        // second render pass - calculate & blur the ambient occlusion
+        {
+            temporaryFramebuffer->bind();
+
+            ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
+            ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            ssaoProgram->use();
+
+            deferredFragmentPositionTexture->bindActive(2);
+            deferredFragmentNormalTexture->bindActive(3);
+
+            ssaoNoiseTexture->bindActive(5);
+            ssaoKernelTexture->bindActive(6);
+
+            ssaoProgram->setUniform("positionTexture", 2);
+            ssaoProgram->setUniform("normalTexture", 3);
+            ssaoProgram->setUniform("albedoTexture", 4);
+
+            ssaoProgram->setUniform("ssaoNoiseTexture", 5);
+            ssaoProgram->setUniform("ssaoKernelTexture", 6);
+
+            ssaoProgram->setUniform("cameraPosition", cameraPos);
+            ssaoProgram->setUniform("projection", cameraProjection);
+            ssaoProgram->setUniform("view", cameraView);
+
+            quadModel->bind();
+            quadModel->draw();
+            quadModel->unbind();
+
+            deferredFragmentPositionTexture->unbindActive(2);
+            deferredFragmentNormalTexture->unbindActive(3);
+
+            ssaoNoiseTexture->unbindActive(5);
+            ssaoKernelTexture->unbindActive(6);
+
+            ssaoProgram->release();
+
+            temporaryFramebuffer->unbind();
+
+            // blur
+            temporaryFramebuffer->bind(static_cast<gl::GLenum>(GL_READ_FRAMEBUFFER));
+            temporaryFramebuffer2->bind(static_cast<gl::GLenum>(GL_DRAW_FRAMEBUFFER));
+
+            temporaryFramebuffer->blit(
+                static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0),
+                std::array<gl::GLint, 4>{ 0, 0, static_cast<int>(window.getSize().x), static_cast<int>(window.getSize().y) },
+                temporaryFramebuffer2.get(),
+                std::vector<gl::GLenum>{ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0) },
+                std::array<gl::GLint, 4>{ 0, 0, static_cast<int>(window.getSize().x), static_cast<int>(window.getSize().y) },
+                static_cast<gl::ClearBufferMask>(GL_COLOR_BUFFER_BIT),
+                static_cast<gl::GLenum>(GL_NEAREST));
+
+            // same as
+            // glReadBuffer(GL_COLOR_ATTACHMENT0);
+            // glDrawBuffer(GL_COLOR_ATTACHMENT0);
+            // glBlitFramebuffer(0, 0, window.getSize().x, window.getSize().y, 0, 0, window.getSize().x, window.getSize().y, static_cast<gl::ClearBufferMask>(GL_COLOR_BUFFER_BIT), static_cast<gl::GLenum>(GL_NEAREST));
+
+            temporaryFramebuffer->unbind();
+            temporaryFramebuffer2->unbind();
+
+            blurProgram->use();
+
+            const auto blurPasses = 10;
+
+            // for the initial blur pass, use the texture from the bloomFramebuffer as an input
+
+            // we do not need anything extra here, since the bloomBlurFramebuffer2 (which we read from) will already contain the data from the bloomBrightnessTexture
+
+            blurProgram->setUniform("blurInput", 0);
+
+            for (auto i = 0; i < blurPasses; ++i)
+            {
+                // bind one framebuffer to write blur results to and bind the texture from another framebuffer to read input data from (for this blur stage)
+                if (i % 2 == 0)
+                {
+                    // bind the new target framebuffer to write blur results to
+                    temporaryFramebuffer->bind();
+                    // bind the texture from the previous blur pass to read input data for this stage from
+                    temporaryTexture2->bindActive(0);
+                    // tell shader that we want to use horizontal blur
+                    blurProgram->setUniform("isHorizontalBlur", true);
+                }
+                else
+                {
+                    // bind the new target framebuffer to write blur results to
+                    temporaryFramebuffer2->bind();
+                    // bind the texture from the previous blur pass to read input data for this stage from
+                    if (i > 0)
+                        temporaryTexture1->bindActive(0);
+                    // tell shader that we want to use vertical blur
+                    blurProgram->setUniform("isHorizontalBlur", false);
+                }
+
+                // render quad with the texture from the active texture
+                quadModel->bind();
+                quadModel->draw();
+                quadModel->unbind();
+
+                if (i % 2 == 0)
+                {
+                    // unbind the active framebuffer
+                    temporaryFramebuffer->unbind();
+                    // unbind the active texture
+                    temporaryTexture2->unbindActive(0);
+                }
+                else
+                {
+                    temporaryFramebuffer2->unbind();
+                    temporaryTexture1->unbindActive(0);
+                }
+            }
+
+            blurProgram->release();
+        }
+
+        // third render pass - merge textures from the deferred rendering pre-pass into a final frame
         {
             ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
             ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
@@ -1812,8 +1984,7 @@ int main()
             deferredFragmentNormalTexture->bindActive(3);
             deferredFragmentAlbedoTexture->bindActive(4);
 
-            ssaoNoiseTexture->bindActive(5);
-            ssaoKernelTexture->bindActive(6);
+            temporaryTexture1->bindActive(5);
 
             pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
 
@@ -1821,8 +1992,7 @@ int main()
             deferredRenderingFinalPassProgram->setUniform("normalTexture", 3);
             deferredRenderingFinalPassProgram->setUniform("albedoTexture", 4);
 
-            deferredRenderingFinalPassProgram->setUniform("ssaoNoiseTexture", 5);
-            deferredRenderingFinalPassProgram->setUniform("ssaoKernelTexture", 6);
+            deferredRenderingFinalPassProgram->setUniform("ssaoTexture", 5);
 
             deferredRenderingFinalPassProgram->setUniform("cameraPosition", cameraPos);
             deferredRenderingFinalPassProgram->setUniform("projection", cameraProjection);
@@ -1838,8 +2008,7 @@ int main()
             deferredFragmentNormalTexture->unbindActive(3);
             deferredFragmentAlbedoTexture->unbindActive(4);
 
-            ssaoNoiseTexture->unbindActive(5);
-            ssaoKernelTexture->unbindActive(6);
+            temporaryTexture1->unbindActive(5);
 
             deferredRenderingFinalPassProgram->release();
         }
