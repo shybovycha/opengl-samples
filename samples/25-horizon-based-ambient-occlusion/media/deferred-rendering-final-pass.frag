@@ -45,9 +45,9 @@ void main()
 
     vec3 viewDirection = normalize(cameraPosition - fragmentPosition);
 
-    float ambientOcclusion = texture(hbaoTexture, fsIn.textureCoord).r;
+    float ambientOcclusion = 1.0 - texture(hbaoTexture, fsIn.textureCoord).r;
 
-    vec4 lighting = albedoColor * 0.5 * ambientOcclusion;
+    vec4 lighting = albedoColor * 0.3 * ambientOcclusion;
 
     for (int i = 0; i < pointLightData.pointLight.length(); ++i)
     {
@@ -60,8 +60,8 @@ void main()
 
         vec4 diffuse = max(dot(normal, lightDirection), 0.0) * albedoColor * light.color;
 
-        lighting += diffuse * attenuation;
+        lighting += diffuse * (ambientOcclusion) * attenuation;
     }
 
-    fragmentColor = vec4(vec3(ambientOcclusion), 1.0); //lighting;
+    fragmentColor = lighting;
 }
