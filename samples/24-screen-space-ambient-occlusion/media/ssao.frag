@@ -57,7 +57,7 @@ void main()
         occlusion += (samplePosition.z >= offsetPosition.z + bias ? 1.0 : 0.0) * rangeCheck;
     }
 
-    occlusion = 1.0 - (occlusion / kernelSize);
+    occlusion = (occlusion / kernelSize);
 
     fragmentColor = vec4(vec3(occlusion), 1.0);
 }

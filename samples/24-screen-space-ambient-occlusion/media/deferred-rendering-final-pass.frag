@@ -45,7 +45,9 @@ void main()
 
     vec3 viewDirection = normalize(cameraPosition - fragmentPosition);
 
-    vec4 lighting = albedoColor * 0.3;
+    float ambientOcclusion = texture(ssaoTexture, fsIn.textureCoord).r;
+
+    vec4 lighting = albedoColor * 0.3 * ambientOcclusion;
 
     for (int i = 0; i < pointLightData.pointLight.length(); ++i)
     {
@@ -56,12 +58,10 @@ void main()
         float lightDistance = length(light.position - fragmentPosition);
         float attenuation = 1.0 / (attenuation_constant + (attenuation_linear * lightDistance) + (attenuation_quadratic * lightDistance * lightDistance));
 
-        vec4 diffuse = max(dot(normal, lightDirection), 0.0) * light.color;
+        vec4 diffuse = max(dot(normal, lightDirection), 0.0) * albedoColor * light.color;
 
         lighting += diffuse * attenuation;
     }
 
-    float ambientOcclusion = texture(ssaoTexture, fsIn.textureCoord).r;
-
-    fragmentColor = lighting * (1.0 - ambientOcclusion);
+    fragmentColor = lighting;
 }
