@@ -1260,7 +1260,11 @@ int main()
 
     auto tableModel = AssimpModel::fromAiNode(tableScene, tableScene->mRootNode, { "media" });
 
-    tableModel->setTransformation(glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+    tableModel->setTransformation(
+        // glm::translate(glm::vec3(0.0f, 0.06f, 0.0f)) *
+        glm::scale(glm::vec3(1.0f)) *
+        (glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)))
+    );
 
     auto lanternScene = importer.ReadFile("media/lantern.obj", 0);
 
@@ -1272,7 +1276,10 @@ int main()
 
     auto lanternModel = AssimpModel::fromAiNode(lanternScene, lanternScene->mRootNode, { "media" });
 
-    lanternModel->setTransformation(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.75f, 3.85f, -0.75f)), glm::vec3(0.5f)));
+    lanternModel->setTransformation(
+        glm::translate(glm::vec3(-1.75f, 3.91f, -0.75f)) *
+        glm::scale(glm::vec3(0.5f))
+    );
 
     // TODO: extract this to material class
     sf::Image lanternEmissionMapImage;
@@ -1382,7 +1389,10 @@ int main()
 
     auto scrollModel = AssimpModel::fromAiNode(scrollScene, scrollScene->mRootNode, { "media" });
 
-    scrollModel->setTransformation(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.85f, 0.0f)), glm::vec3(0.5f)));
+    scrollModel->setTransformation(
+        glm::translate(glm::vec3(0.0f, 3.91f, 0.0f)) *
+        glm::scale(glm::vec3(0.5f))
+    );
 
     auto inkBottleScene = importer.ReadFile("media/ink-bottle.obj", 0);
 
