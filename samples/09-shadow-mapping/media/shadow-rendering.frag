@@ -16,7 +16,7 @@ uniform vec3 lightPosition;
 uniform vec3 lightColor;
 uniform vec3 cameraPosition;
 
-float shadowCalculation(vec3 normal, vec3 lightDirection)
+float shadowCalculation1(vec3 normal, vec3 lightDirection)
 {
     vec3 shadowMapCoord = (fsIn.fragmentPositionInLightSpace.xyz / fsIn.fragmentPositionInLightSpace.w) * 0.5 + 0.5;
     float occluderDepth = texture(shadowMap, shadowMapCoord.xy).r;
@@ -46,6 +46,56 @@ float shadowCalculation(vec3 normal, vec3 lightDirection)
     shadow /= 9.0;
 
     return shadow;
+}
+
+float linearizeDepth(float depth)
+{
+    float nearPlane = 1.0;
+    float farPlane = 100.0;
+
+    return (2.0 * nearPlane) / (farPlane + nearPlane - depth * (farPlane - nearPlane));
+}
+
+float linstep(float _min, float _max, float v)
+{
+    return clamp((v - _min) / (_max - _min), 0, 1);
+}
+
+float reduceLightBleeding(float p_max, float Amount)
+{
+    // Remove the [0, Amount] tail and linearly rescale (Amount, 1].
+    return linstep(Amount, 1, p_max);
+}
+
+// compute an upper bound on the probability that the currently shaded surface (at depth t) is occluded
+float ChebyshevUpperBound(vec2 moments, float t)
+{
+    // One-tailed inequality valid if t > Moments.x
+    if (t <= moments.x)
+    {
+        return 1.0;
+    }
+
+    // Compute variance
+    float variance = moments.y - (moments.x * moments.x);
+    variance = max(variance, 0.001);
+
+    // Compute probabilistic upper bound
+    float d = t - moments.x;
+    return variance / (variance + d * d);
+}
+
+float shadowCalculation(vec3 normal, vec3 lightDirection)
+{
+    vec3 shadowMapCoord = (fsIn.fragmentPositionInLightSpace.xyz / fsIn.fragmentPositionInLightSpace.w) * 0.5 + 0.5;
+    vec3 shadowMapSample = texture(shadowMap, shadowMapCoord.xy).rgb;
+    vec2 moments = shadowMapSample.xy;
+    float distanceToLight = shadowMapCoord.z; //linearizeDepth(shadowMapCoord.z);
+
+    // Compute the Chebyshev upper bound.
+    float p_max = ChebyshevUpperBound(moments, distanceToLight);
+
+    return reduceLightBleeding(p_max, 0.5);
 }
 
 void main()
