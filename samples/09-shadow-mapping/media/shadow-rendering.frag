@@ -18,9 +18,9 @@ uniform vec3 cameraPosition;
 
 float shadowCalculation1(vec3 normal, vec3 lightDirection)
 {
-    vec3 shadowMapCoord = (fsIn.fragmentPositionInLightSpace.xyz / fsIn.fragmentPositionInLightSpace.w) * 0.5 + 0.5;
+    vec2 shadowMapCoord = (fsIn.fragmentPositionInLightSpace.xy / fsIn.fragmentPositionInLightSpace.w) * 0.5 + 0.5;
     float occluderDepth = texture(shadowMap, shadowMapCoord.xy).r;
-    float thisDepth = shadowMapCoord.z;
+    float thisDepth = fsIn.fragmentPositionInLightSpace.z / fsIn.fragmentPositionInLightSpace.w;
 
     if (thisDepth > 1.0)
     {
@@ -90,10 +90,20 @@ float shadowCalculation(vec3 normal, vec3 lightDirection)
     vec3 shadowMapCoord = (fsIn.fragmentPositionInLightSpace.xyz / fsIn.fragmentPositionInLightSpace.w) * 0.5 + 0.5;
     vec3 shadowMapSample = texture(shadowMap, shadowMapCoord.xy).rgb;
     vec2 moments = shadowMapSample.xy;
-    float distanceToLight = shadowMapCoord.z; //linearizeDepth(shadowMapCoord.z);
+    float fragmentDepth = shadowMapCoord.z; //linearizeDepth(shadowMapCoord.z);
 
     // Compute the Chebyshev upper bound.
-    float p_max = ChebyshevUpperBound(moments, distanceToLight);
+    /*float p_max = ChebyshevUpperBound(moments, fragmentDepth);
+
+    return reduceLightBleeding(p_max, 0.5);*/
+
+    float p = step(fragmentDepth, moments.x);
+    float mu = moments.x;
+    float sigma2 = max(moments.y - moments.x * moments.x, 0.0002);
+
+    float d = fragmentDepth - mu;
+    float p_max = sigma2 / (sigma2 + (d * d));
+    p_max = clamp(max(p, p_max), 0, 1);
 
     return reduceLightBleeding(p_max, 0.5);
 }
