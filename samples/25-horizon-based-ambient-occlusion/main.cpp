@@ -1355,6 +1355,39 @@ int main()
         static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
         reinterpret_cast<const gl::GLvoid*>(penNormalMapImage.getPixelsPtr()));
 
+    auto penScene = importer.ReadFile("media/pen-lowpoly.obj", 0);
+
+    if (!penScene)
+    {
+        std::cerr << "failed: " << importer.GetErrorString() << std::endl;
+        return 1;
+    }
+
+    auto penModel = AssimpModel::fromAiNode(penScene, penScene->mRootNode, { "media" });
+
+    // rotate -> scale -> translate; can be done as series of matrix multiplications M_translation * M_scale * M_rotation
+    // each of the components, in turn, can also be a series of matrix multiplications: M_rotation = M_rotate_z * M_rotate_y * M_rotate_x
+    penModel->setTransformation(
+        glm::translate(glm::vec3(0.35f, 3.91f, -0.75f)) *
+        glm::scale(glm::vec3(0.05f)) *
+        (glm::rotate(glm::radians(12.5f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)))
+    );
+
+    auto scrollScene = importer.ReadFile("media/scroll.obj", 0);
+
+    if (!scrollScene)
+    {
+        std::cerr << "failed: " << importer.GetErrorString() << std::endl;
+        return 1;
+    }
+
+    auto scrollModel = AssimpModel::fromAiNode(scrollScene, scrollScene->mRootNode, { "media" });
+
+    scrollModel->setTransformation(
+        glm::translate(glm::vec3(0.0f, 3.85f, 0.0f)) *
+        glm::scale(glm::vec3(0.5f))
+    );
+
     sf::Image inkBottleNormalMapImage;
 
     if (!inkBottleNormalMapImage.loadFromFile("media/ink-bottle-normal.png"))
@@ -1379,21 +1412,6 @@ int main()
         static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
         reinterpret_cast<const gl::GLvoid*>(inkBottleNormalMapImage.getPixelsPtr()));
 
-    auto scrollScene = importer.ReadFile("media/scroll.obj", 0);
-
-    if (!scrollScene)
-    {
-        std::cerr << "failed: " << importer.GetErrorString() << std::endl;
-        return 1;
-    }
-
-    auto scrollModel = AssimpModel::fromAiNode(scrollScene, scrollScene->mRootNode, { "media" });
-
-    scrollModel->setTransformation(
-        glm::translate(glm::vec3(0.0f, 3.91f, 0.0f)) *
-        glm::scale(glm::vec3(0.5f))
-    );
-
     auto inkBottleScene = importer.ReadFile("media/ink-bottle.obj", 0);
 
     if (!inkBottleScene)
@@ -1405,26 +1423,8 @@ int main()
     auto inkBottleModel = AssimpModel::fromAiNode(inkBottleScene, inkBottleScene->mRootNode, { "media" });
 
     inkBottleModel->setTransformation(
-        glm::translate(glm::vec3(-1.75f, 3.85f, 1.05f)) *
+        glm::translate(glm::vec3(-1.75f, 3.86f, 1.05f)) *
         glm::scale(glm::vec3(0.5f))
-    );
-
-    auto penScene = importer.ReadFile("media/pen-lowpoly.obj", 0);
-
-    if (!penScene)
-    {
-        std::cerr << "failed: " << importer.GetErrorString() << std::endl;
-        return 1;
-    }
-
-    auto penModel = AssimpModel::fromAiNode(penScene, penScene->mRootNode, { "media" });
-
-    // rotate -> scale -> translate; can be done as series of matrix multiplications M_translation * M_scale * M_rotation
-    // each of the components, in turn, can also be a series of matrix multiplications: M_rotation = M_rotate_z * M_rotate_y * M_rotate_x
-    penModel->setTransformation(
-        glm::translate(glm::vec3(0.35f, 3.95f, -0.75f)) *
-        glm::scale(glm::vec3(0.05f)) *
-        (glm::rotate(glm::radians(12.5f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)))
     );
 
     std::cout << "done" << std::endl;

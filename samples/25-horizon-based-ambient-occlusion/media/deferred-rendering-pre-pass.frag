@@ -16,7 +16,7 @@ uniform sampler2D normalMapTexture;
 
 void main()
 {
-    fsPosition = fsIn.fragmentPosition;
+    fsPosition = fsIn.fragmentPosition * 0.5 + 0.5;
 
     fsNormal = texture(normalMapTexture, fsIn.textureCoord).rgb;
 
@@ -24,6 +24,8 @@ void main()
     {
         fsNormal = fsIn.normal;
     }
+
+    fsNormal = fsNormal.xyz * 0.5 + 0.5;
 
     fsAlbedo = texture(diffuseTexture, fsIn.textureCoord);
 }

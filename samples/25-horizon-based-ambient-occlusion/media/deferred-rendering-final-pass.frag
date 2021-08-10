@@ -39,8 +39,8 @@ float attenuation_quadratic = 0.032;
 
 void main()
 {
-    vec3 fragmentPosition = texture(positionTexture, fsIn.textureCoord).xyz;
-    vec3 normal = texture(normalTexture, fsIn.textureCoord).rgb;
+    vec3 fragmentPosition = texture(positionTexture, fsIn.textureCoord).xyz * 2 - 1;
+    vec3 normal = texture(normalTexture, fsIn.textureCoord).rgb * 2 - 1;
     vec4 albedoColor = texture(albedoTexture, fsIn.textureCoord);
 
     vec3 viewDirection = normalize(cameraPosition - fragmentPosition);
