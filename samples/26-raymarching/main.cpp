@@ -1512,6 +1512,8 @@ int main()
 
     std::cout << "[DEBUG] Initializing shadowMapTexture...";
 
+    const float shadowMapSize = 2048.0f;
+
     auto shadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
     shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
@@ -1525,7 +1527,7 @@ int main()
     shadowMapTexture->image2D(
         0,
         static_cast<gl::GLenum>(GL_RGB10),
-        glm::vec2(2048, 2048),
+        glm::vec2(shadowMapSize, shadowMapSize),
         0,
         static_cast<gl::GLenum>(GL_RGB),
         static_cast<gl::GLenum>(GL_FLOAT),
@@ -1540,7 +1542,7 @@ int main()
     shadowMapFramebuffer->setDrawBuffers({ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), static_cast<gl::GLenum>(GL_NONE) });
 
     auto shadowMapRenderBuffer = std::make_unique<globjects::Renderbuffer>();
-    shadowMapRenderBuffer->storage(static_cast<gl::GLenum>(GL_DEPTH24_STENCIL8), 2048, 2048);
+    shadowMapRenderBuffer->storage(static_cast<gl::GLenum>(GL_DEPTH24_STENCIL8), shadowMapSize, shadowMapSize);
     shadowMapFramebuffer->attachRenderBuffer(static_cast<gl::GLenum>(GL_DEPTH_STENCIL_ATTACHMENT), shadowMapRenderBuffer.get());
 
     shadowMapFramebuffer->printStatus(true);
@@ -1569,11 +1571,11 @@ int main()
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 
-    glm::vec3 lightPosition = glm::vec3(0.0f, 3.0f, 4.0f); // cameraPos;
+    glm::vec3 lightPosition = glm::vec3(-28.0f, 7.0f, 0.0f); // cameraPos;
 
     const float nearPlane = 0.1f;
-    const float farPlane = 10.0f;
-    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+    const float farPlane = 50.0f;
+    glm::mat4 lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, nearPlane, farPlane);
 
     glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -1683,9 +1685,6 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        const float nearPlane = 0.1f;
-        const float farPlane = 10.0f;
-
         // first render pass - prepare for deferred rendering by rendering to the entire scene to a deferred rendering framebuffer's attachments
         {
             deferredRenderingFramebuffer->bind();
@@ -1776,7 +1775,7 @@ int main()
         {
             shadowMapFramebuffer->bind();
 
-            ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
+            ::glViewport(0, 0, static_cast<GLsizei>(shadowMapSize), static_cast<GLsizei>(shadowMapSize));
             ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1784,7 +1783,7 @@ int main()
 
             // glDepthFunc(GL_LEQUAL);
             // glDisable(GL_CULL_FACE);
-            glCullFace(GL_FRONT);
+            // glCullFace(GL_FRONT);
 
             /*skyboxRenderingProgram->use();
             skyboxRenderingProgram->setUniform("projection", cameraProjection);
@@ -1884,7 +1883,7 @@ int main()
             deferredRenderingFinalPassProgram->setUniform("projection", cameraProjection);
             deferredRenderingFinalPassProgram->setUniform("view", cameraView);
 
-            deferredRenderingFinalPassProgram->setUniform("lightSpaceMatrix", lightProjection);
+            deferredRenderingFinalPassProgram->setUniform("lightSpaceMatrix", lightSpaceMatrix);
             deferredRenderingFinalPassProgram->setUniform("sunDirection", -lightPosition);
             deferredRenderingFinalPassProgram->setUniform("sunColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
