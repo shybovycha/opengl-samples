@@ -1,4 +1,6 @@
-#version 430
+#version 460
+
+#extension GL_ARB_bindless_texture : require
 
 in VS_OUT
 {
@@ -23,12 +25,12 @@ layout (std430, binding = 5) buffer PointLightData
     PointLight pointLight[];
 } pointLightData;
 
-uniform sampler2D positionTexture;
-uniform sampler2D normalTexture;
-uniform sampler2D albedoTexture;
+layout(bindless_sampler) uniform sampler2D positionTexture;
+layout(bindless_sampler) uniform sampler2D normalTexture;
+layout(bindless_sampler) uniform sampler2D albedoTexture;
 
-uniform sampler2D lightSpaceCoord;
-uniform sampler2D shadowMap;
+layout(bindless_sampler) uniform sampler2D lightSpaceCoord;
+layout(bindless_sampler) uniform sampler2D shadowMap;
 
 uniform vec3 cameraPosition;
 uniform vec3 sunDirection;

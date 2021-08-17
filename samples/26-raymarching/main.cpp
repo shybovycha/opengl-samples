@@ -13,6 +13,7 @@
 #include <globjects/Renderbuffer.h>
 #include <globjects/Shader.h>
 #include <globjects/Texture.h>
+#include <globjects/TextureHandle.h>
 #include <globjects/Uniform.h>
 #include <globjects/VertexArray.h>
 #include <globjects/VertexAttributeBinding.h>
@@ -1863,21 +1864,21 @@ int main()
 
             deferredRenderingFinalPassProgram->use();
 
-            deferredFragmentPositionTexture->bindActive(2);
-            deferredFragmentNormalTexture->bindActive(3);
-            deferredFragmentAlbedoTexture->bindActive(4);
+            deferredFragmentPositionTexture->textureHandle().makeResident();
+            deferredFragmentNormalTexture->textureHandle().makeResident();
+            deferredFragmentAlbedoTexture->textureHandle().makeResident();
 
-            deferredFragmentLightSpacePositionTexture->bindActive(6);
-            shadowMapTexture->bindActive(7);
+            deferredFragmentLightSpacePositionTexture->textureHandle().makeResident();
+            shadowMapTexture->textureHandle().makeResident();
 
             pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
 
-            deferredRenderingFinalPassProgram->setUniform("positionTexture", 2);
-            deferredRenderingFinalPassProgram->setUniform("normalTexture", 3);
-            deferredRenderingFinalPassProgram->setUniform("albedoTexture", 4);
+            deferredRenderingFinalPassProgram->setUniform("positionTexture", deferredFragmentPositionTexture->textureHandle().handle());
+            deferredRenderingFinalPassProgram->setUniform("normalTexture", deferredFragmentNormalTexture->textureHandle().handle());
+            deferredRenderingFinalPassProgram->setUniform("albedoTexture", deferredFragmentAlbedoTexture->textureHandle().handle());
 
-            deferredRenderingFinalPassProgram->setUniform("lightSpaceCoord", 6);
-            deferredRenderingFinalPassProgram->setUniform("shadowMap", 7);
+            deferredRenderingFinalPassProgram->setUniform("lightSpaceCoord", deferredFragmentLightSpacePositionTexture->textureHandle().handle());
+            deferredRenderingFinalPassProgram->setUniform("shadowMap", shadowMapTexture->textureHandle().handle());
 
             deferredRenderingFinalPassProgram->setUniform("cameraPosition", cameraPos);
             deferredRenderingFinalPassProgram->setUniform("projection", cameraProjection);
@@ -1893,12 +1894,12 @@ int main()
 
             pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
 
-            deferredFragmentPositionTexture->unbindActive(2);
-            deferredFragmentNormalTexture->unbindActive(3);
-            deferredFragmentAlbedoTexture->unbindActive(4);
+            deferredFragmentPositionTexture->textureHandle().makeNonResident();
+            deferredFragmentNormalTexture->textureHandle().makeNonResident();
+            deferredFragmentAlbedoTexture->textureHandle().makeNonResident();
 
-            deferredFragmentLightSpacePositionTexture->unbindActive(6);
-            shadowMapTexture->unbindActive(7);
+            deferredFragmentLightSpacePositionTexture->textureHandle().makeNonResident();
+            shadowMapTexture->textureHandle().makeNonResident();
 
             deferredRenderingFinalPassProgram->release();
         }
