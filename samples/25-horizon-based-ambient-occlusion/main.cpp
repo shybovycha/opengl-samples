@@ -538,6 +538,8 @@ protected:
 
     static std::unique_ptr<AbstractMesh> fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
+        static std::map<std::string, globjects::Texture*> s_textureCache;
+
         std::cout << "[INFO] Creating buffer objects...";
 
         std::vector<glm::vec3> vertices;
@@ -625,6 +627,13 @@ protected:
 
                 std::string imagePath{ str.C_Str() };
 
+                if (s_textureCache.contains(imagePath))
+                {
+                    std::cout << "[INFO] Using existing DIFFUSE texture " << imagePath << "...";
+                    textures.push_back(s_textureCache[imagePath]);
+                    continue;
+                }
+
                 // TODO: extract the "std::string resolveFile(std::string)" helper
                 /* std::vector<std::filesystem::path> lookupPaths = {
                     imagePath,
@@ -667,6 +676,8 @@ protected:
                     static_cast<gl::GLenum>(GL_RGBA),
                     static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
                     reinterpret_cast<const gl::GLvoid*>(textureImage.getPixelsPtr()));
+
+                s_textureCache[imagePath] = texture;
 
                 textures.push_back(texture);
             }
