@@ -28,4 +28,5 @@ find_path(CHAISCRIPT_INCLUDE_DIRS "chaiscript/chaiscript.hpp")
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${CHAISCRIPT_INCLUDE_DIRS})
 
 # copy media
+add_custom_command(TARGET ${EXECUTABLE_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../media $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/media)
 add_custom_command(TARGET ${EXECUTABLE_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/media $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/media)

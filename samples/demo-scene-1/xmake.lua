@@ -20,5 +20,6 @@ target("demo-scene-1")
   add_files("main.cpp")
 
   after_build(function (target)
+    os.cp("$(scriptdir)/../media", path.join(path.directory(target:targetfile()), "media"))
     os.cp("$(scriptdir)/media", path.join(path.directory(target:targetfile()), "media"))
   end)
