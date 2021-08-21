@@ -25,7 +25,7 @@ void main()
         fsNormal = fsIn.normal;
     }
 
-    fsNormal = fsNormal.xyz * 0.5 + 0.5;
+    fsNormal = normalize(fsNormal) * 0.5 + 0.5;
 
     fsAlbedo = texture(diffuseTexture, fsIn.textureCoord);
 }
