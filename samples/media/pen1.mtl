@@ -2,13 +2,13 @@
 # Material Count: 1
 
 newmtl pen
-Ns 225.000000
+Ns 233.256190
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
-Ks 0.500000 0.500000 0.500000
+Ks 0.068182 0.068182 0.068182
 Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Bump pen-normal.png
+map_Bump pen-detail.png
 map_Kd pen-albedo.png
