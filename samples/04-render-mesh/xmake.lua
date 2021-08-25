@@ -1,6 +1,6 @@
 add_requires("sfml ~2.5.1", { alias = "sfml" })
 add_requires("glm")
-add_requires("vcpkg::globjects ~1.1.0", { alias = "globjects" })
+add_requires("vcpkg::globjects", { alias = "globjects" })
 add_requires("vcpkg::glbinding", { alias = "glbinding" })
 
 target("04-render-mesh")

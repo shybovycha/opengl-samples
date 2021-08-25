@@ -1738,6 +1738,7 @@ int main()
             lanternModel->unbind();
 
             deferredRenderingPrePassProgram->setUniform("model", penModel->getTransformation());
+            deferredRenderingPrePassProgram->setUniform("normalMapTexture", 2);
 
             penNormalMapTexture->bindActive(2);
 
