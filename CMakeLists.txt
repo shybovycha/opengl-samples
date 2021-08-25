@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-project(shoot-them VERSION 1.0.2 LANGUAGES CXX)
+project(shoot-them VERSION 1.1.0 LANGUAGES CXX)
 
 add_subdirectory(samples/01-create-window)
 add_subdirectory(samples/02-init-opengl)
@@ -28,5 +28,6 @@ add_subdirectory(samples/23-multi-sample-anti-aliasing)
 add_subdirectory(samples/24-screen-space-ambient-occlusion)
 add_subdirectory(samples/25-horizon-based-ambient-occlusion)
 add_subdirectory(samples/26-raymarching)
+add_subdirectory(samples/27-animated-model)
 add_subdirectory(samples/demo-scene-1)
 add_subdirectory(samples/demo-scene-2)
