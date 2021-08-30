@@ -1366,7 +1366,7 @@ int main()
         static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
         reinterpret_cast<const gl::GLvoid*>(penNormalMapImage.getPixelsPtr()));
 
-    auto penScene = importer.ReadFile("media/pen-lowpoly.obj", 0);
+    auto penScene = importer.ReadFile("media/pen-lowpoly.obj", aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
     if (!penScene)
     {
@@ -1423,7 +1423,7 @@ int main()
         static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
         reinterpret_cast<const gl::GLvoid*>(inkBottleNormalMapImage.getPixelsPtr()));
 
-    auto inkBottleScene = importer.ReadFile("media/ink-bottle.obj", 0);
+    auto inkBottleScene = importer.ReadFile("media/ink-bottle.obj", aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
     if (!inkBottleScene)
     {

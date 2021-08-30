@@ -5,6 +5,7 @@ in VS_OUT
     vec3 fragmentPosition;
     vec3 normal;
     vec2 textureCoord;
+    mat3 TBN;
 } fsIn;
 
 layout (location = 0) out vec3 fsPosition;
@@ -18,11 +19,16 @@ void main()
 {
     fsPosition = fsIn.fragmentPosition * 0.5 + 0.5;
 
-    fsNormal = texture(normalMapTexture, fsIn.textureCoord).rgb;
+    vec2 normalMapSize = textureSize(normalMapTexture, 0);
 
-    if (length(fsNormal) == 0.0)
+    if (normalMapSize.x == 0 || normalMapSize.y == 0)
     {
         fsNormal = fsIn.normal;
+    } else
+    {
+        fsNormal = texture(normalMapTexture, fsIn.textureCoord).rgb;
+        fsNormal = fsNormal * 2 - 1;
+        fsNormal = fsIn.TBN * fsNormal;
     }
 
     fsNormal = normalize(fsNormal) * 0.5 + 0.5;
