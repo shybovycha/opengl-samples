@@ -57,30 +57,6 @@ void main()
 
     vec3 viewDirection = normalize(cameraPosition - fragmentPosition);
 
-    /*vec4 lighting = albedoColor * 0.3;
-
-    for (int i = 0; i < pointLightData.pointLight.length(); ++i)
-    {
-        PointLight light = pointLightData.pointLight[i];
-
-        vec3 lightDirection = normalize(light.position - fragmentPosition);
-
-        float lightDistance = length(light.position - fragmentPosition);
-        float attenuation = 1.0 / (attenuation_constant + (attenuation_linear * lightDistance) + (attenuation_quadratic * lightDistance * lightDistance));
-
-        vec4 diffuse = max(dot(normal, lightDirection), 0.0) * albedoColor * light.color;
-
-        lighting += diffuse * attenuation;
-    }*/
-
-    // volumetric light (aka light scattering) using raymarching
-    vec4 worldInLightSpace = lightSpaceMatrix * vec4(fragmentPosition, 1.0f);
-    worldInLightSpace /= worldInLightSpace.w;
-
-    vec3 lightSpaceTextureCoord = texture(lightSpaceCoord, fsIn.textureCoord).xyz;
-    vec4 shadowMapValue = texture(shadowMap, lightSpaceTextureCoord.xy);
-
-    // vec3 worldPos = texture(positionTexture, fsIn.textureCoord).xyz * 2 - 1;
     vec3 startPosition = cameraPosition;
     vec3 endRayPosition = fragmentPosition;
 
@@ -103,32 +79,48 @@ void main()
         vec4 worldInLightSpace = lightSpaceMatrix * vec4(currentPosition, 1.0f);
         worldInLightSpace /= worldInLightSpace.w;
 
-        vec2 lightSpaceTextureCoord = worldInLightSpace.xy * 0.5 + 0.5; // [-1..1] -> [0..1]
-        float shadowMapValue = texture(shadowMap, lightSpaceTextureCoord.xy).r;
+        vec2 lightSpaceTextureCoord1 = (worldInLightSpace.xy * 0.5) + 0.5; // [-1..1] -> [0..1]
+        float shadowMapValue1 = texture(shadowMap, lightSpaceTextureCoord1.xy).r;
 
-        if (shadowMapValue > worldInLightSpace.z)
+        if (shadowMapValue1 > worldInLightSpace.z)
         {
             // Mie scaterring approximated with Henyey-Greenstein phase function
             float lightDotView = dot(normalize(rayDirection), normalize(-sunDirection));
+
             float scattering = 1.0 - G_SCATTERING * G_SCATTERING;
+            scattering /= (4.0f * M_PI * pow(1.0f + G_SCATTERING * G_SCATTERING - (2.0f * G_SCATTERING) * lightDotView, 1.5f));
 
-            // scattering /= (4.0f * M_PI * pow(1.0f + G_SCATTERING * G_SCATTERING - (2.0f * G_SCATTERING) * lightDotView, 1.5f));
-
-            // TODO: blinding the camera; does not really work with cameraPosition > 0
-            // if (lightDotView < 0.1)
-            // {
-            //     accumFog += vec4(NB_STEPS);
-            // } else
-            {
-                accumFog += scattering * sunColor;
-            }
+            accumFog += scattering * sunColor;
         }
 
         currentPosition += raymarchingStep;
     }
 
     accumFog /= NB_STEPS;
+
+    // fade rays away
+    // accumFog *= currentPosition / NB_STEPS);
+
     // lighting *= accumFog;
 
-    fragmentColor = (albedoColor * 0.5) + (accumFog * 0.5);  // lighting;
+    vec4 fragmentPositionInLightSpace1 = lightSpaceMatrix * vec4(fragmentPosition, 1.0);
+    fragmentPositionInLightSpace1 /= fragmentPositionInLightSpace1.w;
+
+    vec2 shadowMapCoord1 = fragmentPositionInLightSpace1.xy * 0.5 + 0.5;
+
+    // vec3 fragmentPositionInLightSpace2 = texture(lightSpaceCoord, fsIn.textureCoord).xyz;
+
+    // vec2 shadowMapCoord2 = fragmentPositionInLightSpace2.xy;
+
+    float thisDepth = fragmentPositionInLightSpace1.z;
+    float occluderDepth = texture(shadowMap, shadowMapCoord1).r;
+
+    float shadowFactor = 0.0;
+
+    if (thisDepth > 0.0 && occluderDepth < 1.0 && thisDepth < occluderDepth)
+    {
+        shadowFactor = 1.0;
+    }
+
+    fragmentColor = ((albedoColor * shadowFactor * 0.3) + (accumFog * 0.7));
 }

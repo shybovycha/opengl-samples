@@ -1002,6 +1002,8 @@ int main()
 
     sf::Window window(videoMode, "Hello, Raymarching!", sf::Style::Default, settings);
 
+    window.setVerticalSyncEnabled(true);
+
     globjects::init([](const char* name) {
         return sf::Context::getFunction(name);
     });
@@ -1540,7 +1542,7 @@ int main()
 
     auto shadowMapFramebuffer = std::make_unique<globjects::Framebuffer>();
     shadowMapFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), shadowMapTexture.get());
-    shadowMapFramebuffer->setDrawBuffers({ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), static_cast<gl::GLenum>(GL_NONE) });
+    // shadowMapFramebuffer->setDrawBuffers({ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), static_cast<gl::GLenum>(GL_NONE) });
 
     auto shadowMapRenderBuffer = std::make_unique<globjects::Renderbuffer>();
     shadowMapRenderBuffer->storage(static_cast<gl::GLenum>(GL_DEPTH24_STENCIL8), shadowMapSize, shadowMapSize);
@@ -1565,17 +1567,17 @@ int main()
     const float fov = 45.0f;
 
     const float cameraMoveSpeed = 1.0f;
-    const float cameraRotateSpeed = 10.0f;
+    const float cameraRotateSpeed = 1.0f;
 
     glm::vec3 cameraPos = glm::vec3(0.0f, 6.0f, 5.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 
-    glm::vec3 lightPosition = glm::vec3(-28.0f, 7.0f, 0.0f); // cameraPos;
+    glm::vec3 lightPosition = glm::vec3(-35.0f, 10.0f, 14.0f); // cameraPos;
 
-    const float nearPlane = 0.1f;
-    const float farPlane = 50.0f;
+    const float nearPlane = 0.01f;
+    const float farPlane = 70.0f;
     glm::mat4 lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, nearPlane, farPlane);
 
     glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -1695,8 +1697,8 @@ int main()
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
-            glDepthFunc(GL_LEQUAL);
-            glDisable(GL_CULL_FACE);
+            // glDepthFunc(GL_LEQUAL);
+            // glDisable(GL_CULL_FACE);
 
             /*skyboxRenderingProgram->use();
             skyboxRenderingProgram->setUniform("projection", cameraProjection);
@@ -1849,8 +1851,8 @@ int main()
             scrollModel->draw();
             scrollModel->unbind();
 
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
+            //glEnable(GL_CULL_FACE);
+            //glCullFace(GL_BACK);
 
             shadowMappingProgram->release();
 
