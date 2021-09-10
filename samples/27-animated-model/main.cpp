@@ -52,25 +52,20 @@ public:
     virtual void unbind() = 0;
 };
 
-class AbstractMeshBuilder;
+class StaticMeshBuilder;
 
-class AbstractMesh : public AbstractDrawable
+class StaticMesh : public AbstractDrawable
 {
-    friend class AbstractMeshBuilder;
+    friend class StaticMeshBuilder;
 
 public:
-    static std::shared_ptr<AbstractMeshBuilder> builder()
+    static std::shared_ptr<StaticMeshBuilder> builder()
     {
-        return std::make_shared<AbstractMeshBuilder>();
+        return std::make_shared<StaticMeshBuilder>();
     }
 
-    AbstractMesh(
-        std::vector<glm::vec3> vertices,
-        std::vector<glm::vec3> normals,
-        std::vector<glm::vec3> tangents,
-        std::vector<glm::vec3> bitangents,
-        std::vector<glm::vec2> uvs,
-        std::vector<unsigned int> indices,
+    StaticMesh(
+        size_t numIndices,
         std::vector<globjects::Texture*> textures,
         std::unique_ptr<globjects::VertexArray> vao,
         std::unique_ptr<globjects::Buffer> vertexBuffer,
@@ -81,12 +76,7 @@ public:
         std::unique_ptr<globjects::Buffer> uvBuffer
     ) :
 
-        m_vertices(std::move(vertices)),
-        m_indices(std::move(indices)),
-        m_uvs(std::move(uvs)),
-        m_normals(std::move(normals)),
-        m_tangents(std::move(tangents)),
-        m_bitangents(std::move(bitangents)),
+        m_numIndices(numIndices),
         m_textures(textures),
         m_vao(std::move(vao)),
         m_vertexBuffer(std::move(vertexBuffer)),
@@ -115,7 +105,7 @@ public:
         // in this case: 2 triangles, 3 vertex indexes per triangle
         m_vao->drawElements(
             static_cast<gl::GLenum>(GL_TRIANGLES),
-            m_indices.size(),
+            m_numIndices,
             static_cast<gl::GLenum>(GL_UNSIGNED_INT),
             nullptr);
     }
@@ -124,7 +114,7 @@ public:
     {
         m_vao->drawElementsInstanced(
             static_cast<gl::GLenum>(GL_TRIANGLES),
-            m_indices.size(),
+            m_numIndices,
             static_cast<gl::GLenum>(GL_UNSIGNED_INT),
             nullptr,
             instances);
@@ -162,20 +152,15 @@ protected:
 
     std::vector<globjects::Texture*> m_textures;
 
-    std::vector<unsigned int> m_indices;
-    std::vector<glm::vec3> m_vertices;
-    std::vector<glm::vec3> m_normals;
-    std::vector<glm::vec3> m_tangents;
-    std::vector<glm::vec3> m_bitangents;
-    std::vector<glm::vec2> m_uvs;
+    size_t m_numIndices;
 
     glm::mat4 m_transformation;
 };
 
-class AbstractMeshBuilder
+class StaticMeshBuilder
 {
 public:
-    AbstractMeshBuilder() :
+    StaticMeshBuilder() :
         m_positionAttributeIndex(0),
         m_normalAttributeIndex(1),
         m_tangentAttributeIndex(3),
@@ -184,28 +169,28 @@ public:
     {
     }
 
-    AbstractMeshBuilder* addVertices(std::vector<glm::vec3> vertices)
+    StaticMeshBuilder* addVertices(std::vector<glm::vec3> vertices)
     {
         m_vertices.insert(m_vertices.end(), std::make_move_iterator(vertices.begin()), std::make_move_iterator(vertices.end()));
 
         return this;
     }
 
-    AbstractMeshBuilder* addIndices(std::vector<unsigned int> indices)
+    StaticMeshBuilder* addIndices(std::vector<unsigned int> indices)
     {
         m_indices.insert(m_indices.end(), std::make_move_iterator(indices.begin()), std::make_move_iterator(indices.end()));
 
         return this;
     }
 
-    AbstractMeshBuilder* addNormals(std::vector<glm::vec3> normals)
+    StaticMeshBuilder* addNormals(std::vector<glm::vec3> normals)
     {
         m_normals.insert(m_normals.end(), std::make_move_iterator(normals.begin()), std::make_move_iterator(normals.end()));
 
         return this;
     }
 
-    AbstractMeshBuilder* addTangentsBitangents(std::vector<glm::vec3> tangents, std::vector<glm::vec3> bitangents)
+    StaticMeshBuilder* addTangentsBitangents(std::vector<glm::vec3> tangents, std::vector<glm::vec3> bitangents)
     {
         m_tangents.insert(m_tangents.end(), std::make_move_iterator(tangents.begin()), std::make_move_iterator(tangents.end()));
         m_bitangents.insert(m_bitangents.end(), std::make_move_iterator(bitangents.begin()), std::make_move_iterator(bitangents.end()));
@@ -213,28 +198,28 @@ public:
         return this;
     }
 
-    AbstractMeshBuilder* addUVs(std::vector<glm::vec2> uvs)
+    StaticMeshBuilder* addUVs(std::vector<glm::vec2> uvs)
     {
         m_uvs.insert(m_uvs.end(), std::make_move_iterator(uvs.begin()), std::make_move_iterator(uvs.end()));
 
         return this;
     }
 
-    AbstractMeshBuilder* addTexture(std::unique_ptr<globjects::Texture> texture)
+    StaticMeshBuilder* addTexture(std::unique_ptr<globjects::Texture> texture)
     {
         m_textures.push_back(texture.get());
 
         return this;
     }
 
-    AbstractMeshBuilder* addTexture(globjects::Texture* texture)
+    StaticMeshBuilder* addTexture(globjects::Texture* texture)
     {
         m_textures.push_back(texture);
 
         return this;
     }
 
-    AbstractMeshBuilder* addTextures(std::vector<std::unique_ptr<globjects::Texture>> textures)
+    StaticMeshBuilder* addTextures(std::vector<std::unique_ptr<globjects::Texture>> textures)
     {
         for (auto& texture : textures)
         {
@@ -244,7 +229,7 @@ public:
         return this;
     }
 
-    AbstractMeshBuilder* addTextures(std::vector<globjects::Texture*> textures)
+    StaticMeshBuilder* addTextures(std::vector<globjects::Texture*> textures)
     {
         for (auto& texture : textures)
         {
@@ -254,42 +239,42 @@ public:
         return this;
     }
 
-    AbstractMeshBuilder* setPositionAttributerIndex(unsigned int positionAttributeIndex)
+    StaticMeshBuilder* setPositionAttributerIndex(unsigned int positionAttributeIndex)
     {
         m_positionAttributeIndex = positionAttributeIndex;
 
         return this;
     }
 
-    AbstractMeshBuilder* setTangentAttributerIndex(unsigned int tangentAttributeIndex)
+    StaticMeshBuilder* setTangentAttributerIndex(unsigned int tangentAttributeIndex)
     {
         m_tangentAttributeIndex = tangentAttributeIndex;
 
         return this;
     }
 
-    AbstractMeshBuilder* setBitangentAttributerIndex(unsigned int bitangentAttributeIndex)
+    StaticMeshBuilder* setBitangentAttributerIndex(unsigned int bitangentAttributeIndex)
     {
         m_bitangentAttributeIndex = bitangentAttributeIndex;
 
         return this;
     }
 
-    AbstractMeshBuilder* setNormalAttributerIndex(unsigned int normalAttributeIndex)
+    StaticMeshBuilder* setNormalAttributerIndex(unsigned int normalAttributeIndex)
     {
         m_normalAttributeIndex = normalAttributeIndex;
 
         return this;
     }
 
-    AbstractMeshBuilder* setUVAttributerIndex(unsigned int uvAttributeIndex)
+    StaticMeshBuilder* setUVAttributerIndex(unsigned int uvAttributeIndex)
     {
         m_uvAttributeIndex = uvAttributeIndex;
 
         return this;
     }
 
-    std::unique_ptr<AbstractMesh> build()
+    std::unique_ptr<StaticMesh> build()
     {
         m_vertexBuffer = std::make_unique<globjects::Buffer>();
 
@@ -364,13 +349,8 @@ public:
             // TODO: enable the corresponding shader sections (those which require bitangent data)
         }
 
-        return std::make_unique<AbstractMesh>(
-            m_vertices,
-            m_normals,
-            m_tangents,
-            m_bitangents,
-            m_uvs,
-            m_indices,
+        return std::make_unique<StaticMesh>(
+            m_indices.size(),
             std::move(m_textures),
             std::move(m_vao),
             std::move(m_vertexBuffer),
@@ -406,52 +386,10 @@ private:
     unsigned int m_uvAttributeIndex;
 };
 
-class SingleMeshModel : public AbstractDrawable
+class StaticModel : public AbstractDrawable
 {
 public:
-    SingleMeshModel(std::unique_ptr<AbstractMesh> mesh) : m_mesh(std::move(mesh)), m_transformation(1.0f)
-    {
-    }
-
-    void draw() override
-    {
-        m_mesh->draw();
-    }
-
-    void drawInstanced(unsigned int instances) override
-    {
-        m_mesh->drawInstanced(instances);
-    }
-
-    void bind() override
-    {
-        m_mesh->bind();
-    }
-
-    void unbind() override
-    {
-        m_mesh->unbind();
-    }
-
-    void setTransformation(glm::mat4 transformation)
-    {
-        m_transformation = transformation;
-    }
-
-    glm::mat4 getTransformation() const
-    {
-        return m_transformation;
-    }
-
-protected:
-    std::unique_ptr<AbstractMesh> m_mesh;
-    glm::mat4 m_transformation;
-};
-
-class MultiMeshModel : public AbstractDrawable
-{
-public:
-    MultiMeshModel(std::vector<std::unique_ptr<AbstractMesh>> meshes) : m_meshes(std::move(meshes)), m_transformation(1.0f)
+    StaticModel(std::vector<std::unique_ptr<StaticMesh>> meshes) : m_meshes(std::move(meshes)), m_transformation(1.0f)
     {
     }
 
@@ -499,25 +437,16 @@ public:
     }
 
 protected:
-    std::vector<std::unique_ptr<AbstractMesh>> m_meshes;
+    std::vector<std::unique_ptr<StaticMesh>> m_meshes;
     glm::mat4 m_transformation;
 };
 
-class AssimpModelLoader
+class AssimpStaticModelLoader
 {
 public:
-    AssimpModelLoader() {}
+    AssimpStaticModelLoader() {}
 
-    static std::unique_ptr<MultiMeshModel> fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
-    {
-        std::vector<std::unique_ptr<AbstractMesh>> meshes;
-
-        processAiNode(scene, node, materialLookupPaths, meshes);
-
-        return std::make_unique<MultiMeshModel>(std::move(meshes));
-    }
-
-    static std::unique_ptr<MultiMeshModel> fromFile(std::string filename, std::vector<std::filesystem::path> materialLookupPaths = {}, unsigned int assimpImportFlags = 0)
+    static std::unique_ptr<StaticModel> fromFile(std::string filename, std::vector<std::filesystem::path> materialLookupPaths = {}, unsigned int assimpImportFlags = 0)
     {
         static auto importer = std::make_unique<Assimp::Importer>();
         auto scene = importer->ReadFile(filename, assimpImportFlags);
@@ -534,7 +463,16 @@ public:
     }
 
 protected:
-    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<AbstractMesh>>& meshes)
+    static std::unique_ptr<StaticModel> fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
+    {
+        std::vector<std::unique_ptr<StaticMesh>> meshes;
+
+        processAiNode(scene, node, materialLookupPaths, meshes);
+
+        return std::make_unique<StaticModel>(std::move(meshes));
+    }
+
+    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<StaticMesh>>& meshes)
     {
         for (auto t = 0; t < node->mNumMeshes; ++t)
         {
@@ -551,7 +489,7 @@ protected:
         }
     }
 
-    static std::unique_ptr<AbstractMesh> fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
+    static std::unique_ptr<StaticMesh> fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
         std::cout << "[INFO] Creating buffer objects...";
 
@@ -562,8 +500,6 @@ protected:
         std::vector<glm::vec2> uvs;
 
         std::vector<GLuint> indices;
-
-        auto builder = AbstractMesh::builder();
 
         for (auto i = 0; i < mesh->mNumVertices; ++i)
         {
@@ -691,7 +627,7 @@ protected:
 
         std::cout << "done" << std::endl;
 
-        return AbstractMesh::builder()
+        return StaticMesh::builder()
             ->addVertices(vertices)
             ->addIndices(indices)
             ->addNormals(normals)
@@ -701,6 +637,197 @@ protected:
             ->build();
     }
 };
+
+/*class AssimpAnimatedModelLoader
+{
+public:
+    AssimpAnimatedModelLoader() {}
+
+    static std::unique_ptr<AnimatedModel> fromFile(std::string filename, std::vector<std::filesystem::path> materialLookupPaths = {}, unsigned int assimpImportFlags = 0)
+    {
+        static auto importer = std::make_unique<Assimp::Importer>();
+        auto scene = importer->ReadFile(filename, assimpImportFlags);
+
+        if (!scene)
+        {
+            std::cerr << "failed: " << importer->GetErrorString() << std::endl;
+            return nullptr;
+        }
+
+        auto model = fromAiNode(scene, scene->mRootNode, materialLookupPaths);
+
+        return std::move(model);
+    }
+
+protected:
+    static std::unique_ptr<AnimatedModel> fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
+    {
+        std::vector<std::unique_ptr<AnimatedMesh>> meshes;
+
+        processAiNode(scene, node, materialLookupPaths, meshes);
+
+        return std::make_unique<AnimatedModel>(std::move(meshes));
+    }
+
+    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<AnimatedMesh>>& meshes)
+    {
+        for (auto t = 0; t < node->mNumMeshes; ++t)
+        {
+            auto mesh = fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
+            meshes.push_back(std::move(mesh));
+        }
+
+        for (auto i = 0; i < node->mNumChildren; ++i)
+        {
+            auto child = node->mChildren[i];
+            // auto childTransformation = parentTransformation + assimpMatrixToGlm(child->mTransformation);
+
+            processAiNode(scene, child, materialLookupPaths, meshes);
+        }
+    }
+
+    static std::unique_ptr<AnimatedMesh> fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
+    {
+        std::cout << "[INFO] Creating buffer objects...";
+
+        std::vector<glm::vec3> vertices;
+        std::vector<glm::vec3> normals;
+        std::vector<glm::vec3> tangents;
+        std::vector<glm::vec3> bitangents;
+        std::vector<glm::vec2> uvs;
+
+        std::vector<GLuint> indices;
+
+        for (auto i = 0; i < mesh->mNumVertices; ++i)
+        {
+            glm::vec3 position(
+                mesh->mVertices[i].x,
+                mesh->mVertices[i].y,
+                mesh->mVertices[i].z);
+
+            vertices.push_back(position);
+
+            if (mesh->HasNormals())
+            {
+                glm::vec3 normal(
+                    mesh->mNormals[i].x,
+                    mesh->mNormals[i].y,
+                    mesh->mNormals[i].z);
+
+                normals.push_back(normal);
+            }
+
+            if (mesh->HasTangentsAndBitangents())
+            {
+                glm::vec3 tangent(
+                    mesh->mTangents[i].x,
+                    mesh->mTangents[i].y,
+                    mesh->mTangents[i].z
+                );
+
+                glm::vec3 bitangent(
+                    mesh->mBitangents[i].x,
+                    mesh->mBitangents[i].y,
+                    mesh->mBitangents[i].z
+                );
+
+                tangents.push_back(tangent);
+                bitangents.push_back(bitangent);
+            }
+
+            if (mesh->HasTextureCoords(0))
+            {
+                glm::vec3 uv(
+                    mesh->mTextureCoords[0][i].x,
+                    mesh->mTextureCoords[0][i].y,
+                    mesh->mTextureCoords[0][i].z);
+
+                uvs.push_back(uv);
+            }
+        }
+
+        for (auto i = 0; i < mesh->mNumFaces; ++i)
+        {
+            auto face = mesh->mFaces[i];
+
+            for (auto t = 0; t < face.mNumIndices; ++t)
+            {
+                indices.push_back(face.mIndices[t]);
+            }
+        }
+
+        std::cout << "done" << std::endl;
+
+        std::cout << "[INFO] Loading textures...";
+
+        std::vector<globjects::Texture*> textures;
+
+        if (mesh->mMaterialIndex >= 0)
+        {
+            auto material = scene->mMaterials[mesh->mMaterialIndex];
+
+            for (auto i = 0; i < material->GetTextureCount(aiTextureType_DIFFUSE); ++i)
+            {
+                aiString str;
+                material->GetTexture(aiTextureType_DIFFUSE, i, &str);
+
+                std::string imagePath{ str.C_Str() };
+
+                for (auto path : materialLookupPaths) {
+                    std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
+
+                    const auto filePath = std::filesystem::path(path).append(imagePath);
+
+                    if (std::filesystem::exists(filePath)) {
+                        imagePath = filePath.string();
+                        break;
+                    }
+                }
+
+                std::cout << "[INFO] Loading DIFFUSE texture " << imagePath << "...";
+
+                auto textureImage = std::make_unique<sf::Image>();
+
+                if (!textureImage->loadFromFile(imagePath))
+                {
+                    std::cerr << "[ERROR] Can not load texture" << std::endl;
+                    continue;
+                }
+
+                textureImage->flipVertically();
+
+                auto texture = new globjects::Texture(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+
+                texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+                texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+                texture->image2D(
+                    0,
+                    static_cast<gl::GLenum>(GL_RGBA8),
+                    glm::vec2(textureImage->getSize().x, textureImage->getSize().y),
+                    0,
+                    static_cast<gl::GLenum>(GL_RGBA),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+                    reinterpret_cast<const gl::GLvoid*>(textureImage->getPixelsPtr()));
+
+                textures.push_back(texture);
+            }
+
+            // TODO: also handle aiTextureType_DIFFUSE and aiTextureType_SPECULAR
+        }
+
+        std::cout << "done" << std::endl;
+
+        return AnimatedMesh::builder()
+            ->addVertices(vertices)
+            ->addIndices(indices)
+            ->addNormals(normals)
+            ->addTangentsBitangents(tangents, bitangents)
+            ->addUVs(uvs)
+            ->addTextures(textures)
+            ->build();
+    }
+};*/
 
 class Skybox;
 
@@ -838,7 +965,7 @@ public:
             { 1.000000f, 0.500000f },
         };
 
-        auto mesh = AbstractMesh::builder()
+        auto mesh = StaticMesh::builder()
             ->addVertices(vertices)
             ->addIndices(indices)
             ->addNormals(normals)
@@ -977,7 +1104,7 @@ private:
     std::unique_ptr<sf::Image> m_top, m_bottom, m_left, m_right, m_front, m_back;
 };
 
-class Skybox : public SingleMeshModel
+class Skybox : public AbstractDrawable
 {
     friend class SkyboxBuilder;
 
@@ -992,9 +1119,43 @@ public:
         return new CubemapSkyboxBuilder(cubemapTexture);
     }
 
-    Skybox(std::unique_ptr<AbstractMesh> mesh) : SingleMeshModel(std::move(mesh))
+    Skybox(std::unique_ptr<StaticMesh> mesh) : AbstractDrawable(), m_mesh(std::move(mesh)), m_transformation(1.0f)
     {
     }
+
+    void draw() override
+    {
+        m_mesh->draw();
+    }
+
+    void drawInstanced(unsigned int instances) override
+    {
+        m_mesh->drawInstanced(instances);
+    }
+
+    void bind() override
+    {
+        m_mesh->bind();
+    }
+
+    void unbind() override
+    {
+        m_mesh->unbind();
+    }
+
+    void setTransformation(glm::mat4 transformation)
+    {
+        m_transformation = transformation;
+    }
+
+    glm::mat4 getTransformation() const
+    {
+        return m_transformation;
+    }
+
+private:
+    std::unique_ptr<StaticMesh> m_mesh;
+    glm::mat4 m_transformation;
 };
 
 struct alignas(16) PointLightDescriptor
@@ -1214,14 +1375,14 @@ int main()
 
     std::cout << "[INFO] Loading 3D model...";
 
-    auto quadModel = AssimpModelLoader::fromFile("media/quad.obj", {}, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
+    auto quadModel = AssimpStaticModelLoader::fromFile("media/quad.obj", {}, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
-    auto houseModel = AssimpModelLoader::fromFile("media/house1.obj", { "media" });
+    auto houseModel = AssimpStaticModelLoader::fromFile("media/house1.obj", { "media" });
 
     // INFO: this transformation is hard-coded specifically for Chicken.3ds model
     houseModel->setTransformation(glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(2.0f)), glm::vec3(0.0f, 0.75f, 0.0f)));
 
-    auto tableModel = AssimpModelLoader::fromFile("media/table.obj", { "media" });
+    auto tableModel = AssimpStaticModelLoader::fromFile("media/table.obj", { "media" });
 
     tableModel->setTransformation(
         // glm::translate(glm::vec3(0.0f, 0.06f, 0.0f)) *
@@ -1229,10 +1390,10 @@ int main()
         (glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)))
     );
 
-    std::unique_ptr<MultiMeshModel> lanternModel = nullptr;
+    std::unique_ptr<StaticModel> lanternModel = nullptr;
 
     {
-        lanternModel = AssimpModelLoader::fromFile("media/lantern.obj", { "media" });
+        lanternModel = AssimpStaticModelLoader::fromFile("media/lantern.obj", { "media" });
 
         lanternModel->setTransformation(
             glm::translate(glm::vec3(-1.75f, 3.91f, -0.75f)) *
@@ -1293,7 +1454,7 @@ int main()
         lanternSpecularMapImage.release();
     }
 
-    std::unique_ptr<MultiMeshModel> penModel = nullptr;
+    std::unique_ptr<StaticModel> penModel = nullptr;
     std::unique_ptr<globjects::Texture> penNormalMapTexture = nullptr;
 
     {
@@ -1321,7 +1482,7 @@ int main()
             static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
             reinterpret_cast<const gl::GLvoid*>(penNormalMapImage->getPixelsPtr()));
 
-        penModel = AssimpModelLoader::fromFile("media/pen-lowpoly.obj", { "media" });
+        penModel = AssimpStaticModelLoader::fromFile("media/pen-lowpoly.obj", { "media" });
 
         // rotate -> scale -> translate; can be done as series of matrix multiplications M_translation * M_scale * M_rotation
         // each of the components, in turn, can also be a series of matrix multiplications: M_rotation = M_rotate_z * M_rotate_y * M_rotate_x
@@ -1334,7 +1495,7 @@ int main()
         penNormalMapImage.release();
     }
 
-    auto scrollModel = AssimpModelLoader::fromFile("media/scroll.obj", { "media" });
+    auto scrollModel = AssimpStaticModelLoader::fromFile("media/scroll.obj", { "media" });
 
     scrollModel->setTransformation(
         glm::translate(glm::vec3(0.0f, 3.85f, 0.0f)) *
@@ -1369,7 +1530,7 @@ int main()
             reinterpret_cast<const gl::GLvoid*>(inkBottleNormalMapImage->getPixelsPtr()));
     }
 
-    auto inkBottleModel = AssimpModelLoader::fromFile("media/ink-bottle.obj", { "media" });
+    auto inkBottleModel = AssimpStaticModelLoader::fromFile("media/ink-bottle.obj", { "media" });
 
     inkBottleModel->setTransformation(
         glm::translate(glm::vec3(-1.75f, 3.86f, 1.05f)) *
