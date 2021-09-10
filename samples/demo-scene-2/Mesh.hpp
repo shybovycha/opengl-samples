@@ -14,12 +14,7 @@ public:
     static std::shared_ptr<AbstractMeshBuilder> builder();
 
     AbstractMesh(
-        std::vector<glm::vec3> vertices,
-        std::vector<glm::vec3> normals,
-        std::vector<glm::vec3> tangents,
-        std::vector<glm::vec3> bitangents,
-        std::vector<glm::vec2> uvs,
-        std::vector<unsigned int> indices,
+        unsigned int numIndices,
         std::vector<globjects::Texture*> textures,
         std::unique_ptr<globjects::VertexArray> vao,
         std::unique_ptr<globjects::Buffer> vertexBuffer,
@@ -54,12 +49,7 @@ protected:
 
     std::vector<globjects::Texture*> m_textures;
 
-    std::vector<unsigned int> m_indices;
-    std::vector<glm::vec3> m_vertices;
-    std::vector<glm::vec3> m_normals;
-    std::vector<glm::vec3> m_tangents;
-    std::vector<glm::vec3> m_bitangents;
-    std::vector<glm::vec2> m_uvs;
+    unsigned int m_numIndices;
 
     glm::mat4 m_transformation;
 };

@@ -10,12 +10,7 @@ std::shared_ptr<AbstractMeshBuilder> AbstractMesh::builder()
 }
 
 AbstractMesh::AbstractMesh(
-    std::vector<glm::vec3> vertices,
-    std::vector<glm::vec3> normals,
-    std::vector<glm::vec3> tangents,
-    std::vector<glm::vec3> bitangents,
-    std::vector<glm::vec2> uvs,
-    std::vector<unsigned int> indices,
+    unsigned int numIndices,
     std::vector<globjects::Texture*> textures,
     std::unique_ptr<globjects::VertexArray> vao,
     std::unique_ptr<globjects::Buffer> vertexBuffer,
@@ -25,12 +20,7 @@ AbstractMesh::AbstractMesh(
     std::unique_ptr<globjects::Buffer> bitangentBuffer,
     std::unique_ptr<globjects::Buffer> uvBuffer
 ) :
-    m_vertices(std::move(vertices)),
-    m_indices(std::move(indices)),
-    m_uvs(std::move(uvs)),
-    m_normals(std::move(normals)),
-    m_tangents(std::move(tangents)),
-    m_bitangents(std::move(bitangents)),
+    m_numIndices(numIndices),
     m_textures(textures),
     m_vao(std::move(vao)),
     m_vertexBuffer(std::move(vertexBuffer)),
@@ -59,7 +49,7 @@ void AbstractMesh::draw()
     // in this case: 2 triangles, 3 vertex indexes per triangle
     m_vao->drawElements(
         static_cast<gl::GLenum>(GL_TRIANGLES),
-        m_indices.size(),
+        m_numIndices,
         static_cast<gl::GLenum>(GL_UNSIGNED_INT),
         nullptr);
 }
@@ -68,7 +58,7 @@ void AbstractMesh::drawInstanced(unsigned int instances)
 {
     m_vao->drawElementsInstanced(
         static_cast<gl::GLenum>(GL_TRIANGLES),
-        m_indices.size(),
+        m_numIndices,
         static_cast<gl::GLenum>(GL_UNSIGNED_INT),
         nullptr,
         instances);
@@ -284,12 +274,7 @@ std::unique_ptr<AbstractMesh> AbstractMeshBuilder::build()
     }
 
     return std::make_unique<AbstractMesh>(
-        m_vertices,
-        m_normals,
-        m_tangents,
-        m_bitangents,
-        m_uvs,
-        m_indices,
+        m_indices.size(),
         std::move(m_textures),
         std::move(m_vao),
         std::move(m_vertexBuffer),
