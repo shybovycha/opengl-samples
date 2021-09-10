@@ -6,6 +6,7 @@ add_requires("vcpkg::assimp", { alias = "assimp" })
 add_requires("vcpkg::chaiscript", { alias = "chaiscript" })
 
 target("20-scripting")
+  set_languages("cxx20")
   set_kind("binary")
 
   add_packages("sfml", "glm", "globjects", "glbinding", "assimp", "chaiscript")

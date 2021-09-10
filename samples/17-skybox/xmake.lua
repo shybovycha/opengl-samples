@@ -5,6 +5,7 @@ add_requires("vcpkg::glbinding", { alias = "glbinding" })
 add_requires("vcpkg::assimp", { alias = "assimp" })
 
 target("17-skybox")
+  set_languages("cxx20")
   set_kind("binary")
 
   add_packages("sfml", "glm", "globjects", "glbinding", "assimp")

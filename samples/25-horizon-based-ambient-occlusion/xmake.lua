@@ -5,6 +5,7 @@ add_requires("vcpkg::glbinding", { alias = "glbinding" })
 add_requires("vcpkg::assimp", { alias = "assimp" })
 
 target("25-horizon-based-ambient-occlusion")
+  set_languages("cxx20")
   set_kind("binary")
 
   add_packages("sfml", "glm", "globjects", "glbinding", "assimp")
@@ -15,6 +16,8 @@ target("25-horizon-based-ambient-occlusion")
 
     -- this prevents linker errors
     add_frameworks("Foundation", "OpenGL", "IOKit", "Cocoa", "Carbon")
+  elseif is_plat("windows") then
+    add_ldflags("/LTCG")
   end
 
   add_files("main.cpp")

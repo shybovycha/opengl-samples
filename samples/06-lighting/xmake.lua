@@ -4,6 +4,7 @@ add_requires("vcpkg::globjects", { alias = "globjects" })
 add_requires("vcpkg::glbinding", { alias = "glbinding" })
 
 target("06-lighting")
+  set_languages("cxx20")
   set_kind("binary")
 
   add_packages("sfml", "glm", "globjects", "glbinding")

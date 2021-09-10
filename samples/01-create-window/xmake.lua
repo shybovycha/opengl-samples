@@ -1,6 +1,7 @@
 add_requires("sfml ~2.5.1", { alias = "sfml" })
 
 target("01-window")
+  set_languages("cxx20")
   set_kind("binary")
 
   add_packages("sfml")
