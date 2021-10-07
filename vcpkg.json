@@ -8,6 +8,7 @@
       "globjects",
       "glm",
       "glfw3",
-      "assimp"
+      "assimp",
+      "imgui"
   ]
 }
