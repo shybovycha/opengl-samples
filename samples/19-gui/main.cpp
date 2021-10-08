@@ -66,6 +66,17 @@ int main()
 
     auto clock = sf::Clock();
 
+    char* str1 = new char[255];
+    str1[0] = 0;
+    float f1 = 1.e10f;
+    float f2 = 0.0f;
+    glm::vec3 f3(0.0f);
+    float col2[4] = { 0.4f, 0.7f, 0.0f, 0.5f };
+    std::vector<std::string> items{ "item 1", "item 2", "item 3" };
+    int selectedIdx = 0;
+    bool checkValue = false;
+    float propertyValues[4] = { 0.0f, 1.0f, 2.0f, 3.0f };
+
     while (window->isOpen())
     {
         sf::Event event {};
@@ -83,194 +94,205 @@ int main()
 
         ImGui::NewFrame();
 
-        ImGui::Begin("Another Window");   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+        ImGui::Begin("Another Window");
             ImGui::Text("Hi from another window!");
             ImGui::Button("Close Me");
 
-        //    if (ImGui::CollapsingHeader("Help"))
-        //    {
-        //        static bool checkValue = false;
+            if (ImGui::CollapsingHeader("Help"))
+            {
+                std::ostringstream s;
+                s << "You have found a checkbox: "
+                    << "["
+                    << (checkValue ? "x" : " ")
+                    << "]";
 
-        //        std::ostringstream s;
-        //        s << "You have found a checkbox: "
-        //            << "["
-        //            << (checkValue ? "x" : " ")
-        //            << "]";
+                ImGui::Text(s.str().c_str());
 
-        //        ImGui::Text(s.str().c_str());
-        //        
-        //        ImGui::Checkbox("Checkbox: ", &checkValue);
-        //    
-        //        if (ImGui::TreeNode("Tree"))
-        //        {
-        //            if (ImGui::TreeNode("sub-node-1"))
-        //            {
-        //                ImGui::TreePop();
-        //            }
+                ImGui::Checkbox("Checkbox: ", &checkValue);
 
-        //            if (ImGui::TreeNode("sub-node-2"))
-        //            {
-        //                if (ImGui::TreeNode("sub-node-2-1"))
-        //                {
-        //                    if (ImGui::TreeNode("sub-node-2-1-1"))
-        //                    {
-        //                        ImGui::TreePop();
-        //                    }
+                if (ImGui::TreeNode("Tree"))
+                {
+                    if (ImGui::TreeNode("sub-node-1"))
+                    {
+                        ImGui::TreePop();
+                    }
 
-        //                    if (ImGui::TreeNode("sub-node-2-1-2"))
-        //                    {
-        //                        ImGui::TreePop();
-        //                    }
+                    if (ImGui::TreeNode("sub-node-2"))
+                    {
+                        if (ImGui::TreeNode("sub-node-2-1"))
+                        {
+                            if (ImGui::TreeNode("sub-node-2-1-1"))
+                            {
+                                ImGui::TreePop();
+                            }
 
-        //                    if (ImGui::TreeNode("sub-node-2-1-3"))
-        //                    {
-        //                        ImGui::TreePop();
-        //                    }
+                            if (ImGui::TreeNode("sub-node-2-1-2"))
+                            {
+                                ImGui::TreePop();
+                            }
 
-        //                    ImGui::TreePop();
-        //                }
+                            if (ImGui::TreeNode("sub-node-2-1-3"))
+                            {
+                                ImGui::TreePop();
+                            }
 
-        //                if (ImGui::TreeNode("sub-node-2-2"))
-        //                {
-        //                    ImGui::TreePop();
-        //                }
+                            ImGui::TreePop();
+                        }
 
-        //                ImGui::TreePop();
-        //            }
+                        if (ImGui::TreeNode("sub-node-2-2"))
+                        {
+                            ImGui::TreePop();
+                        }
 
-        //            if (ImGui::TreeNode("sub-node-3"))
-        //            {
-        //                ImGui::TreePop();
-        //            }
-        //        }
-        //    }
+                        ImGui::TreePop();
+                    }
 
-        //    static char* str1 = new char[255];
-        //    ImGui::InputTextWithHint("input text (w/ hint)", "enter text here", str1, 255);
+                    if (ImGui::TreeNode("sub-node-3"))
+                    {
+                        ImGui::TreePop();
+                    }
+                }
+            }
 
-        //    float f1 = 1.e10f;
-        //    ImGui::InputFloat("input float", &f1, 0.0f, 0.0f, "%f");
+            ImGui::InputTextWithHint("input text (w/ hint)", "enter text here", str1, 255);
 
-        //    static float f2 = 0.0f;
-        //    ImGui::SliderFloat("slider float", &f2, 0.0f, 1.0f, "ratio = %.3f");
+            ImGui::InputFloat("input float", &f1, 0.0f, 0.0f, "%f");
 
-        //    static glm::vec3 f3(0.0f);
-        //    ImGui::InputFloat3("input float3", &f3.x);
+            ImGui::SliderFloat("slider float", &f2, 0.0f, 1.0f, "ratio = %.3f");
 
-        //    static float col2[4] = { 0.4f, 0.7f, 0.0f, 0.5f };
-        //    ImGui::ColorEdit3("color", col2);
+            ImGui::InputFloat3("input float3", &f3.x);
 
-        //    static std::vector<std::string> items { "item 1", "item 2", "item 3" };
-        //    static int selectedIdx = 0;
+            ImGui::ColorEdit3("color", col2);
 
-        //    if (ImGui::BeginCombo("combo 1", items[selectedIdx].c_str(), 0))
-        //    {
-        //        for (int n = 0; n < items.size(); n++)
-        //        {
-        //            const bool is_selected = (selectedIdx == n);
+            if (ImGui::BeginCombo("combo 1", items[selectedIdx].c_str(), 0))
+            {
+                for (int n = 0; n < items.size(); n++)
+                {
+                    const bool is_selected = (selectedIdx == n);
 
-        //            if (ImGui::Selectable(items[n].c_str(), is_selected))
-        //                selectedIdx = n;
+                    if (ImGui::Selectable(items[n].c_str(), is_selected))
+                        selectedIdx = n;
 
-        //            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-        //            if (is_selected)
-        //                ImGui::SetItemDefaultFocus();
-        //        }
+                    // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
 
-        //        ImGui::EndCombo();
-        //    }
+                ImGui::EndCombo();
+            }
 
-        //    ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
-        //    if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags))
-        //    {
-        //        if (ImGui::BeginTabItem("Avocado"))
-        //        {
-        //            ImGui::Text("This is the Avocado tab!\nblah blah blah blah blah");
-        //            ImGui::EndTabItem();
-        //        }
+            ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
 
-        //        if (ImGui::BeginTabItem("Broccoli"))
-        //        {
-        //            ImGui::Text("This is the Broccoli tab!\nblah blah blah blah blah");
-        //            ImGui::EndTabItem();
-        //        }
+            if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags))
+            {
+                if (ImGui::BeginTabItem("Avocado"))
+                {
+                    ImGui::Text("This is the Avocado tab!\nblah blah blah blah blah");
+                    ImGui::EndTabItem();
+                }
 
-        //        if (ImGui::BeginTabItem("Cucumber"))
-        //        {
-        //            ImGui::Text("This is the Cucumber tab!\nblah blah blah blah blah");
-        //            ImGui::EndTabItem();
-        //        }
+                if (ImGui::BeginTabItem("Broccoli"))
+                {
+                    ImGui::Text("This is the Broccoli tab!\nblah blah blah blah blah");
+                    ImGui::EndTabItem();
+                }
 
-        //        ImGui::EndTabBar();
-        //    }
+                if (ImGui::BeginTabItem("Cucumber"))
+                {
+                    ImGui::Text("This is the Cucumber tab!\nblah blah blah blah blah");
+                    ImGui::EndTabItem();
+                }
 
-        //ImGui::End();
-
-        //ImGui::Begin("Property editor");
-
-        //    static float values[4] = { 0 };
-        //    if (ImGui::BeginTable("split", 2, ImGuiTableFlags_BordersOuter | ImGuiTableFlags_Resizable))
-        //    {
-        //        // Iterate placeholder objects (all the same data)
-        //        for (int obj_i = 0; obj_i < 4; obj_i++)
-        //        {
-        //            ImGui::TableNextRow();
-        //            ImGui::TableSetColumnIndex(0);
-        //            ImGui::AlignTextToFramePadding();
-        //            // ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_Bullet;
-        //            // ImGui::TreeNodeEx("Field", flags, "Field_%d", i);
-        //            ImGui::Text("property");
-
-        //            ImGui::TableSetColumnIndex(1);
-        //            ImGui::InputFloat("##value", &values[obj_i], 1.0f);
-        //            //ImGui::Separator();
-        //            ImGui::NextColumn();
-        //        }
-
-        //        ImGui::EndTable();
-        //    }
+                ImGui::EndTabBar();
+            }
 
         ImGui::End();
 
-        //if (ImGui::BeginMainMenuBar())
-        //{
-        //    if (ImGui::BeginMenu("File"))
-        //    {
-        //        // ShowExampleMenuFile();
-        //        ImGui::EndMenu();
-        //    }
+        ImGui::Begin("Property editor");
 
-        //    if (ImGui::BeginMenu("Edit"))
-        //    {
-        //        if (ImGui::MenuItem("Undo", "CTRL+Z"))
-        //        {
-        //        }
+            if (ImGui::BeginTable("split", 2, ImGuiTableFlags_BordersOuter | ImGuiTableFlags_Resizable))
+            {
+                // Iterate placeholder objects (all the same data)
+                for (int i = 0; i < 4; i++)
+                {
+                    ImGui::PushID(i);
 
-        //        if (ImGui::MenuItem("Redo", "CTRL+Y", false, false))
-        //        {
-        //        } // Disabled item
-        //        
-        //        ImGui::Separator();
-        //        
-        //        if (ImGui::MenuItem("Cut", "CTRL+X"))
-        //        {
-        //        }
-        //        
-        //        if (ImGui::MenuItem("Copy", "CTRL+C"))
-        //        {
-        //        }
-        //        
-        //        if (ImGui::MenuItem("Paste", "CTRL+V"))
-        //        {
-        //        }
-        //        
-        //        ImGui::EndMenu();
-        //    }
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::AlignTextToFramePadding();
+                    // ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_Bullet;
+                    // ImGui::TreeNodeEx("Field", flags, "Field_%d", i);
+                    ImGui::Text("property");
 
-        //    ImGui::EndMainMenuBar();
-        //}
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::InputFloat("##value", &(propertyValues[i]), 1.0f);
+                    //ImGui::Separator();
+                    // ImGui::NextColumn();
 
-        // ImGui::BulletText("Double-click on title bar to collapse window.");
+                    ImGui::PopID();
+                }
+
+                ImGui::EndTable();
+            }
+
+        ImGui::End();
+
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Open", "CTRL+O"))
+                {
+                }
+
+                if (ImGui::MenuItem("Save", "CTRL+S"))
+                {
+                }
+
+                if (ImGui::MenuItem("Save as", "CTRL+SHIFT+S"))
+                {
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Exit"))
+                {
+                }
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Edit"))
+            {
+                if (ImGui::MenuItem("Undo", "CTRL+Z"))
+                {
+                }
+
+                if (ImGui::MenuItem("Redo", "CTRL+Y", false, false))
+                {
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Cut", "CTRL+X"))
+                {
+                }
+
+                if (ImGui::MenuItem("Copy", "CTRL+C"))
+                {
+                }
+
+                if (ImGui::MenuItem("Paste", "CTRL+V"))
+                {
+                }
+
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMainMenuBar();
+        }
+
+         ImGui::BulletText("Double-click on title bar to collapse window.");
 
         ::glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

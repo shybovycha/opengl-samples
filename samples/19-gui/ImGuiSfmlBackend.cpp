@@ -127,7 +127,7 @@ void initImGuiStyles(ImGuiIO& io)
 {
     ImGui::StyleColorsLight();
 
-    io.FontGlobalScale = 2.0f;
+    // io.FontGlobalScale = 2.0f;
 }
 
 void beforeImGuiInit(std::function<void(ImGuiIO&)> fn)
@@ -332,10 +332,10 @@ void processSfmlEventWithImGui(sf::Event& evt)
         }
     }
 
-    /*if (evt.type == sf::Event::MouseMoved)
+    if (evt.type == sf::Event::MouseMoved)
     {
         io.MousePos = ImVec2(evt.mouseMove.x, evt.mouseMove.y);
-    }*/
+    }
 }
 
 bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
@@ -488,7 +488,7 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
 
     backendData->shaderProgram->release();
 
-    {
+    /*{
         auto mousePosition = sf::Mouse::getPosition();
         auto windowPosition = window->getPosition();
 
@@ -497,7 +497,7 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
         io.MouseDown[0] = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
         io.MouseDown[1] = sf::Mouse::isButtonPressed(sf::Mouse::Button::Right);
         io.MouseDown[2] = sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle);
-    }
+    }*/
 
     if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) == 0)
     {
