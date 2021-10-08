@@ -50,25 +50,9 @@ struct ImGui_SFML_BackendData
     std::unique_ptr<globjects::Buffer> indexBuffer;
 };
 
-void initImGuiContext();
+void afterImGuiInit(std::function<void(ImGuiIO&)> fn);
 
-void initImGuiBackendData(ImGuiIO& io);
-
-void initImGuiKeyMappings(ImGuiIO& io);
-
-void initImGuiCursorMapping(ImGuiIO& io);
-
-void initImGuiFonts(ImGuiIO& io);
-
-void initImGuiConfigurationFlags(ImGuiIO& io);
-
-void initImGuiClipboard(ImGuiIO& io);
-
-void initImGuiStyles(ImGuiIO& io);
-
-void initImGuiShaders(ImGuiIO& io);
-
-void initImGuiDisplay(ImGuiIO& io, std::shared_ptr<sf::Window> windowPtr);
+void beforeImGuiInit(std::function<void(ImGuiIO&)> fn);
 
 bool initImGui(std::weak_ptr<sf::Window> windowPtr);
 

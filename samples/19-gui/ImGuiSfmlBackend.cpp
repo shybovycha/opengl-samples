@@ -1,5 +1,8 @@
 #include "ImGuiSfmlBackend.hpp"
 
+std::function<void(ImGuiIO&)> beforeImGuiInitHandlerFn = [](ImGuiIO& io) {};
+std::function<void(ImGuiIO&)> afterImGuiInitHandlerFn = [](ImGuiIO& io) {};
+
 void initImGuiKeyMappings(ImGuiIO& io)
 {
     io.KeyMap[ImGuiKey_Tab] = sf::Keyboard::Tab;
@@ -123,12 +126,24 @@ void initImGuiClipboard(ImGuiIO& io)
 void initImGuiStyles(ImGuiIO& io)
 {
     ImGui::StyleColorsLight();
+
+    io.FontGlobalScale = 2.0f;
+}
+
+void beforeImGuiInit(std::function<void(ImGuiIO&)> fn)
+{
+    beforeImGuiInitHandlerFn = fn;
+}
+
+void afterImGuiInit(std::function<void(ImGuiIO&)> fn)
+{
+    afterImGuiInitHandlerFn = fn;
 }
 
 void initImGuiShaders(ImGuiIO& io)
 {
     const auto vertexShaderSourceStr = R"EOS(
-        #version 410 core
+        #version 460
 
         layout (location = 0) in vec2 Position;
         layout (location = 1) in vec2 UV;
@@ -148,12 +163,14 @@ void initImGuiShaders(ImGuiIO& io)
     )EOS";
 
     const auto fragmentShaderSourceStr = R"EOS(
-        #version 410 core
+        #version 460
+
+        #extension GL_ARB_bindless_texture : require
 
         in vec2 Frag_UV;
         in vec4 Frag_Color;
 
-        uniform sampler2D surfaceTexture;
+        layout(bindless_sampler) uniform sampler2D surfaceTexture;
 
         layout (location = 0) out vec4 Out_Color;
 
@@ -219,6 +236,8 @@ void initImGuiShaders(ImGuiIO& io)
     vao->binding(2)->setFormat(4, static_cast<gl::GLenum>(GL_UNSIGNED_BYTE), true);
     vao->enable(2);
 
+    backendData->textureUniform->set(reinterpret_cast<gl::GLuint64>(io.Fonts->TexID));
+
     backendData->vao = std::move(vao);
     backendData->indexBuffer = std::move(indexBuffer);
     backendData->vertexBuffer = std::move(vertexBuffer);
@@ -246,6 +265,8 @@ bool initImGui(std::weak_ptr<sf::Window> windowPtr)
 
     auto& io = ImGui::GetIO();
 
+    beforeImGuiInitHandlerFn(io);
+
     initImGuiBackendData(io);
     initImGuiConfigurationFlags(io);
     initImGuiDisplay(io, std::move(window));
@@ -256,6 +277,8 @@ bool initImGui(std::weak_ptr<sf::Window> windowPtr)
     initImGuiClipboard(io);
     initImGuiStyles(io);
     initImGuiShaders(io);
+
+    afterImGuiInitHandlerFn(io);
 
     return true;
 }
@@ -309,10 +332,10 @@ void processSfmlEventWithImGui(sf::Event& evt)
         }
     }
 
-    if (evt.type == sf::Event::MouseMoved)
+    /*if (evt.type == sf::Event::MouseMoved)
     {
         io.MousePos = ImVec2(evt.mouseMove.x, evt.mouseMove.y);
-    }
+    }*/
 }
 
 bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
@@ -334,6 +357,7 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
 
     if (drawData->CmdListsCount < 1)
     {
+        std::cout << "no commands to render" << std::endl;
         return true;
     }
 
@@ -342,6 +366,7 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
 
     if (frameWidth <= 0 || frameHeight <= 0)
     {
+        std::cout << "invalid frame size" << std::endl;
         return false;
     }
 
@@ -419,6 +444,7 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
                 }
                 else
                 {
+                    std::cout << "requested user callback" << std::endl;
                     cmd->UserCallback(cmdList, cmd);
                 }
             }
@@ -441,7 +467,7 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
                         static_cast<int>(clipRect.w - clipRect.y)
                     );*/
 
-                    backendData->textureUniform->set(reinterpret_cast<gl::GLuint64>(cmd->GetTexID()));
+                    // backendData->textureUniform->set(reinterpret_cast<gl::GLuint64>(cmd->GetTexID()));
 
                     backendData->vao->drawElements(
                         static_cast<gl::GLenum>(GL_TRIANGLES),
@@ -450,6 +476,10 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
                         reinterpret_cast<void*>(cmd->IdxOffset * sizeof(ImDrawIdx))
                     );
                 }
+                else
+                {
+                    std::cout << "out of clipping space" << std::endl;
+                }
             }
         }
     }
@@ -457,6 +487,17 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
     backendData->vao->unbind();
 
     backendData->shaderProgram->release();
+
+    {
+        auto mousePosition = sf::Mouse::getPosition();
+        auto windowPosition = window->getPosition();
+
+        io.MousePos = ImVec2(mousePosition.x - windowPosition.x, mousePosition.y - windowPosition.y);
+
+        io.MouseDown[0] = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
+        io.MouseDown[1] = sf::Mouse::isButtonPressed(sf::Mouse::Button::Right);
+        io.MouseDown[2] = sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle);
+    }
 
     if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) == 0)
     {
