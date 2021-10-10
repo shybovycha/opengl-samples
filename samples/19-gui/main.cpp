@@ -36,8 +36,8 @@ int main()
     settings.depthBits = 24;
     settings.stencilBits = 8;
     settings.antialiasingLevel = 4;
-    settings.majorVersion = 3;
-    settings.minorVersion = 2;
+    settings.majorVersion = 4;
+    settings.minorVersion = 6;
     settings.attributeFlags = sf::ContextSettings::Attribute::Core;
 
 #ifdef SYSTEM_DARWIN

@@ -207,8 +207,17 @@ void initImGuiShaders(ImGuiIO& io)
     auto backendData = reinterpret_cast<ImGui_SFML_BackendData*>(io.BackendRendererUserData);
 
     backendData->textureUniform = shaderProgram->getUniform<gl::GLuint64>("surfaceTexture");
+    backendData->textureUniform->set(reinterpret_cast<gl::GLuint64>(io.Fonts->TexID));
+
     backendData->projectionMatrix = shaderProgram->getUniform<glm::mat4>("projection");
 
+    backendData->vertexShader = std::move(vertexShader);
+    backendData->fragmentShader = std::move(fragmentShader);
+    backendData->shaderProgram = std::move(shaderProgram);
+}
+
+void initImGuiBuffers(ImGuiIO& io)
+{
     auto vertexBuffer = std::make_unique<globjects::Buffer>();
     auto indexBuffer = std::make_unique<globjects::Buffer>();
 
@@ -236,15 +245,11 @@ void initImGuiShaders(ImGuiIO& io)
     vao->binding(2)->setFormat(4, static_cast<gl::GLenum>(GL_UNSIGNED_BYTE), true);
     vao->enable(2);
 
-    backendData->textureUniform->set(reinterpret_cast<gl::GLuint64>(io.Fonts->TexID));
+    auto backendData = reinterpret_cast<ImGui_SFML_BackendData*>(io.BackendRendererUserData);
 
     backendData->vao = std::move(vao);
     backendData->indexBuffer = std::move(indexBuffer);
     backendData->vertexBuffer = std::move(vertexBuffer);
-
-    backendData->vertexShader = std::move(vertexShader);
-    backendData->fragmentShader = std::move(fragmentShader);
-    backendData->shaderProgram = std::move(shaderProgram);
 }
 
 void initImGuiDisplay(ImGuiIO& io, std::shared_ptr<sf::Window> windowPtr)
@@ -277,6 +282,7 @@ bool initImGui(std::weak_ptr<sf::Window> windowPtr)
     initImGuiClipboard(io);
     initImGuiStyles(io);
     initImGuiShaders(io);
+    initImGuiBuffers(io);
 
     afterImGuiInitHandlerFn(io);
 
@@ -344,6 +350,7 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
 
     if (!window)
     {
+        std::cout << "Could not obtain window pointer" << std::endl;
         return false;
     }
 
@@ -410,7 +417,6 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
     backendData->projectionMatrix->set(orthoProjectionMatrix);
 
     backendData->vao->bind();
-
     backendData->shaderProgram->use();
 
     ImVec2 clipOffset = drawData->DisplayPos;
@@ -485,7 +491,6 @@ bool renderImGui(std::weak_ptr<sf::Window> windowPtr, float deltaTime)
     }
 
     backendData->vao->unbind();
-
     backendData->shaderProgram->release();
 
     /*{
