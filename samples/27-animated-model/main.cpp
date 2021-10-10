@@ -23,6 +23,11 @@
 
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/quaternion_float.hpp>
+#include <glm/ext/quaternion_common.hpp>
+#include <glm/ext/quaternion_geometric.hpp>
+#include <glm/ext/quaternion_relational.hpp>
+#include <glm/ext/quaternion_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
@@ -636,6 +641,73 @@ protected:
             ->addTextures(textures)
             ->build();
     }
+};
+
+class BoneTransformation
+{
+private:
+    glm::vec3 m_position;
+    glm::quat m_rotation;
+};
+
+class Bone
+{
+private:
+    std::string m_name;
+    std::vector<std::unique_ptr<Bone>> m_children;
+    glm::mat4 m_transformation;
+};
+
+class AnimationKeyframe
+{
+private:
+    std::vector<BoneTransformation> m_transformations;
+    float m_timestamp;
+};
+
+class Animation
+{
+private:
+    std::vector<AnimationKeyframe> m_keyframes;
+};
+
+class ModelAnimator
+{
+private:
+    std::shared_ptr<Animation> m_animation;
+    float m_time;
+};
+
+class AnimatedModel : public AbstractDrawable
+{
+public:
+    AnimatedModel() :
+        AbstractDrawable()
+    {
+    }
+
+    void draw() override
+    {
+        // TODO
+    }
+
+    void drawInstanced(unsigned int instances) override
+    {
+        // TODO
+    }
+
+    void bind() override
+    {
+        // TODO
+    }
+
+    void unbind() override
+    {
+        // TODO
+    }
+
+private:
+    std::unique_ptr<Bone> m_skeleton;
 };
 
 /*class AssimpAnimatedModelLoader
