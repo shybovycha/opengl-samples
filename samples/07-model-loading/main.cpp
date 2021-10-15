@@ -8,7 +8,6 @@
 #include <globjects/Error.h>
 #include <globjects/Framebuffer.h>
 #include <globjects/Program.h>
-#include <globjects/ProgramPipeline.h>
 #include <globjects/Renderbuffer.h>
 #include <globjects/Shader.h>
 #include <globjects/Texture.h>
@@ -406,7 +405,6 @@ int main()
 
     std::cout << "[INFO] Compiling model rendering vertex shader...";
 
-    auto modelRenderingVertexProgram = std::make_unique<globjects::Program>();
     auto modelRenderingVertexShaderSource = globjects::Shader::sourceFromFile("media/model-rendering.vert");
     auto modelRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(modelRenderingVertexShaderSource.get());
     auto modelRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), modelRenderingVertexShaderTemplate.get());
@@ -417,17 +415,10 @@ int main()
         return 1;
     }
 
-    modelRenderingVertexProgram->attach(modelRenderingVertexShader.get());
-
-    auto modelTransformationUniform = modelRenderingVertexProgram->getUniform<glm::mat4>("model");
-    auto viewTransformationUniform = modelRenderingVertexProgram->getUniform<glm::mat4>("view");
-    auto projectionTransformationUniform = modelRenderingVertexProgram->getUniform<glm::mat4>("projection");
-
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Compiling model rendering fragment shader...";
 
-    auto modelRenderingFragmentProgram = std::make_unique<globjects::Program>();
     auto modelRenderingFragmentShaderSource = globjects::Shader::sourceFromFile("media/model-rendering.frag");
     auto modelRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(modelRenderingFragmentShaderSource.get());
     auto modelRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), modelRenderingFragmentShaderTemplate.get());
@@ -438,23 +429,19 @@ int main()
         return 1;
     }
 
-    modelRenderingFragmentProgram->attach(modelRenderingFragmentShader.get());
+    auto modelRenderingProgram = std::make_unique<globjects::Program>();
+    modelRenderingProgram->attach(modelRenderingVertexShader.get(), modelRenderingFragmentShader.get());
 
-    auto lightPositionUniform = modelRenderingFragmentProgram->getUniform<glm::vec3>("lightPosition");
-    auto lightColorUniform = modelRenderingFragmentProgram->getUniform<glm::vec3>("lightColor");
-    auto ambientColorUniform = modelRenderingFragmentProgram->getUniform<glm::vec3>("ambientColor");
-    auto diffuseColorUniform = modelRenderingFragmentProgram->getUniform<glm::vec3>("diffuseColor");
-    auto materialSpecularUniform = modelRenderingFragmentProgram->getUniform<float>("materialSpecular");
-    auto cameraPositionUniform = modelRenderingFragmentProgram->getUniform<glm::vec3>("cameraPosition");
+    auto modelTransformationUniform = modelRenderingProgram->getUniform<glm::mat4>("model");
+    auto viewTransformationUniform = modelRenderingProgram->getUniform<glm::mat4>("view");
+    auto projectionTransformationUniform = modelRenderingProgram->getUniform<glm::mat4>("projection");
 
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Creating model rendering pipeline...";
-
-    auto modelRenderingPipeline = std::make_unique<globjects::ProgramPipeline>();
-
-    modelRenderingPipeline->useStages(modelRenderingVertexProgram.get(), gl::GL_VERTEX_SHADER_BIT);
-    modelRenderingPipeline->useStages(modelRenderingFragmentProgram.get(), gl::GL_FRAGMENT_SHADER_BIT);
+    auto lightPositionUniform = modelRenderingProgram->getUniform<glm::vec3>("lightPosition");
+    auto lightColorUniform = modelRenderingProgram->getUniform<glm::vec3>("lightColor");
+    auto ambientColorUniform = modelRenderingProgram->getUniform<glm::vec3>("ambientColor");
+    auto diffuseColorUniform = modelRenderingProgram->getUniform<glm::vec3>("diffuseColor");
+    auto materialSpecularUniform = modelRenderingProgram->getUniform<float>("materialSpecular");
+    auto cameraPositionUniform = modelRenderingProgram->getUniform<glm::vec3>("cameraPosition");
 
     std::cout << "done" << std::endl;
 
@@ -583,7 +570,7 @@ int main()
         ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        modelRenderingPipeline->use();
+        modelRenderingProgram->use();
 
         // draw chicken
 
@@ -593,7 +580,7 @@ int main()
         chickenModel->draw();
         chickenModel->unbind();
 
-        modelRenderingPipeline->release();
+        modelRenderingProgram->release();
 
         window.display();
     }
