@@ -6,7 +6,6 @@
 #include <globjects/Buffer.h>
 #include <globjects/Error.h>
 #include <globjects/Program.h>
-#include <globjects/ProgramPipeline.h>
 #include <globjects/Shader.h>
 #include <globjects/Texture.h>
 #include <globjects/VertexArray.h>

@@ -9,7 +9,6 @@
 #include <globjects/Error.h>
 #include <globjects/Framebuffer.h>
 #include <globjects/Program.h>
-#include <globjects/ProgramPipeline.h>
 #include <globjects/Renderbuffer.h>
 #include <globjects/Shader.h>
 #include <globjects/Texture.h>
