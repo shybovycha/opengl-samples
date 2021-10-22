@@ -53,11 +53,17 @@ struct StaticGeometryDrawCommand
     unsigned int baseInstance; // offset of the first instance' per-instance-vertex-attributes; attribute index is calculated as: (gl_InstanceID / glVertexAttribDivisor()) + baseInstance
 };
 
-struct alignas(16) StaticGeometryData
+struct alignas(16) StaticObjectData
+{
+    glm::vec2 albedoTextureSize;
+    glm::vec2 normalTextureSize;
+    glm::vec2 emissionTextureSize;
+    unsigned int instanceDataOffset;
+};
+
+struct alignas(16) StaticObjectInstanceData
 {
     glm::mat4 transformation;
-    glm::vec4 color;
-    // std::vector<globjects::TextureHandle> textures;
 };
 
 struct StaticMesh
@@ -68,6 +74,14 @@ struct StaticMesh
     std::vector<unsigned int> indices;
 };
 
+struct StaticScene
+{
+    std::vector<StaticMesh> meshes;
+    std::unique_ptr<sf::Image> albedoTexture;
+    std::unique_ptr<sf::Image> normalTexture;
+    std::unique_ptr<sf::Image> emissionTexture;
+};
+
 class AssimpStaticModelLoader
 {
 public:
@@ -75,41 +89,71 @@ public:
     {
     }
 
-    static std::vector<StaticMesh> fromFile(std::string filename, std::vector<std::filesystem::path> materialLookupPaths = {}, unsigned int assimpImportFlags = 0)
+    static std::shared_ptr<StaticScene> fromFile(std::string filename, std::vector<std::filesystem::path> materialLookupPaths = {}, unsigned int assimpImportFlags = 0)
     {
         static auto importer = std::make_unique<Assimp::Importer>();
         auto scene = importer->ReadFile(filename, assimpImportFlags);
 
-        std::vector<StaticMesh> meshes;
+        auto resultScene = std::make_shared<StaticScene>();
 
         if (!scene)
         {
             std::cerr << "failed: " << importer->GetErrorString() << std::endl;
-            return meshes;
+            return resultScene;
         }
 
-        fromAiNode(scene, scene->mRootNode, materialLookupPaths, meshes);
+        fromAiNode(scene, scene->mRootNode, materialLookupPaths, resultScene);
 
-        return meshes;
+        return std::move(resultScene);
     }
 
 protected:
-    static void fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<StaticMesh>& meshes)
+    static void fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::shared_ptr<StaticScene> resultScene)
     {
         for (auto t = 0; t < node->mNumMeshes; ++t)
         {
-            fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths, meshes);
+            fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths, resultScene);
         }
 
         for (auto i = 0; i < node->mNumChildren; ++i)
         {
             auto child = node->mChildren[i];
 
-            fromAiNode(scene, child, materialLookupPaths, meshes);
+            fromAiNode(scene, child, materialLookupPaths, resultScene);
         }
     }
 
-    static void fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths, std::vector<StaticMesh>& meshes)
+    static std::unique_ptr<sf::Image> loadTexture(std::string& imagePath, std::vector<std::filesystem::path> materialLookupPaths)
+    {
+        for (auto path : materialLookupPaths)
+        {
+            std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
+
+            const auto filePath = std::filesystem::path(path).append(imagePath);
+
+            if (std::filesystem::exists(filePath))
+            {
+                imagePath = filePath.string();
+                break;
+            }
+        }
+
+        std::cout << "[INFO] Loading DIFFUSE texture " << imagePath << "...";
+
+        auto textureImage = std::make_unique<sf::Image>();
+
+        if (!textureImage->loadFromFile(imagePath))
+        {
+            std::cerr << "[ERROR] Can not load texture" << std::endl;
+            return nullptr;
+        }
+
+        textureImage->flipVertically();
+
+        return std::move(textureImage);
+    }
+
+    static void fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths, std::shared_ptr<StaticScene> resultScene)
     {
         std::cout << "[INFO] Creating buffer objects...";
 
@@ -169,107 +213,57 @@ protected:
         {
             auto material = scene->mMaterials[mesh->mMaterialIndex];
 
-            for (auto i = 0; i < material->GetTextureCount(aiTextureType_DIFFUSE); ++i)
+            auto numDiffuseTextures = material->GetTextureCount(aiTextureType_DIFFUSE);
+            auto numNormalTextures = material->GetTextureCount(aiTextureType_NORMALS);
+            auto numEmissionTextures = material->GetTextureCount(aiTextureType_EMISSIVE);
+
+            auto numEmissionColorTextures = material->GetTextureCount(aiTextureType_EMISSION_COLOR);
+            auto numSpecularTextures = material->GetTextureCount(aiTextureType_SPECULAR);
+
+            if (numDiffuseTextures > 0)
             {
                 aiString str;
-                material->GetTexture(aiTextureType_DIFFUSE, i, &str);
+                material->GetTexture(aiTextureType_DIFFUSE, 0, &str);
 
                 std::string imagePath { str.C_Str() };
 
-                for (auto path : materialLookupPaths)
-                {
-                    std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
+                auto texture = loadTexture(imagePath, materialLookupPaths);
 
-                    const auto filePath = std::filesystem::path(path).append(imagePath);
+                resultScene->albedoTexture = std::move(texture);
+            }
 
-                    if (std::filesystem::exists(filePath))
-                    {
-                        imagePath = filePath.string();
-                        break;
-                    }
-                }
+            if (numNormalTextures > 0)
+            {
+                aiString str;
+                material->GetTexture(aiTextureType_NORMALS, 0, &str);
 
-                std::cout << "[INFO] Loading DIFFUSE texture " << imagePath << "...";
+                std::string imagePath { str.C_Str() };
 
-                auto textureImage = std::make_unique<sf::Image>();
+                auto texture = loadTexture(imagePath, materialLookupPaths);
 
-                if (!textureImage->loadFromFile(imagePath))
-                {
-                    std::cerr << "[ERROR] Can not load texture" << std::endl;
-                    continue;
-                }
+                resultScene->normalTexture = std::move(texture);
+            }
 
-                textureImage->flipVertically();
+            if (numEmissionTextures > 0)
+            {
+                aiString str;
+                material->GetTexture(aiTextureType_EMISSIVE, 0, &str);
 
-                auto texture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
+                std::string imagePath { str.C_Str() };
 
-                texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-                texture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+                auto texture = loadTexture(imagePath, materialLookupPaths);
 
-                texture->image2D(
-                    0,
-                    static_cast<gl::GLenum>(GL_RGBA8),
-                    glm::vec2(textureImage->getSize().x, textureImage->getSize().y),
-                    0,
-                    static_cast<gl::GLenum>(GL_RGBA),
-                    static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-                    reinterpret_cast<const gl::GLvoid*>(textureImage->getPixelsPtr()));
-
-                textures.push_back(std::move(texture));
+                resultScene->emissionTexture = std::move(texture);
             }
         }
 
         std::cout << "done" << std::endl;
 
-        meshes.push_back({ .vertexPositions = vertices,
-                           .normals = normals,
-                           .uvs = uvs,
-                           .indices = indices });
+        resultScene->meshes.push_back({ .vertexPositions = vertices,
+                                        .normals = normals,
+                                        .uvs = uvs,
+                                        .indices = indices });
     }
-};
-
-std::shared_ptr<globjects::Program> loadShader(std::string vertexShaderFile, std::string fragmentShaderFile)
-{
-    auto vertexSource = globjects::Shader::sourceFromFile(vertexShaderFile);
-    auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexSource.get());
-    auto vertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
-
-    if (!vertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile vertex shader '" << vertexShaderFile << "'" << std::endl;
-        return nullptr;
-    }
-
-    auto fragmentSource = globjects::Shader::sourceFromFile(fragmentShaderFile);
-    auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentSource.get());
-    auto fragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
-
-    if (!fragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile fragment shader '" << fragmentShaderFile << "'" << std::endl;
-        return nullptr;
-    }
-
-    auto program = std::make_shared<globjects::Program>();
-
-    program->attach(vertexShader.get(), fragmentShader.get());
-
-    program->link();
-
-    if (!program->isLinked())
-    {
-        std::cerr << "Failed to link program" << std::endl;
-        return nullptr;
-    }
-
-    return std::move(program);
-}
-
-struct alignas(16) PointLightDescriptor
-{
-    glm::vec3 position;
-    float strength;
-    glm::vec4 color;
 };
 
 int main()
@@ -347,38 +341,58 @@ int main()
     auto duckScene = AssimpStaticModelLoader::fromFile("media/duck.obj", { "media" });
     auto lanternScene = AssimpStaticModelLoader::fromFile("media/lantern.obj", { "media" });
     auto scrollScene = AssimpStaticModelLoader::fromFile("media/scroll.obj", { "media" });
-    auto penScene = AssimpStaticModelLoader::fromFile("media/pen.obj", { "media" });
+    auto penScene = AssimpStaticModelLoader::fromFile("media/pen-lowpoly.obj", { "media" });
 
     std::cout << "[INFO] Convert 3D models to static data..." << std::endl;
 
-    std::vector<StaticMesh> meshes;
-    std::map<unsigned int, StaticGeometryData> m_objectDataMap;
-
-    meshes.insert(meshes.end(), std::make_move_iterator(duckScene.begin()), std::make_move_iterator(duckScene.end()));
-    meshes.insert(meshes.end(), std::make_move_iterator(lanternScene.begin()), std::make_move_iterator(lanternScene.end()));
-    meshes.insert(meshes.end(), std::make_move_iterator(scrollScene.begin()), std::make_move_iterator(scrollScene.end()));
-    meshes.insert(meshes.end(), std::make_move_iterator(penScene.begin()), std::make_move_iterator(penScene.end()));
-
-    m_objectDataMap[1] = {
-        .transformation = glm::translate(glm::vec3(0.0f, 0.5f, 0.0f)),
-        .color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)
+    std::vector<std::shared_ptr<StaticScene>> scenes {
+        std::move(duckScene),
+        std::move(lanternScene),
+        std::move(scrollScene),
+        std::move(penScene)
     };
 
-    m_objectDataMap[2] = {
-        .transformation = glm::translate(glm::vec3(0.0f, 0.5f, -0.5f)),
-        .color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)
-    };
+    std::vector<StaticObjectData> m_objectData;
+    std::vector<StaticObjectInstanceData> m_objectInstanceData;
 
-    m_objectDataMap[3] = {
-        .transformation = glm::translate(glm::vec3(0.5f, 0.5f, 0.5f)),
-        .color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)
-    };
+    // duck
+    m_objectData.push_back({
+        // TODO: automate this
+        .albedoTextureSize = glm::vec2(0, 0),
+        .normalTextureSize = glm::vec2(0, 0),
+        .emissionTextureSize = glm::vec2(0, 0),
+        .instanceDataOffset = 0
+    });
+
+    m_objectInstanceData.push_back({ .transformation = glm::mat4() });
+
+    // lantern
+    m_objectData.push_back({ .albedoTextureSize = glm::vec2(1024, 1024),
+                             .normalTextureSize = glm::vec2(1024, 1024),
+                             .emissionTextureSize = glm::vec2(0, 0),
+                             .instanceDataOffset = 1 });
+
+    m_objectInstanceData.push_back({ .transformation = glm::translate(glm::vec3(0.0f, 0.5f, 0.0f)) });
+
+    // scroll
+    m_objectData.push_back({ .albedoTextureSize = glm::vec2(1024, 1024),
+                             .normalTextureSize = glm::vec2(0, 0),
+                             .emissionTextureSize = glm::vec2(1024, 1024),
+                             .instanceDataOffset = 2 });
+
+    m_objectInstanceData.push_back({ .transformation = glm::translate(glm::vec3(0.0f, 0.5f, -0.5f)) });
+
+    // pen
+    m_objectData.push_back({ .albedoTextureSize = glm::vec2(512, 512),
+                             .normalTextureSize = glm::vec2(512, 512),
+                             .emissionTextureSize = glm::vec2(0, 0),
+                             .instanceDataOffset = 3 });
+
+    m_objectInstanceData.push_back({ .transformation = glm::translate(glm::vec3(0.5f, 0.5f, 0.5f)) });
 
     std::vector<unsigned int> m_indices;
 
     std::vector<StaticGeometryDrawCommand> m_drawCommands;
-
-    std::vector<StaticGeometryData> m_objectData;
 
     struct NormalizedVertex
     {
@@ -389,48 +403,36 @@ int main()
 
     std::vector<NormalizedVertex> normalizedVertexData;
     unsigned int baseVertex = 0;
-    unsigned int objectID = 0;
 
-    for (auto mesh : meshes)
+    for (auto& scene : scenes)
     {
-        const auto numVertices = mesh.vertexPositions.size();
-
-        for (size_t i = 0; i < numVertices; ++i)
+        for (auto& mesh : scene->meshes)
         {
-            auto position = mesh.vertexPositions[i];
-            auto normal = mesh.normals[i];
-            auto uv = mesh.uvs[i];
+            const auto numVertices = mesh.vertexPositions.size();
 
-            normalizedVertexData.push_back({ .position = position, .normal = normal, .uv = uv });
+            for (size_t i = 0; i < numVertices; ++i)
+            {
+                auto position = mesh.vertexPositions[i];
+                auto normal = mesh.normals[i];
+                auto uv = mesh.uvs[i];
+
+                normalizedVertexData.push_back({ .position = position, .normal = normal, .uv = uv });
+            }
+
+            m_indices.insert(m_indices.end(), mesh.indices.begin(), mesh.indices.end());
+
+            StaticGeometryDrawCommand drawCommand {
+                .elementCount = static_cast<unsigned int>(mesh.indices.size()),
+                .instanceCount = 1, // TODO: generate commands dynamically whenever the data is changed
+                .firstIndex = 0,
+                .baseVertex = baseVertex,
+                .baseInstance = 0
+            };
+
+            m_drawCommands.push_back(drawCommand);
+
+            baseVertex += numVertices;
         }
-
-        m_indices.insert(m_indices.end(), mesh.indices.begin(), mesh.indices.end());
-
-        StaticGeometryDrawCommand drawCommand {
-            .elementCount = static_cast<unsigned int>(mesh.indices.size()),
-            .instanceCount = 1,
-            .firstIndex = 0,
-            .baseVertex = baseVertex,
-            .baseInstance = 0
-        };
-
-        m_drawCommands.push_back(drawCommand);
-
-        StaticGeometryData objectData
-        {
-            .transformation = glm::mat4(),
-            .color = glm::vec4(1.0f)
-        };
-
-        if (m_objectDataMap.find(objectID) != m_objectDataMap.end())
-        {
-            objectData = m_objectDataMap[objectID];
-        }
-
-        m_objectData.push_back(objectData);
-
-        baseVertex += numVertices;
-        ++objectID;
     }
 
     auto vao = std::make_unique<globjects::VertexArray>();
@@ -468,6 +470,108 @@ int main()
     auto objectDataBuffer = std::make_unique<globjects::Buffer>();
 
     objectDataBuffer->setData(m_objectData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
+
+    // generate object **instance** data buffer
+    auto objectInstanceDataBuffer = std::make_unique<globjects::Buffer>();
+
+    objectInstanceDataBuffer->setData(m_objectInstanceData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
+
+    // generate texture arrays
+    glm::vec2 maxAlbedoTextureSize(0, 0);
+    glm::vec2 maxNormalTextureSize(0, 0);
+    glm::vec2 maxEmissionTextureSize(0, 0);
+
+    for (auto& objectData : m_objectData)
+    {
+        maxAlbedoTextureSize.x = std::max(maxAlbedoTextureSize.x, objectData.albedoTextureSize.x);
+        maxAlbedoTextureSize.y = std::max(maxAlbedoTextureSize.y, objectData.albedoTextureSize.y);
+
+        maxNormalTextureSize.x = std::max(maxNormalTextureSize.x, objectData.normalTextureSize.x);
+        maxNormalTextureSize.y = std::max(maxNormalTextureSize.y, objectData.normalTextureSize.y);
+
+        maxEmissionTextureSize.x = std::max(maxEmissionTextureSize.x, objectData.emissionTextureSize.x);
+        maxEmissionTextureSize.y = std::max(maxEmissionTextureSize.y, objectData.emissionTextureSize.y);
+    }
+
+    auto albedoTextures = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY));
+    auto normalTextures = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY));
+    auto emissionTextures = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY));
+
+    albedoTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    albedoTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+    albedoTextures->image3D(
+        0,
+        static_cast<gl::GLenum>(GL_RGBA8),
+        glm::vec3(maxAlbedoTextureSize.x, maxAlbedoTextureSize.y, scenes.size()),
+        0,
+        static_cast<gl::GLenum>(GL_RGBA),
+        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        nullptr);
+
+    normalTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    normalTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+    normalTextures->image3D(
+        0,
+        static_cast<gl::GLenum>(GL_RGBA8),
+        glm::vec3(maxNormalTextureSize.x, maxNormalTextureSize.y, scenes.size()),
+        0,
+        static_cast<gl::GLenum>(GL_RGBA),
+        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        nullptr);
+
+    emissionTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+    emissionTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+    emissionTextures->image3D(
+        0,
+        static_cast<gl::GLenum>(GL_RGBA8),
+        glm::vec3(maxEmissionTextureSize.x, maxEmissionTextureSize.y, scenes.size()),
+        0,
+        static_cast<gl::GLenum>(GL_RGBA),
+        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+        nullptr);
+
+    for (size_t i = 0; i < scenes.size(); ++i)
+    {
+        if (scenes[i]->albedoTexture != nullptr)
+        {
+            albedoTextures->subImage3D(
+                0,
+                glm::vec3(0, 0, i),
+                glm::vec3(scenes[i]->albedoTexture->getSize().x, scenes[i]->albedoTexture->getSize().y, 1),
+                static_cast<gl::GLenum>(GL_RGBA),
+                static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+                reinterpret_cast<const gl::GLvoid*>(scenes[i]->albedoTexture->getPixelsPtr()));
+        }
+
+        if (scenes[i]->normalTexture != nullptr)
+        {
+            normalTextures->subImage3D(
+                0,
+                glm::vec3(0, 0, i),
+                glm::vec3(scenes[i]->normalTexture->getSize().x, scenes[i]->normalTexture->getSize().y, 1),
+                static_cast<gl::GLenum>(GL_RGBA),
+                static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+                reinterpret_cast<const gl::GLvoid*>(scenes[i]->normalTexture->getPixelsPtr()));
+        }
+
+        if (scenes[i]->emissionTexture != nullptr)
+        {
+            emissionTextures->subImage3D(
+                0,
+                glm::vec3(0, 0, i),
+                glm::vec3(scenes[i]->emissionTexture->getSize().x, scenes[i]->emissionTexture->getSize().y, 1),
+                static_cast<gl::GLenum>(GL_RGBA),
+                static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+                reinterpret_cast<const gl::GLvoid*>(scenes[i]->emissionTexture->getPixelsPtr()));
+        }
+    }
+
+    albedoTextures->textureHandle().makeResident();
+    normalTextures->textureHandle().makeResident();
+    emissionTextures->textureHandle().makeResident();
 
     std::cout << "done" << std::endl;
 
@@ -599,11 +703,16 @@ int main()
         projectionUniform->set(cameraProjection);
         viewUniform->set(cameraView);
 
+        simpleProgram->setUniform("albedoTextures", albedoTextures->textureHandle().handle());
+        simpleProgram->setUniform("normalTextures", albedoTextures->textureHandle().handle());
+        simpleProgram->setUniform("emissionTextures", albedoTextures->textureHandle().handle());
+
         simpleProgram->use();
 
         drawCommandBuffer->bind(static_cast<gl::GLenum>(GL_DRAW_INDIRECT_BUFFER));
         objectDataBuffer->bindBase(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 4);
-        
+        objectInstanceDataBuffer->bindBase(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 5);
+
         vao->bind();
 
         vao->multiDrawElementsIndirect(static_cast<gl::GLenum>(GL_TRIANGLES), static_cast<gl::GLenum>(GL_UNSIGNED_INT), 0, m_drawCommands.size(), 0);
@@ -612,7 +721,8 @@ int main()
 
         drawCommandBuffer->unbind(static_cast<gl::GLenum>(GL_DRAW_INDIRECT_BUFFER));
         objectDataBuffer->unbind(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 4);
-        
+        objectInstanceDataBuffer->unbind(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 5);
+
         vao->unbind();
 
         window.display();
