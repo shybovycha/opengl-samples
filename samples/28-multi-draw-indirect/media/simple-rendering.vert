@@ -1,9 +1,8 @@
-#version 430
+#version 460
 
 layout (location = 0) in vec3 vertexPosition;
 layout (location = 1) in vec3 vertexNormal;
 layout (location = 2) in vec2 vertexTextureCoord;
-layout (location = 3) in  uint objectID;
 
 out VS_OUT
 {
@@ -13,16 +12,9 @@ out VS_OUT
     flat uint objectID;
 } vsOut;
 
-struct ObjectData
+out gl_PerVertex
 {
-    mat4 transform;
-    vec4 color;
-    // uint[] diffuseTextures;
-};
-
-layout (std430, binding = 4) buffer StaticObjectData
-{
-    ObjectData[] objectData;
+    vec4 gl_Position;
 };
 
 uniform mat4 projection;
@@ -33,9 +25,7 @@ void main()
     vsOut.fragmentPosition = vertexPosition;
     vsOut.normal = vertexNormal;
     vsOut.textureCoord = vec2(1.0 - vertexTextureCoord.x, vertexTextureCoord.y);
-    vsOut.objectID = objectID;
-
-    // mat4 model = objectData[objectID].transform;
+    vsOut.objectID = gl_DrawID;
 
     gl_Position = projection * view * vec4(vertexPosition, 1.0);
 }
