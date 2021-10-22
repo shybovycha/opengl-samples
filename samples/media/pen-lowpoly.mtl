@@ -10,5 +10,6 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Bump pen-normal.png
+map_bump pen-normal.png
+map_norm pen-normal.png
 map_Kd pen-albedo.png

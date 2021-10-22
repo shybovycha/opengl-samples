@@ -11,3 +11,5 @@ Ni 1.450000
 d 1.000000
 illum 3
 map_Kd lantern_albedo.png
+map_Ke lantern_emission.png
+map_Ks lantern_specular.png
