@@ -282,6 +282,13 @@ public:
     {
     }
 
+    ~StaticGeometryDrawable()
+    {
+        albedoTextures->textureHandle().makeNonResident();
+        normalTextures->textureHandle().makeNonResident();
+        emissionTextures->textureHandle().makeNonResident();
+    }
+
     void addScene(std::string sceneName, std::shared_ptr<StaticScene> scene)
     {
         StaticObjectData objectData {
@@ -368,18 +375,16 @@ public:
         m_geometryDataBuffer->setData(m_normalizedVertexData, static_cast<gl::GLenum>(GL_STATIC_DRAW));
 
         m_vao->binding(0)->setAttribute(0);
-        m_vao->binding(0)->setBuffer(m_geometryDataBuffer.get(), offsetof(NormalizedVertex, position), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(0)->setBuffer(m_geometryDataBuffer.get(), 0, sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
         m_vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(0);
 
-        m_vao->binding(1)->setAttribute(1);
-        m_vao->binding(1)->setBuffer(m_geometryDataBuffer.get(), offsetof(NormalizedVertex, normal), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
-        m_vao->binding(1)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->binding(0)->setAttribute(1); // attribute 1 uses same data format, so it can be bound to the same binding point
         m_vao->enable(1);
 
-        m_vao->binding(2)->setAttribute(2);
-        m_vao->binding(2)->setBuffer(m_geometryDataBuffer.get(), offsetof(NormalizedVertex, uv), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
-        m_vao->binding(2)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->binding(1)->setAttribute(2);
+        m_vao->binding(1)->setBuffer(m_geometryDataBuffer.get(), offsetof(NormalizedVertex, uv), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(1)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(2);
 
         // generate element buffer
@@ -645,6 +650,10 @@ int main()
 
     staticDrawable->build();
 
+    simpleProgram->setUniform("albedoTextures", staticDrawable->albedoTextures->textureHandle().handle());
+    simpleProgram->setUniform("normalTextures", staticDrawable->normalTextures->textureHandle().handle());
+    simpleProgram->setUniform("emissionTextures", staticDrawable->emissionTextures->textureHandle().handle());
+
     std::cout << "done" << std::endl;
 
     std::cout << "[INFO] Done initializing" << std::endl;
@@ -774,10 +783,6 @@ int main()
 
         projectionUniform->set(cameraProjection);
         viewUniform->set(cameraView);
-
-        simpleProgram->setUniform("albedoTextures", staticDrawable->albedoTextures->textureHandle().handle());
-        simpleProgram->setUniform("normalTextures", staticDrawable->normalTextures->textureHandle().handle());
-        simpleProgram->setUniform("emissionTextures", staticDrawable->emissionTextures->textureHandle().handle());
 
         simpleProgram->use();
 
