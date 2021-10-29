@@ -266,6 +266,292 @@ protected:
     }
 };
 
+class StaticGeometryDrawable
+{
+public:
+    StaticGeometryDrawable() :
+        m_vao(std::make_unique<globjects::VertexArray>()),
+        m_drawCommandBuffer(std::make_unique<globjects::Buffer>()),
+        m_geometryDataBuffer(std::make_unique<globjects::Buffer>()),
+        m_elementBuffer(std::make_unique<globjects::Buffer>()),
+        m_objectDataBuffer(std::make_unique<globjects::Buffer>()),
+        m_objectInstanceDataBuffer(std::make_unique<globjects::Buffer>()),
+        albedoTextures(std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY))),
+        normalTextures(std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY))),
+        emissionTextures(std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY)))
+    {
+    }
+
+    void addScene(std::string sceneName, std::shared_ptr<StaticScene> scene)
+    {
+        StaticObjectData objectData {
+            .albedoTextureSize = getTextureSize(scene->albedoTexture.get()),
+            .normalTextureSize = getTextureSize(scene->normalTexture.get()),
+            .emissionTextureSize = getTextureSize(scene->emissionTexture.get()),
+            .instanceDataOffset = static_cast<unsigned int>(m_scenes.size())
+        };
+
+        m_scenes[sceneName] = {
+            .scene = std::move(scene),
+            .objectData = objectData,
+            .instanceData = {}
+        };
+    }
+
+    /*StaticSceneDescriptor getSceneInstance(std::string sceneName)
+    {
+        return m_scenes[sceneName];
+    }*/
+
+    void addSceneInstance(std::string sceneName, StaticObjectInstanceData instanceData)
+    {
+        if (m_scenes.find(sceneName) == m_scenes.end())
+        {
+            return;
+        }
+
+        m_scenes[sceneName].instanceData.push_back(instanceData);
+    }
+
+    void build()
+    {
+        std::vector<unsigned int> m_indices;
+
+        unsigned int baseVertex = 0;
+
+        m_drawCommands.clear();
+        m_normalizedVertexData.clear();
+
+        for (auto& sceneKV : m_scenes)
+        {
+            auto scene = sceneKV.second.scene;
+
+            for (auto& mesh : scene->meshes)
+            {
+                const auto numVertices = mesh.vertexPositions.size();
+
+                for (size_t i = 0; i < numVertices; ++i)
+                {
+                    auto position = mesh.vertexPositions[i];
+                    auto normal = mesh.normals[i];
+                    auto uv = mesh.uvs[i];
+
+                    m_normalizedVertexData.push_back({ .position = position, .normal = normal, .uv = uv });
+                }
+
+                m_indices.insert(m_indices.end(), mesh.indices.begin(), mesh.indices.end());
+
+                StaticGeometryDrawCommand drawCommand {
+                    .elementCount = static_cast<unsigned int>(mesh.indices.size()),
+                    .instanceCount = 1, // TODO: generate commands dynamically whenever the data is changed
+                    .firstIndex = 0,
+                    .baseVertex = baseVertex,
+                    .baseInstance = 0
+                };
+
+                m_drawCommands.push_back(drawCommand);
+
+                baseVertex += numVertices;
+            }
+        }
+
+        /*m_vao.reset();
+        m_drawCommandBuffer.reset();
+        m_geometryDataBuffer.reset();
+        m_elementBuffer.reset();
+        m_objectDataBuffer.reset();*/
+
+        // generate draw command buffer
+        m_drawCommandBuffer->setData(m_drawCommands, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW)); // draw commands can technically be changed
+
+        // generate vertex data buffer
+        m_geometryDataBuffer->setData(m_normalizedVertexData, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+        m_vao->binding(0)->setAttribute(0);
+        m_vao->binding(0)->setBuffer(m_geometryDataBuffer.get(), offsetof(NormalizedVertex, position), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(0);
+
+        m_vao->binding(1)->setAttribute(1);
+        m_vao->binding(1)->setBuffer(m_geometryDataBuffer.get(), offsetof(NormalizedVertex, normal), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(1)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(1);
+
+        m_vao->binding(2)->setAttribute(2);
+        m_vao->binding(2)->setBuffer(m_geometryDataBuffer.get(), offsetof(NormalizedVertex, uv), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(2)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(2);
+
+        // generate element buffer
+        m_elementBuffer->setData(m_indices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+        m_vao->bindElementBuffer(m_elementBuffer.get());
+
+        // generate object data buffer
+        std::vector<StaticObjectData> m_objectData;
+
+        for (auto& sceneDescKV : m_scenes)
+        {
+            m_objectData.push_back(sceneDescKV.second.objectData);
+        }
+
+        // std::transform(m_scenes.begin(), m_scenes.end(), m_objectData.begin(), [](std::pair<std::string, StaticSceneDescriptor> sceneDescKV) { return sceneDescKV.second.objectData; });
+
+        m_objectDataBuffer->setData(m_objectData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
+
+        // generate object **instance** data buffer
+        std::vector<StaticObjectInstanceData> m_objectInstanceData;
+
+        for (auto& sceneDescKV : m_scenes)
+        {
+            m_objectInstanceData.insert(m_objectInstanceData.end(), sceneDescKV.second.instanceData.begin(), sceneDescKV.second.instanceData.end());
+        }
+
+        m_objectInstanceDataBuffer->setData(m_objectInstanceData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
+
+        // generate texture arrays
+        glm::vec2 maxAlbedoTextureSize(0, 0);
+        glm::vec2 maxNormalTextureSize(0, 0);
+        glm::vec2 maxEmissionTextureSize(0, 0);
+
+        for (auto& objectData : m_objectData)
+        {
+            maxAlbedoTextureSize.x = std::max(maxAlbedoTextureSize.x, objectData.albedoTextureSize.x);
+            maxAlbedoTextureSize.y = std::max(maxAlbedoTextureSize.y, objectData.albedoTextureSize.y);
+
+            maxNormalTextureSize.x = std::max(maxNormalTextureSize.x, objectData.normalTextureSize.x);
+            maxNormalTextureSize.y = std::max(maxNormalTextureSize.y, objectData.normalTextureSize.y);
+
+            maxEmissionTextureSize.x = std::max(maxEmissionTextureSize.x, objectData.emissionTextureSize.x);
+            maxEmissionTextureSize.y = std::max(maxEmissionTextureSize.y, objectData.emissionTextureSize.y);
+        }
+
+        albedoTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+        albedoTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+        albedoTextures->image3D(
+            0,
+            static_cast<gl::GLenum>(GL_RGBA8),
+            glm::vec3(maxAlbedoTextureSize.x, maxAlbedoTextureSize.y, m_scenes.size()),
+            0,
+            static_cast<gl::GLenum>(GL_RGBA),
+            static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+            nullptr);
+
+        normalTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+        normalTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+        normalTextures->image3D(
+            0,
+            static_cast<gl::GLenum>(GL_RGBA8),
+            glm::vec3(maxNormalTextureSize.x, maxNormalTextureSize.y, m_scenes.size()),
+            0,
+            static_cast<gl::GLenum>(GL_RGBA),
+            static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+            nullptr);
+
+        emissionTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
+        emissionTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
+
+        emissionTextures->image3D(
+            0,
+            static_cast<gl::GLenum>(GL_RGBA8),
+            glm::vec3(maxEmissionTextureSize.x, maxEmissionTextureSize.y, m_scenes.size()),
+            0,
+            static_cast<gl::GLenum>(GL_RGBA),
+            static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+            nullptr);
+
+        unsigned int i = 0;
+
+        for (auto& sceneDescKV : m_scenes)
+        {
+            auto scene = sceneDescKV.second.scene;
+
+            if (scene->albedoTexture != nullptr)
+            {
+                albedoTextures->subImage3D(
+                    0,
+                    glm::vec3(0, 0, i),
+                    glm::vec3(scene->albedoTexture->getSize().x, scene->albedoTexture->getSize().y, 1),
+                    static_cast<gl::GLenum>(GL_RGBA),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+                    reinterpret_cast<const gl::GLvoid*>(scene->albedoTexture->getPixelsPtr()));
+            }
+
+            if (scene->normalTexture != nullptr)
+            {
+                normalTextures->subImage3D(
+                    0,
+                    glm::vec3(0, 0, i),
+                    glm::vec3(scene->normalTexture->getSize().x, scene->normalTexture->getSize().y, 1),
+                    static_cast<gl::GLenum>(GL_RGBA),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+                    reinterpret_cast<const gl::GLvoid*>(scene->normalTexture->getPixelsPtr()));
+            }
+
+            if (scene->emissionTexture != nullptr)
+            {
+                emissionTextures->subImage3D(
+                    0,
+                    glm::vec3(0, 0, i),
+                    glm::vec3(scene->emissionTexture->getSize().x, scene->emissionTexture->getSize().y, 1),
+                    static_cast<gl::GLenum>(GL_RGBA),
+                    static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
+                    reinterpret_cast<const gl::GLvoid*>(scene->emissionTexture->getPixelsPtr()));
+            }
+
+            ++i;
+        }
+
+        albedoTextures->textureHandle().makeResident();
+        normalTextures->textureHandle().makeResident();
+        emissionTextures->textureHandle().makeResident();
+    }
+
+private:
+    glm::vec2 getTextureSize(sf::Image* texture)
+    {
+        if (texture == nullptr)
+        {
+            return glm::vec2();
+        }
+
+        return glm::vec2(texture->getSize().x, texture->getSize().y);
+    }
+
+    struct StaticSceneDescriptor
+    {
+        std::shared_ptr<StaticScene> scene;
+        StaticObjectData objectData;
+        std::vector<StaticObjectInstanceData> instanceData;
+    };
+
+    struct NormalizedVertex
+    {
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec2 uv;
+    };
+
+    std::map<std::string, StaticSceneDescriptor> m_scenes;
+    std::vector<NormalizedVertex> m_normalizedVertexData;
+
+public:
+    std::unique_ptr<globjects::VertexArray> m_vao;
+    std::unique_ptr<globjects::Buffer> m_drawCommandBuffer;
+    std::unique_ptr<globjects::Buffer> m_geometryDataBuffer;
+    std::unique_ptr<globjects::Buffer> m_elementBuffer;
+    std::unique_ptr<globjects::Buffer> m_objectDataBuffer;
+    std::unique_ptr<globjects::Buffer> m_objectInstanceDataBuffer;
+
+    std::vector<StaticGeometryDrawCommand> m_drawCommands;
+
+    std::unique_ptr<globjects::Texture> albedoTextures;
+    std::unique_ptr<globjects::Texture> normalTextures;
+    std::unique_ptr<globjects::Texture> emissionTextures;
+};
+
 int main()
 {
     sf::ContextSettings settings;
@@ -345,233 +631,19 @@ int main()
 
     std::cout << "[INFO] Convert 3D models to static data..." << std::endl;
 
-    std::vector<std::shared_ptr<StaticScene>> scenes {
-        std::move(duckScene),
-        std::move(lanternScene),
-        std::move(scrollScene),
-        std::move(penScene)
-    };
+    auto staticDrawable = std::make_unique<StaticGeometryDrawable>();
 
-    std::vector<StaticObjectData> m_objectData;
-    std::vector<StaticObjectInstanceData> m_objectInstanceData;
+    staticDrawable->addScene("duck", duckScene);
+    staticDrawable->addScene("lantern", lanternScene);
+    staticDrawable->addScene("scroll", scrollScene);
+    staticDrawable->addScene("pen", penScene);
 
-    // duck
-    m_objectData.push_back({
-        // TODO: automate this
-        .albedoTextureSize = glm::vec2(0, 0),
-        .normalTextureSize = glm::vec2(0, 0),
-        .emissionTextureSize = glm::vec2(0, 0),
-        .instanceDataOffset = 0
-    });
+    staticDrawable->addSceneInstance("duck", { .transformation = glm::mat4() });
+    staticDrawable->addSceneInstance("lantern", { .transformation = glm::translate(glm::vec3(0.0f, 0.5f, 0.0f)) });
+    staticDrawable->addSceneInstance("scroll", { .transformation = glm::translate(glm::vec3(0.5f, 0.5f, 0.5f)) });
+    staticDrawable->addSceneInstance("pen", { .transformation = glm::translate(glm::vec3(0.5f, 0.5f, 0.5f)) });
 
-    m_objectInstanceData.push_back({ .transformation = glm::mat4() });
-
-    // lantern
-    m_objectData.push_back({ .albedoTextureSize = glm::vec2(1024, 1024),
-                             .normalTextureSize = glm::vec2(1024, 1024),
-                             .emissionTextureSize = glm::vec2(0, 0),
-                             .instanceDataOffset = 1 });
-
-    m_objectInstanceData.push_back({ .transformation = glm::translate(glm::vec3(0.0f, 0.5f, 0.0f)) });
-
-    // scroll
-    m_objectData.push_back({ .albedoTextureSize = glm::vec2(1024, 1024),
-                             .normalTextureSize = glm::vec2(0, 0),
-                             .emissionTextureSize = glm::vec2(1024, 1024),
-                             .instanceDataOffset = 2 });
-
-    m_objectInstanceData.push_back({ .transformation = glm::translate(glm::vec3(0.0f, 0.5f, -0.5f)) });
-
-    // pen
-    m_objectData.push_back({ .albedoTextureSize = glm::vec2(512, 512),
-                             .normalTextureSize = glm::vec2(512, 512),
-                             .emissionTextureSize = glm::vec2(0, 0),
-                             .instanceDataOffset = 3 });
-
-    m_objectInstanceData.push_back({ .transformation = glm::translate(glm::vec3(0.5f, 0.5f, 0.5f)) });
-
-    std::vector<unsigned int> m_indices;
-
-    std::vector<StaticGeometryDrawCommand> m_drawCommands;
-
-    struct NormalizedVertex
-    {
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec2 uv;
-    };
-
-    std::vector<NormalizedVertex> normalizedVertexData;
-    unsigned int baseVertex = 0;
-
-    for (auto& scene : scenes)
-    {
-        for (auto& mesh : scene->meshes)
-        {
-            const auto numVertices = mesh.vertexPositions.size();
-
-            for (size_t i = 0; i < numVertices; ++i)
-            {
-                auto position = mesh.vertexPositions[i];
-                auto normal = mesh.normals[i];
-                auto uv = mesh.uvs[i];
-
-                normalizedVertexData.push_back({ .position = position, .normal = normal, .uv = uv });
-            }
-
-            m_indices.insert(m_indices.end(), mesh.indices.begin(), mesh.indices.end());
-
-            StaticGeometryDrawCommand drawCommand {
-                .elementCount = static_cast<unsigned int>(mesh.indices.size()),
-                .instanceCount = 1, // TODO: generate commands dynamically whenever the data is changed
-                .firstIndex = 0,
-                .baseVertex = baseVertex,
-                .baseInstance = 0
-            };
-
-            m_drawCommands.push_back(drawCommand);
-
-            baseVertex += numVertices;
-        }
-    }
-
-    auto vao = std::make_unique<globjects::VertexArray>();
-
-    // generate draw command buffer
-    auto drawCommandBuffer = std::make_unique<globjects::Buffer>();
-    drawCommandBuffer->setData(m_drawCommands, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW)); // draw commands can technically be changed
-
-    // generate vertex data buffer
-    auto geometryDataBuffer = std::make_unique<globjects::Buffer>();
-    geometryDataBuffer->setData(normalizedVertexData, static_cast<gl::GLenum>(GL_STATIC_DRAW));
-
-    vao->binding(0)->setAttribute(0);
-    vao->binding(0)->setBuffer(geometryDataBuffer.get(), offsetof(NormalizedVertex, position), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
-    vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-    vao->enable(0);
-
-    vao->binding(1)->setAttribute(1);
-    vao->binding(1)->setBuffer(geometryDataBuffer.get(), offsetof(NormalizedVertex, normal), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
-    vao->binding(1)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-    vao->enable(1);
-
-    vao->binding(2)->setAttribute(2);
-    vao->binding(2)->setBuffer(geometryDataBuffer.get(), offsetof(NormalizedVertex, uv), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
-    vao->binding(2)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-    vao->enable(2);
-
-    // generate element buffer
-    auto elementBuffer = std::make_unique<globjects::Buffer>();
-    elementBuffer->setData(m_indices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
-
-    vao->bindElementBuffer(elementBuffer.get());
-
-    // generate object data buffer
-    auto objectDataBuffer = std::make_unique<globjects::Buffer>();
-
-    objectDataBuffer->setData(m_objectData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
-
-    // generate object **instance** data buffer
-    auto objectInstanceDataBuffer = std::make_unique<globjects::Buffer>();
-
-    objectInstanceDataBuffer->setData(m_objectInstanceData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
-
-    // generate texture arrays
-    glm::vec2 maxAlbedoTextureSize(0, 0);
-    glm::vec2 maxNormalTextureSize(0, 0);
-    glm::vec2 maxEmissionTextureSize(0, 0);
-
-    for (auto& objectData : m_objectData)
-    {
-        maxAlbedoTextureSize.x = std::max(maxAlbedoTextureSize.x, objectData.albedoTextureSize.x);
-        maxAlbedoTextureSize.y = std::max(maxAlbedoTextureSize.y, objectData.albedoTextureSize.y);
-
-        maxNormalTextureSize.x = std::max(maxNormalTextureSize.x, objectData.normalTextureSize.x);
-        maxNormalTextureSize.y = std::max(maxNormalTextureSize.y, objectData.normalTextureSize.y);
-
-        maxEmissionTextureSize.x = std::max(maxEmissionTextureSize.x, objectData.emissionTextureSize.x);
-        maxEmissionTextureSize.y = std::max(maxEmissionTextureSize.y, objectData.emissionTextureSize.y);
-    }
-
-    auto albedoTextures = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY));
-    auto normalTextures = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY));
-    auto emissionTextures = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D_ARRAY));
-
-    albedoTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-    albedoTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
-
-    albedoTextures->image3D(
-        0,
-        static_cast<gl::GLenum>(GL_RGBA8),
-        glm::vec3(maxAlbedoTextureSize.x, maxAlbedoTextureSize.y, scenes.size()),
-        0,
-        static_cast<gl::GLenum>(GL_RGBA),
-        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-        nullptr);
-
-    normalTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-    normalTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
-
-    normalTextures->image3D(
-        0,
-        static_cast<gl::GLenum>(GL_RGBA8),
-        glm::vec3(maxNormalTextureSize.x, maxNormalTextureSize.y, scenes.size()),
-        0,
-        static_cast<gl::GLenum>(GL_RGBA),
-        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-        nullptr);
-
-    emissionTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-    emissionTextures->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
-
-    emissionTextures->image3D(
-        0,
-        static_cast<gl::GLenum>(GL_RGBA8),
-        glm::vec3(maxEmissionTextureSize.x, maxEmissionTextureSize.y, scenes.size()),
-        0,
-        static_cast<gl::GLenum>(GL_RGBA),
-        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-        nullptr);
-
-    for (size_t i = 0; i < scenes.size(); ++i)
-    {
-        if (scenes[i]->albedoTexture != nullptr)
-        {
-            albedoTextures->subImage3D(
-                0,
-                glm::vec3(0, 0, i),
-                glm::vec3(scenes[i]->albedoTexture->getSize().x, scenes[i]->albedoTexture->getSize().y, 1),
-                static_cast<gl::GLenum>(GL_RGBA),
-                static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-                reinterpret_cast<const gl::GLvoid*>(scenes[i]->albedoTexture->getPixelsPtr()));
-        }
-
-        if (scenes[i]->normalTexture != nullptr)
-        {
-            normalTextures->subImage3D(
-                0,
-                glm::vec3(0, 0, i),
-                glm::vec3(scenes[i]->normalTexture->getSize().x, scenes[i]->normalTexture->getSize().y, 1),
-                static_cast<gl::GLenum>(GL_RGBA),
-                static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-                reinterpret_cast<const gl::GLvoid*>(scenes[i]->normalTexture->getPixelsPtr()));
-        }
-
-        if (scenes[i]->emissionTexture != nullptr)
-        {
-            emissionTextures->subImage3D(
-                0,
-                glm::vec3(0, 0, i),
-                glm::vec3(scenes[i]->emissionTexture->getSize().x, scenes[i]->emissionTexture->getSize().y, 1),
-                static_cast<gl::GLenum>(GL_RGBA),
-                static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-                reinterpret_cast<const gl::GLvoid*>(scenes[i]->emissionTexture->getPixelsPtr()));
-        }
-    }
-
-    albedoTextures->textureHandle().makeResident();
-    normalTextures->textureHandle().makeResident();
-    emissionTextures->textureHandle().makeResident();
+    staticDrawable->build();
 
     std::cout << "done" << std::endl;
 
@@ -703,27 +775,27 @@ int main()
         projectionUniform->set(cameraProjection);
         viewUniform->set(cameraView);
 
-        simpleProgram->setUniform("albedoTextures", albedoTextures->textureHandle().handle());
-        simpleProgram->setUniform("normalTextures", albedoTextures->textureHandle().handle());
-        simpleProgram->setUniform("emissionTextures", albedoTextures->textureHandle().handle());
+        simpleProgram->setUniform("albedoTextures", staticDrawable->albedoTextures->textureHandle().handle());
+        simpleProgram->setUniform("normalTextures", staticDrawable->normalTextures->textureHandle().handle());
+        simpleProgram->setUniform("emissionTextures", staticDrawable->emissionTextures->textureHandle().handle());
 
         simpleProgram->use();
 
-        drawCommandBuffer->bind(static_cast<gl::GLenum>(GL_DRAW_INDIRECT_BUFFER));
-        objectDataBuffer->bindBase(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 4);
-        objectInstanceDataBuffer->bindBase(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 5);
+        staticDrawable->m_drawCommandBuffer->bind(static_cast<gl::GLenum>(GL_DRAW_INDIRECT_BUFFER));
+        staticDrawable->m_objectDataBuffer->bindBase(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 4);
+        staticDrawable->m_objectInstanceDataBuffer->bindBase(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 5);
 
-        vao->bind();
+        staticDrawable->m_vao->bind();
 
-        vao->multiDrawElementsIndirect(static_cast<gl::GLenum>(GL_TRIANGLES), static_cast<gl::GLenum>(GL_UNSIGNED_INT), 0, m_drawCommands.size(), 0);
+        staticDrawable->m_vao->multiDrawElementsIndirect(static_cast<gl::GLenum>(GL_TRIANGLES), static_cast<gl::GLenum>(GL_UNSIGNED_INT), 0, staticDrawable->m_drawCommands.size(), 0);
 
         simpleProgram->release();
 
-        drawCommandBuffer->unbind(static_cast<gl::GLenum>(GL_DRAW_INDIRECT_BUFFER));
-        objectDataBuffer->unbind(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 4);
-        objectInstanceDataBuffer->unbind(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 5);
+        staticDrawable->m_drawCommandBuffer->unbind(static_cast<gl::GLenum>(GL_DRAW_INDIRECT_BUFFER));
+        staticDrawable->m_objectDataBuffer->unbind(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 4);
+        staticDrawable->m_objectInstanceDataBuffer->unbind(static_cast<gl::GLenum>(GL_SHADER_STORAGE_BUFFER), 5);
 
-        vao->unbind();
+        staticDrawable->m_vao->unbind();
 
         window.display();
     }
