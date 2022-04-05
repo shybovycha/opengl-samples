@@ -1,5 +1,5 @@
-set_project("shoot-them")
-set_languages("cxx17")
+set_project("opengl-samples")
+set_languages("cxx20")
 
 includes("samples/01-create-window/xmake.lua")
 includes("samples/02-init-opengl/xmake.lua")

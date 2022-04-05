@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
-  "name": "shoot-them",
-  "version-string": "0.2.0",
+  "name": "opengl-samples",
+  "version-string": "0.1.0",
   "dependencies": [
       "sfml",
       "tinyxml2",
