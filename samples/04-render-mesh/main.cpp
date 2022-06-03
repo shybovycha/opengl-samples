@@ -1,5 +1,8 @@
 #include <tracy/Tracy.hpp>
 
+// make sure to build in Release profile before enabling Tracy
+#undef TRACY_ENABLE
+
 #ifdef TRACY_ENABLE
 void* operator new(std::size_t count)
 {
