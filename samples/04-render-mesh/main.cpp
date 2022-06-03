@@ -1,3 +1,18 @@
+#include <tracy/Tracy.hpp>
+
+void* operator new(std::size_t count)
+{
+    auto ptr = malloc(count);
+    TracyAllocN(ptr, count, "in-app");
+    return ptr;
+}
+
+void operator delete(void* ptr) noexcept
+{
+    TracyFreeN(ptr, "in-app");
+    free(ptr);
+}
+
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -29,8 +44,12 @@
 using namespace gl;
 #endif
 
+#include <tracy/TracyOpenGL.hpp>
+
 int main()
 {
+    ZoneScopedS(60);
+
     sf::ContextSettings settings;
     settings.depthBits = 24;
     settings.stencilBits = 8;
@@ -149,6 +168,8 @@ int main()
 
     sf::Clock clock;
 
+    TracyGpuContext;
+
     glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
 
     while (window.isOpen())
@@ -242,6 +263,9 @@ int main()
         vao->unbind();
 
         window.display();
+
+        FrameMark;
+        TracyGpuCollect;
     }
 
     return 0;

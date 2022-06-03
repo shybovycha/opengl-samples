@@ -2,6 +2,21 @@
 #include <iostream>
 #include <sstream>
 
+#include <tracy/Tracy.hpp>
+
+void* operator new(std::size_t count)
+{
+    auto ptr = malloc(count);
+    TracyAllocN(ptr, count, "in-app");
+    return ptr;
+}
+
+void operator delete(void* ptr) noexcept
+{
+    TracyFreeN(ptr, "in-app");
+    free(ptr);
+}
+
 #include <glbinding/gl/gl.h>
 
 #include <globjects/Buffer.h>
@@ -37,6 +52,8 @@
 using namespace gl;
 #endif
 
+#include <tracy/TracyOpenGL.hpp>
+
 class Mesh
 {
 public:
@@ -71,6 +88,8 @@ public:
 
     static std::unique_ptr<Mesh> fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
+        ZoneScopedN("Mesh::fromAiMesh");
+
         std::cout << "[INFO] Creating buffer objects...";
 
         std::vector<glm::vec3> vertices;
@@ -111,7 +130,7 @@ public:
 
         for (auto i = 0; i < mesh->mNumFaces; ++i)
         {
-            auto face = mesh->mFaces[i];
+            auto& face = mesh->mFaces[i];
 
             for (auto t = 0; t < face.mNumIndices; ++t)
             {
@@ -187,10 +206,10 @@ public:
                     std::filesystem::path{ "../" + imagePath }
                 };*/
 
-                for (auto path : materialLookupPaths) {
+                for (auto& path : materialLookupPaths) {
                     std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
 
-                    const auto filePath = std::filesystem::path(path).append(imagePath);
+                    const auto& filePath = std::filesystem::path(path).append(imagePath);
 
                     if (std::filesystem::exists(filePath)) {
                         imagePath = filePath.string();
@@ -247,6 +266,9 @@ public:
 
     void draw()
     {
+        // ZoneScopedN("Mesh#draw");
+        TracyGpuZone("Mesh#draw");
+
         // number of values passed = number of elements * number of vertices per element
         // in this case: 2 triangles, 3 vertex indexes per triangle
         m_vao->drawElements(
@@ -258,6 +280,8 @@ public:
 
     void drawInstanced(unsigned int instances)
     {
+        ZoneScopedN("Mesh#drawInstanced");
+
         m_vao->drawElementsInstanced(
             static_cast<gl::GLenum>(GL_TRIANGLES),
             m_indices.size(),
@@ -268,6 +292,8 @@ public:
 
     void bind()
     {
+        ZoneScopedN("Mesh#bind");
+
         m_vao->bind();
 
         for (auto& texture : m_textures)
@@ -278,6 +304,8 @@ public:
 
     void unbind()
     {
+        ZoneScopedN("Mesh#unbind");
+
         for (auto& texture : m_textures)
         {
             texture->unbindActive(1);
@@ -317,6 +345,8 @@ public:
 
     static std::unique_ptr<Model> fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
+        ZoneScopedN("Model::fromAiNode");
+
         std::vector<std::unique_ptr<Mesh>> meshes;
 
         processAiNode(scene, node, materialLookupPaths, meshes);
@@ -326,6 +356,8 @@ public:
 
     void setTransformation(glm::mat4 transformation)
     {
+        ZoneScopedN("Model#setTransformation");
+
         m_transformation = transformation;
     }
 
@@ -336,6 +368,8 @@ public:
 
     void draw()
     {
+        ZoneScopedN("Model#draw");
+
         for (auto& mesh : m_meshes)
         {
             mesh->draw();
@@ -344,6 +378,8 @@ public:
 
     void drawInstanced(unsigned int instances)
     {
+        ZoneScopedN("Model#drawInstanced");
+
         for (auto& mesh : m_meshes)
         {
             mesh->drawInstanced(instances);
@@ -352,6 +388,8 @@ public:
 
     void bind()
     {
+        ZoneScopedN("Model#bind");
+
         for (auto& mesh : m_meshes)
         {
             mesh->bind();
@@ -360,6 +398,8 @@ public:
 
     void unbind()
     {
+        ZoneScopedN("Model#unbind");
+
         for (auto& mesh : m_meshes)
         {
             mesh->unbind();
@@ -369,6 +409,8 @@ public:
 protected:
     static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<Mesh>>& meshes)
     {
+        ZoneScopedN("Model::processAiNode");
+
         for (auto t = 0; t < node->mNumMeshes; ++t)
         {
             auto mesh = Mesh::fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
@@ -516,6 +558,8 @@ public:
 
     void update(float deltaTime)
     {
+        ZoneScopedN("ParticleSystem#update");
+
         for (auto& particle : m_particles)
         {
             if (!particle->isAlive())
@@ -533,6 +577,8 @@ public:
 
     void draw(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
     {
+        ZoneScopedN("ParticleSystem#draw");
+
         m_renderer->beforeDraw(m_particles, projectionMatrix, viewMatrix);
         m_renderer->draw(m_particles, projectionMatrix, viewMatrix);
     }
@@ -607,6 +653,8 @@ public:
 
     void emit(SimpleParticle* particle) override
     {
+        ZoneScopedN("SampleParticleEmitter#emit");
+
         particle->setLifetime(m_lifetime * static_cast<float>((std::rand() % 473) / 473.0f));
         particle->setPosition(m_origin);
         particle->setVelocity(glm::normalize(m_velocity) * static_cast<float>((std::rand() % 439) / 439.0f));
@@ -630,6 +678,8 @@ public:
 
     void affect(SimpleParticle* particle, float deltaTime) override
     {
+        ZoneScopedN("SampleParticleAffector#affect");
+
         float speed = bezier<3>(particle->getLifetime(), 0.32f, 0.0f, 1.0f, 0.12f);
 
         particle->setLifetime(particle->getLifetime() - deltaTime);
@@ -757,12 +807,12 @@ public:
 
     void beforeDraw(std::vector<std::shared_ptr<SimpleParticle>> particles, glm::mat4 projectionMatrix, glm::mat4 viewMatrix) override
     {
+        ZoneScopedN("SimpleParticleRenderer#beforeDraw");
+
         std::vector<SimpleParticleData> particleData;
 
-        for (auto i = 0; i < particles.size(); ++i)
+        for (auto& particle : particles)
         {
-            const auto particle = particles[i];
-
             glm::mat4 modelMatrix = particle->getModelMatrix();
 
             /*
@@ -806,6 +856,9 @@ public:
 
     void draw(std::vector<std::shared_ptr<SimpleParticle>> particles, glm::mat4 projectionMatrix, glm::mat4 viewMatrix) override
     {
+        // ZoneScopedN("SimpleParticleRenderer#draw");
+        TracyGpuZone("SimpleParticleRenderer#draw");
+
         ::glEnable(GL_BLEND);
         ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         ::glDepthMask(false);
@@ -848,6 +901,9 @@ private:
 
 int main()
 {
+    // tracy::StartupProfiler();
+    ZoneScopedS(60);
+
     sf::ContextSettings settings;
     settings.depthBits = 24;
     settings.stencilBits = 8;
@@ -1107,6 +1163,8 @@ int main()
 
     sf::Clock clock;
 
+    TracyGpuContext;
+
     glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
 
 #ifndef WIN32
@@ -1312,7 +1370,12 @@ int main()
         // done rendering the frame
 
         window.display();
+
+        FrameMark;
+        TracyGpuCollect;
     }
+
+    // tracy::ShutdownProfiler();
 
     return 0;
 }
