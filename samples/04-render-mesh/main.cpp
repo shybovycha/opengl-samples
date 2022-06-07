@@ -46,167 +46,57 @@ using namespace gl;
 
 #include <tracy/TracyOpenGL.hpp>
 
-int main()
+class Application
 {
-    ZoneScopedS(60);
-
-    sf::ContextSettings settings;
-    settings.depthBits = 24;
-    settings.stencilBits = 8;
-    settings.antialiasingLevel = 4;
-    settings.majorVersion = 3;
-    settings.minorVersion = 2;
-    settings.attributeFlags = sf::ContextSettings::Attribute::Core;
-
-#ifdef SYSTEM_DARWIN
-    auto videoMode = sf::VideoMode(2048, 1536);
-#else
-    auto videoMode = sf::VideoMode(1024, 768);
-#endif
-
-    sf::Window window(videoMode, "Hello Mesh!", sf::Style::Default, settings);
-
-    globjects::init([](const char* name) {
-        return sf::Context::getFunction(name);
-    });
-
-    globjects::DebugMessage::enable(); // enable automatic messages if KHR_debug is available
-
-    globjects::DebugMessage::setCallback([](const globjects::DebugMessage& message) {
-        std::cout << "[DEBUG] " << message.message() << std::endl;
-    });
-
-    std::cout << "[INFO] Initializing..." << std::endl;
-
-    std::cout << "[INFO] Creating shaders..." << std::endl;
-
-    std::cout << "[INFO] Compiling vertex shader...";
-
-    auto vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
-    auto vertexShaderTemplate = globjects::Shader::applyGlobalReplacements(vertexShaderSource.get());
-    auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderTemplate.get());
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling fragment shader...";
-
-    auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
-    auto fragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(fragmentShaderSource.get());
-    auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderTemplate.get());
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Linking shader programs...";
-
-    auto renderProgram = globjects::Program::create();
-    renderProgram->attach(vertexShader.get(), fragmentShader.get());
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Creating buffer objects...";
-
-    auto meshVertexBuffer = globjects::Buffer::create();
-
-    meshVertexBuffer->setData(
-        std::array<glm::vec3, 8> {
-            {
-                glm::vec3(0, 0, 0),
-                glm::vec3(0, 1, 0),
-                glm::vec3(1, 1, 0),
-                glm::vec3(1, 0, 0),
-                glm::vec3(0, 0, 1),
-                glm::vec3(0, 1, 1),
-                glm::vec3(1, 1, 1),
-                glm::vec3(1, 0, 1),
-            } },
-        static_cast<gl::GLenum>(GL_STATIC_DRAW));
-
-    auto meshIndexBuffer = globjects::Buffer::create();
-
-    const auto numFaces = 12;
-
-    meshIndexBuffer->setData(
-        std::array<std::array<GLuint, 3>, numFaces> {
-            {
-                { 0, 1, 2 }, // back
-                { 2, 3, 0 },
-                { 4, 5, 6 }, // front
-                { 6, 7, 4 },
-                { 0, 1, 5 }, // left
-                { 5, 4, 0 },
-                { 3, 2, 6 }, // right
-                { 6, 7, 3 },
-                { 1, 5, 6 }, // top
-                { 6, 2, 1 },
-                { 0, 3, 7 }, // bottom
-                { 7, 4, 0 },
-            } },
-        static_cast<gl::GLenum>(GL_STATIC_DRAW));
-
-    auto vao = globjects::VertexArray::create();
-
-    vao->bindElementBuffer(meshIndexBuffer.get());
-
-    vao->binding(0)->setAttribute(0);
-    vao->binding(0)->setBuffer(meshVertexBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
-    vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
-    vao->enable(0);
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Done initializing" << std::endl;
-
-    const float fov = 45.0f;
-
-    const float cameraMoveSpeed = 1.0f;
-    const float cameraRotateSpeed = 10.0f;
-
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
-    glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
-
-    sf::Clock clock;
-
-    TracyGpuContext;
-
-    glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
-
-    while (window.isOpen())
+public:
+    void initialize()
     {
-#ifdef WIN32
-        if (!window.hasFocus())
+        ZoneScoped;
+
+        createWindow();
+        initializeOpenGL();
+        initializeShaders();
+        createBufferObjects();
+    }
+
+    void run()
+    {
+        ZoneScoped;
+
+        while (m_window->isOpen())
         {
-            continue;
+            renderFrame();
         }
-#endif
+    }
+
+protected:
+    void renderFrame()
+    {
+        ZoneScoped;
+        TracyGpuContext;
+
+        glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
 
         sf::Event event {};
 
         // measure time since last frame, in seconds
         float deltaTime = static_cast<float>(clock.restart().asSeconds());
 
-        std::ostringstream title;
-
-        title << "Hello mesh [frame render time, sec: " << deltaTime << "]";
-
-        window.setTitle(title.str());
-
-        while (window.pollEvent(event))
+        while (m_window->pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
             {
-                window.close();
+                m_window->close();
                 break;
             }
         }
 
-        glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y);
-        glm::vec2 mouseDelta = currentMousePos - glm::vec2((window.getSize().x / 2), (window.getSize().y / 2));
-        sf::Mouse::setPosition(sf::Vector2<int>(window.getSize().x / 2, window.getSize().y / 2), window);
+        glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition(*m_window).x, sf::Mouse::getPosition(*m_window).y);
+        glm::vec2 mouseDelta = currentMousePos - glm::vec2((m_window->getSize().x / 2), (m_window->getSize().y / 2));
+        sf::Mouse::setPosition(sf::Vector2<int>(m_window->getSize().x / 2, m_window->getSize().y / 2), *m_window);
 
-        float horizontalAngle = (mouseDelta.x / static_cast<float>(window.getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
-        float verticalAngle = (mouseDelta.y / static_cast<float>(window.getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
+        float horizontalAngle = (mouseDelta.x / static_cast<float>(m_window->getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
+        float verticalAngle = (mouseDelta.y / static_cast<float>(m_window->getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
 
         cameraForward = glm::rotate(cameraForward, horizontalAngle, cameraUp);
         cameraForward = glm::rotate(cameraForward, verticalAngle, cameraRight);
@@ -233,7 +123,7 @@ int main()
             cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
         }
 
-        glm::mat4 projection = glm::perspective(glm::radians(fov), (float) window.getSize().x / (float) window.getSize().y, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(fov), (float) m_window->getSize().x / (float) m_window->getSize().y, 0.1f, 100.0f);
 
         glm::mat4 view = glm::lookAt(
             cameraPos,
@@ -242,31 +132,178 @@ int main()
 
         glm::mat4 model = glm::mat4(1.0f); // identity
 
-        renderProgram->setUniform("model", model);
-        renderProgram->setUniform("view", view);
-        renderProgram->setUniform("projection", projection);
+        m_renderProgram->setUniform("model", model);
+        m_renderProgram->setUniform("view", view);
+        m_renderProgram->setUniform("projection", projection);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        ::glViewport(static_cast<GLint>(0), static_cast<GLint>(0), static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
+        ::glViewport(static_cast<GLint>(0), static_cast<GLint>(0), static_cast<GLsizei>(m_window->getSize().x), static_cast<GLsizei>(m_window->getSize().y));
 
-        vao->bind();
+        m_vao->bind();
 
-        renderProgram->use();
+        m_renderProgram->use();
 
         // number of values passed = number of elements * number of vertices per element
         // in this case: 2 triangles, 3 vertex indexes per triangle
-        vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), numFaces * 3, static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr);
+        m_vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), m_numFaces * 3, static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr);
 
-        renderProgram->release();
+        m_renderProgram->release();
 
-        vao->unbind();
+        m_vao->unbind();
 
-        window.display();
+        m_window->display();
 
         FrameMark;
         TracyGpuCollect;
     }
+
+    void createWindow()
+    {
+        ZoneScoped;
+
+        sf::ContextSettings settings;
+        settings.depthBits = 24;
+        settings.stencilBits = 8;
+        settings.antialiasingLevel = 4;
+        settings.majorVersion = 3;
+        settings.minorVersion = 2;
+        settings.attributeFlags = sf::ContextSettings::Attribute::Core;
+
+#ifdef SYSTEM_DARWIN
+        auto videoMode = sf::VideoMode(2048, 1536);
+#else
+        auto videoMode = sf::VideoMode(1024, 768);
+#endif
+
+        m_window = std::move(std::make_unique<sf::Window>(videoMode, "Hello Mesh!", sf::Style::Default, settings));
+    }
+
+    void initializeOpenGL()
+    {
+        ZoneScoped;
+
+        globjects::init(sf::Context::getFunction);
+
+        globjects::DebugMessage::enable(); // enable automatic messages if KHR_debug is available
+
+        globjects::DebugMessage::setCallback([](const globjects::DebugMessage& message) { std::cout << "[DEBUG] " << message.message() << "\n"; });
+    }
+
+    void initializeShaders()
+    {
+        ZoneScoped;
+
+        auto vertexShaderSource = globjects::Shader::sourceFromFile("media/vertex.glsl");
+        auto vertexShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_VERTEX_SHADER), vertexShaderSource.get());
+
+        auto fragmentShaderSource = globjects::Shader::sourceFromFile("media/fragment.glsl");
+        auto fragmentShader = globjects::Shader::create(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), fragmentShaderSource.get());
+
+        auto renderProgram = globjects::Program::create();
+        renderProgram->attach(vertexShader.get(), fragmentShader.get());
+
+        m_renderProgram = std::move(renderProgram);
+
+        m_shaders.push_back(std::move(vertexShader));
+        m_shaders.push_back(std::move(fragmentShader));
+        m_shaderSources.push_back(std::move(vertexShaderSource));
+        m_shaderSources.push_back(std::move(fragmentShaderSource));
+    }
+
+    void createBufferObjects()
+    {
+        ZoneScoped;
+
+        auto meshVertexBuffer = globjects::Buffer::create();
+
+        meshVertexBuffer->setData(
+            std::array<glm::vec3, 8> {
+                {
+                    glm::vec3(0, 0, 0),
+                    glm::vec3(0, 1, 0),
+                    glm::vec3(1, 1, 0),
+                    glm::vec3(1, 0, 0),
+                    glm::vec3(0, 0, 1),
+                    glm::vec3(0, 1, 1),
+                    glm::vec3(1, 1, 1),
+                    glm::vec3(1, 0, 1),
+                } },
+            static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+        auto meshIndexBuffer = globjects::Buffer::create();
+
+        const auto numFaces = 12;
+
+        meshIndexBuffer->setData(
+            std::array<std::array<GLuint, 3>, numFaces> {
+                {
+                    { 0, 1, 2 }, // back
+                    { 2, 3, 0 },
+                    { 4, 5, 6 }, // front
+                    { 6, 7, 4 },
+                    { 0, 1, 5 }, // left
+                    { 5, 4, 0 },
+                    { 3, 2, 6 }, // right
+                    { 6, 7, 3 },
+                    { 1, 5, 6 }, // top
+                    { 6, 2, 1 },
+                    { 0, 3, 7 }, // bottom
+                    { 7, 4, 0 },
+                } },
+            static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+        auto vao = globjects::VertexArray::create();
+
+        vao->bindElementBuffer(meshIndexBuffer.get());
+
+        vao->binding(0)->setAttribute(0);
+        vao->binding(0)->setBuffer(meshVertexBuffer.get(), 0, sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        vao->enable(0);
+
+        m_vao = std::move(vao);
+
+        m_buffers.push_back(std::move(meshVertexBuffer));
+        m_buffers.push_back(std::move(meshIndexBuffer));
+    }
+
+private:
+    std::unique_ptr<sf::Window> m_window;
+
+    std::unique_ptr<globjects::VertexArray> m_vao;
+    std::unique_ptr<globjects::Program> m_renderProgram;
+
+    const float fov = 45.0f;
+
+    const float cameraMoveSpeed = 1.0f;
+    const float cameraRotateSpeed = 10.0f;
+
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
+
+    sf::Clock clock;
+
+    int m_numFaces = 0;
+
+    // scoped objects that have to be kept alive because globjects uses raw pointers instead of smart pointers, effectively binding the memory by address
+    // since once out of scope this memory will be freed, the program will fall apart
+    std::vector<std::unique_ptr<globjects::Shader>> m_shaders;
+    std::vector<std::unique_ptr<globjects::Buffer>> m_buffers;
+    std::vector<std::unique_ptr<globjects::AbstractStringSource>> m_shaderSources;
+};
+
+int main()
+{
+    ZoneScoped;
+
+    auto app = std::make_unique<Application>();
+
+    app->initialize();
+
+    app->run();
 
     return 0;
 }
