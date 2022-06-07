@@ -1,4 +1,4 @@
-﻿# Advanced modern OpenGL rendering technique & optimization samples
+# Advanced modern OpenGL rendering technique & optimization samples
 
 This repo contains a number of samples of some advanced rendering techniques with modern OpenGL.
 Modern as in 4.4 .. 4.6. There are also few samples showing the rendering optimization techniques.
@@ -27,37 +27,174 @@ $ cmake --build build
 
 ### Basics
 
-* [01-create-window](/tree/master/samples/01-create-window) - create an SFML window
-* [02-init-opengl](/tree/master/samples/02-init-opengl) - initialize OpenGL context with globjects
-* [03-fps-camera](/tree/master/samples/03-fps-camera) - implement a simple user-controlled first-person camera with GLM
-* [04-render-mesh](/tree/master/samples/04-render-mesh) - render 3D shape with OpenGL
-* [05-texture](/tree/master/samples/05-texture) - load texture from file and render a _textured_ 3D model
-* [06-lighting](/tree/master/samples/06-lighting) - simple lighting techniques (Blinn-Phong), basically a simple shader test
-* [07-model-loading](/tree/master/samples/07-model-loading) - load a 3D model from file and render it with OpenGL
-* [08-frame-buffer](/tree/master/samples/08-frame-buffer) - render to framebuffer and then to the screen
+#### [01-create-window](/samples/01-create-window)
+
+[[/Screenshots/sample-01-sfml-window.png]]
+
+create an SFML window
+
+#### [02-init-opengl](/samples/02-init-opengl)
+
+[[/Screenshots/sample-02-opengl.png]]
+
+initialize OpenGL context with globjects
+
+#### [03-fps-camera](/samples/03-fps-camera)
+
+[[/Screenshots/sample-03-fps-camera.png]]
+
+implement a simple user-controlled first-person camera with GLM
+
+#### [04-render-mesh](/samples/04-render-mesh)
+
+[[/Screenshots/sample-04-rendering-indexed-geometry.png]]
+
+render 3D shape with OpenGL
+
+#### [05-texture](/samples/05-texture)
+
+[[/Screenshots/sample-05-texture.png]]
+
+load texture from file and render a _textured_ 3D model
+
+#### [06-lighting](/samples/06-lighting)
+
+[[/Screenshots/sample-06-lighting.png]]
+
+simple lighting techniques (Blinn-Phong), basically a simple shader test
+
+#### [07-model-loading](/samples/07-model-loading)
+
+[[/Screenshots/sample-07-model-loading.png]]
+
+load a 3D model from file and render it with OpenGL
+
+#### [08-frame-buffer](/samples/08-frame-buffer)
+
+[[/Screenshots/sample-08-frame-buffer.png]]
+
+render to framebuffer and then to the screen
 
 ### Rendering techniques
 
-* [09-shadow-mapping](/tree/master/samples/09-shadow-mapping) - simple shadow mapping
-* [10-particles](/tree/master/samples/10-particles) - rendering particles; simple particle engine (TODO: should use [SPARK](https://github.com/Synxis/SPARK), like in [skylicht engine](https://github.com/skylicht-lab/skylicht-engine) ?)
-* [13-terrain](/tree/master/samples/13-terrain) - rendering a terrain; very simple, not paginated (TODO)
-* [14-point-light](/tree/master/samples/14-point-light) - point light source (using cubemaps)
-* [15-bloom](/tree/master/samples/15-bloom) - bloom effect
-* [16-anti-aliasing](/tree/master/samples/16-anti-aliasing) - simple anti-aliasing using out-of-the-box OpenGL capabilities
-* [17-skybox](/tree/master/samples/17-skybox) - rendering skybox
-* [18-reflection](/tree/master/samples/18-reflection) - rendering reflective objects (using cubemaps)
-* [19-gui](/tree/master/samples/19-gui) - simple GUI with [Dear ImGUI](https://github.com/ocornut/imgui)
-* ~~[20-scripting](/tree/master/samples/20-scripting)~~ (TODO)
-* [21-deferred-rendering](/tree/master/samples/21-deferred-rendering) - deferred rendering
-* [24-screen-space-ambient-occlusion](/tree/master/samples/24-screen-space-ambient-occlusion) - simple SSAO implementation
-* [26-raymarching](/tree/master/samples/26-raymarching) - volumetric light using raymarching
-* ~~[27-animated-model](/tree/master/samples/27-animated-model)~~ (TODO)
+#### [09-shadow-mapping](/samples/09-shadow-mapping)
+
+[[/Screenshots/sample-09-shadow-mapping-0.png]]
+
+simple shadow mapping
+
+#### [10-particles](/samples/10-particles)
+
+[[/Screenshots/sample-10-particles-3.png]]
+
+rendering particles; simple particle engine (TODO: should use [SPARK](https://github.com/Synxis/SPARK), like in [skylicht engine](https://github.com/skylicht-lab/skylicht-engine) ?)
+
+#### [13-terrain](/samples/13-terrain)
+
+[[/Screenshots/sample-13-terrain-2.png]]
+
+rendering a terrain; very simple, not paginated (TODO)
+
+#### [14-point-light](/samples/14-point-light)
+
+[[/Screenshots/sample-14-point-light-with-light-maps.png]]
+
+point light source (using cubemaps)
+
+#### [15-bloom](/samples/15-bloom)
+
+[[/Screenshots/sample-15-bloom-2.png]]
+
+bloom effect
+
+#### [16-anti-aliasing](/samples/16-anti-aliasing)
+
+[[/Screenshots/sample-16-anti-aliasing-2.png]]
+[[/Screenshots/sample-16-anti-aliasing-3.png]]
+
+simple anti-aliasing using out-of-the-box OpenGL capabilities
+
+#### [17-skybox](/samples/17-skybox)
+
+[[/Screenshots/sample-17-skybox.png]]
+
+rendering skybox
+
+#### [18-reflection](/samples/18-reflection)
+
+[[/Screenshots/sample-18-reflection-2.png]]
+[[/Screenshots/sample-18-reflection-3.png]]
+[[/Screenshots/sample-18-reflection-4.png]]
+
+rendering reflective objects (using cubemaps)
+
+#### [19-gui](/samples/19-gui)
+
+simple GUI with [Dear ImGUI](https://github.com/ocornut/imgui)
+
+#### ~~[20-scripting](/samples/20-scripting)~~ (TODO)
+
+#### [21-deferred-rendering](/samples/21-deferred-rendering)
+
+[[/Screenshots/sample-21-deferred-rendering-1.png]]
+
+deferred rendering, aka render different attributes of each pixel to the framebuffers first
+and then combine them all into a final frame in one go (potentially applying post-processing effects) and display on the screen in one go
+
+#### [24-screen-space-ambient-occlusion](/samples/24-screen-space-ambient-occlusion)
+
+[[/Screenshots/sample-24-ssao-1.png]]
+[[/Screenshots/sample-24-ssao-6.png]]
+
+simple SSAO implementation
+
+#### [26-raymarching](/samples/26-raymarching)
+
+[[/Screenshots/sample-26-raymarching-2.png]]
+
+volumetric light using raymarching
+
+#### ~~[27-animated-model](/samples/27-animated-model)~~ (TODO)
 
 ### Optimization techniques
 
-* [11-instance-rendering](/tree/master/samples/11-instance-rendering) - rendering multiple instances of an object using OpenGL capabilities
-* [12-cascade-shadow-mapping](/tree/master/samples/12-cascade-shadow-mapping) - optimizing shadow mapping for large (think outdoor, landscape) scenes
-* [22-fast-approximation-anti-aliasing](/tree/master/samples/22-fast-approximation-anti-aliasing) - faster anti-aliasing algorithm
-* [23-multi-sample-anti-aliasing](/tree/master/samples/23-multi-sample-anti-aliasing) - MSAA algorithm
-* [25-horizon-based-ambient-occlusion](/tree/master/samples/25-horizon-based-ambient-occlusion) - HBAO, nVidia algorithm, optimization for performance and quality over SSAO
-* [28-multi-draw-indirect](/tree/master/samples/28-multi-draw-indirect) - optimized "batched" rendering using modern OpenGL capabilities (`glMultiDrawIndirect`), reducing the number of draw calls
+#### [11-instance-rendering](/samples/11-instance-rendering)
+
+[[/Screenshots/sample-11-instanced-rendering.png]]
+
+rendering multiple instances of an object using OpenGL capabilities to render many things in one draw call
+
+#### [12-cascade-shadow-mapping](/samples/12-cascade-shadow-mapping)
+
+[[/Screenshots/pssm_issue_2_0_lookAt_setup.png]]
+[[/Screenshots/sample-12-cascade-shadow-mapping-1.png]]
+[[/Screenshots/sample-12-cascade-shadow-mapping-2.png]]
+[[/Screenshots/sample-12-cascade-shadow-mapping-3.png]]
+
+optimizing shadow mapping for large (think outdoor, landscape) scenes
+
+#### [22-fast-approximation-anti-aliasing](/samples/22-fast-approximation-anti-aliasing)
+
+[[/Screenshots/sample-22-fxaa-0.png]]
+[[/Screenshots/sample-22-fxaa-4.png]]
+
+faster anti-aliasing algorithm
+
+#### [23-multi-sample-anti-aliasing](/samples/23-multi-sample-anti-aliasing)
+
+[[/Screenshots/sample-23-msaa.png]]
+
+MSAA algorithm
+
+#### [25-horizon-based-ambient-occlusion](/samples/25-horizon-based-ambient-occlusion)
+
+[[/Screenshots/sample-25-hbao-1.png]]
+[[/Screenshots/sample-25-hbao-3.png]]
+
+HBAO, nVidia algorithm, optimization for performance and quality over SSAO
+
+#### [28-multi-draw-indirect](/samples/28-multi-draw-indirect)
+
+[[/Screenshots/sample-28-draw-multi-indirect.png]]
+
+optimized "batched" rendering using modern OpenGL capabilities (`glMultiDrawIndirect`), reducing the number of draw calls
