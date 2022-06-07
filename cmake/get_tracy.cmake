@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-set(TRACY_ENABLE ON)
+option(TRACY_ENABLE OFF)
 
 # set(TRACY_MANUAL_LIFETIME ON)
 # set(TRACY_DELAYED_INIT ON)

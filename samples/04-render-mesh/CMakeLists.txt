@@ -21,6 +21,7 @@ target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${GLM_LIBRARIES})
 find_package(OpenGL REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PUBLIC ${OPENGL_LIBRARIES})
 
+set(TRACY_ENABLE OFF)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE tracy)
 
 # copy media

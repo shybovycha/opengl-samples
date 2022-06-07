@@ -1,5 +1,6 @@
 #include <tracy/Tracy.hpp>
 
+#ifdef TRACY_ENABLE
 void* operator new(std::size_t count)
 {
     auto ptr = malloc(count);
@@ -12,6 +13,7 @@ void operator delete(void* ptr) noexcept
     TracyFreeN(ptr, "in-app");
     free(ptr);
 }
+#endif
 
 #include <iostream>
 #include <memory>
@@ -46,119 +48,35 @@ using namespace gl;
 
 #include <tracy/TracyOpenGL.hpp>
 
-class Application
+int main()
 {
-public:
-    void initialize()
-    {
-        ZoneScoped;
+    ZoneScoped;
 
-        createWindow();
-        initializeOpenGL();
-        initializeShaders();
-        createBufferObjects();
-    }
+    std::unique_ptr<sf::Window> m_window;
 
-    void run()
-    {
-        ZoneScoped;
+    std::unique_ptr<globjects::VertexArray> m_vao;
+    std::unique_ptr<globjects::Program> m_renderProgram;
 
-        while (m_window->isOpen())
-        {
-            renderFrame();
-        }
-    }
+    const float fov = 45.0f;
 
-protected:
-    void renderFrame()
-    {
-        ZoneScoped;
-        TracyGpuContext;
+    const float cameraMoveSpeed = 1.0f;
+    const float cameraRotateSpeed = 10.0f;
 
-        glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 
-        sf::Event event {};
+    sf::Clock clock;
 
-        // measure time since last frame, in seconds
-        float deltaTime = static_cast<float>(clock.restart().asSeconds());
+    int m_numFaces = 0;
 
-        while (m_window->pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed)
-            {
-                m_window->close();
-                break;
-            }
-        }
+    // scoped objects that have to be kept alive because globjects uses raw pointers instead of smart pointers, effectively binding the memory by address
+    // since once out of scope this memory will be freed, the program will fall apart
+    std::vector<std::unique_ptr<globjects::Shader>> m_shaders;
+    std::vector<std::unique_ptr<globjects::Buffer>> m_buffers;
+    std::vector<std::unique_ptr<globjects::AbstractStringSource>> m_shaderSources;
 
-        glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition(*m_window).x, sf::Mouse::getPosition(*m_window).y);
-        glm::vec2 mouseDelta = currentMousePos - glm::vec2((m_window->getSize().x / 2), (m_window->getSize().y / 2));
-        sf::Mouse::setPosition(sf::Vector2<int>(m_window->getSize().x / 2, m_window->getSize().y / 2), *m_window);
-
-        float horizontalAngle = (mouseDelta.x / static_cast<float>(m_window->getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
-        float verticalAngle = (mouseDelta.y / static_cast<float>(m_window->getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
-
-        cameraForward = glm::rotate(cameraForward, horizontalAngle, cameraUp);
-        cameraForward = glm::rotate(cameraForward, verticalAngle, cameraRight);
-
-        cameraRight = glm::normalize(glm::rotate(cameraRight, horizontalAngle, cameraUp));
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-        {
-            cameraPos += cameraForward * cameraMoveSpeed * deltaTime;
-        }
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-        {
-            cameraPos -= cameraForward * cameraMoveSpeed * deltaTime;
-        }
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-        {
-            cameraPos -= glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
-        }
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-        {
-            cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
-        }
-
-        glm::mat4 projection = glm::perspective(glm::radians(fov), (float) m_window->getSize().x / (float) m_window->getSize().y, 0.1f, 100.0f);
-
-        glm::mat4 view = glm::lookAt(
-            cameraPos,
-            cameraPos + cameraForward,
-            cameraUp);
-
-        glm::mat4 model = glm::mat4(1.0f); // identity
-
-        m_renderProgram->setUniform("model", model);
-        m_renderProgram->setUniform("view", view);
-        m_renderProgram->setUniform("projection", projection);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        ::glViewport(static_cast<GLint>(0), static_cast<GLint>(0), static_cast<GLsizei>(m_window->getSize().x), static_cast<GLsizei>(m_window->getSize().y));
-
-        m_vao->bind();
-
-        m_renderProgram->use();
-
-        // number of values passed = number of elements * number of vertices per element
-        // in this case: 2 triangles, 3 vertex indexes per triangle
-        m_vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), m_numFaces * 3, static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr);
-
-        m_renderProgram->release();
-
-        m_vao->unbind();
-
-        m_window->display();
-
-        FrameMark;
-        TracyGpuCollect;
-    }
-
-    void createWindow()
     {
         ZoneScoped;
 
@@ -179,7 +97,6 @@ protected:
         m_window = std::move(std::make_unique<sf::Window>(videoMode, "Hello Mesh!", sf::Style::Default, settings));
     }
 
-    void initializeOpenGL()
     {
         ZoneScoped;
 
@@ -190,7 +107,6 @@ protected:
         globjects::DebugMessage::setCallback([](const globjects::DebugMessage& message) { std::cout << "[DEBUG] " << message.message() << "\n"; });
     }
 
-    void initializeShaders()
     {
         ZoneScoped;
 
@@ -211,7 +127,6 @@ protected:
         m_shaderSources.push_back(std::move(fragmentShaderSource));
     }
 
-    void createBufferObjects()
     {
         ZoneScoped;
 
@@ -235,8 +150,10 @@ protected:
 
         const auto numFaces = 12;
 
+        m_numFaces = numFaces;
+
         meshIndexBuffer->setData(
-            std::array<std::array<GLuint, 3>, numFaces> {
+            std::array<std::array<GLuint, 3>, 12> {
                 {
                     { 0, 1, 2 }, // back
                     { 2, 3, 0 },
@@ -268,42 +185,97 @@ protected:
         m_buffers.push_back(std::move(meshIndexBuffer));
     }
 
-private:
-    std::unique_ptr<sf::Window> m_window;
+    {
+        ZoneScoped;
 
-    std::unique_ptr<globjects::VertexArray> m_vao;
-    std::unique_ptr<globjects::Program> m_renderProgram;
+        while (m_window->isOpen())
+        {
+            ZoneScoped;
+            TracyGpuContext;
 
-    const float fov = 45.0f;
+            glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
 
-    const float cameraMoveSpeed = 1.0f;
-    const float cameraRotateSpeed = 10.0f;
+            sf::Event event {};
 
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
-    glm::vec3 cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
+            // measure time since last frame, in seconds
+            float deltaTime = static_cast<float>(clock.restart().asSeconds());
 
-    sf::Clock clock;
+            while (m_window->pollEvent(event))
+            {
+                if (event.type == sf::Event::Closed)
+                {
+                    m_window->close();
+                    break;
+                }
+            }
 
-    int m_numFaces = 0;
+            glm::vec2 currentMousePos = glm::vec2(sf::Mouse::getPosition(*m_window).x, sf::Mouse::getPosition(*m_window).y);
+            glm::vec2 mouseDelta = currentMousePos - glm::vec2((m_window->getSize().x / 2), (m_window->getSize().y / 2));
+            sf::Mouse::setPosition(sf::Vector2<int>(m_window->getSize().x / 2, m_window->getSize().y / 2), *m_window);
 
-    // scoped objects that have to be kept alive because globjects uses raw pointers instead of smart pointers, effectively binding the memory by address
-    // since once out of scope this memory will be freed, the program will fall apart
-    std::vector<std::unique_ptr<globjects::Shader>> m_shaders;
-    std::vector<std::unique_ptr<globjects::Buffer>> m_buffers;
-    std::vector<std::unique_ptr<globjects::AbstractStringSource>> m_shaderSources;
-};
+            float horizontalAngle = (mouseDelta.x / static_cast<float>(m_window->getSize().x)) * -1 * deltaTime * cameraRotateSpeed * fov;
+            float verticalAngle = (mouseDelta.y / static_cast<float>(m_window->getSize().y)) * -1 * deltaTime * cameraRotateSpeed * fov;
 
-int main()
-{
-    ZoneScoped;
+            cameraForward = glm::rotate(cameraForward, horizontalAngle, cameraUp);
+            cameraForward = glm::rotate(cameraForward, verticalAngle, cameraRight);
 
-    auto app = std::make_unique<Application>();
+            cameraRight = glm::normalize(glm::rotate(cameraRight, horizontalAngle, cameraUp));
 
-    app->initialize();
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+            {
+                cameraPos += cameraForward * cameraMoveSpeed * deltaTime;
+            }
 
-    app->run();
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+            {
+                cameraPos -= cameraForward * cameraMoveSpeed * deltaTime;
+            }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+            {
+                cameraPos -= glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
+            }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+            {
+                cameraPos += glm::normalize(glm::cross(cameraForward, cameraUp)) * cameraMoveSpeed * deltaTime;
+            }
+
+            glm::mat4 projection = glm::perspective(glm::radians(fov), (float) m_window->getSize().x / (float) m_window->getSize().y, 0.1f, 100.0f);
+
+            glm::mat4 view = glm::lookAt(
+                cameraPos,
+                cameraPos + cameraForward,
+                cameraUp);
+
+            glm::mat4 model = glm::mat4(1.0f); // identity
+
+            m_renderProgram->setUniform("model", model);
+            m_renderProgram->setUniform("view", view);
+            m_renderProgram->setUniform("projection", projection);
+
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            ::glViewport(static_cast<GLint>(0), static_cast<GLint>(0), static_cast<GLsizei>(m_window->getSize().x), static_cast<GLsizei>(m_window->getSize().y));
+
+            m_vao->bind();
+
+            m_renderProgram->use();
+
+            // number of values passed = number of elements * number of vertices per element
+            // in this case: 2 triangles, 3 vertex indexes per triangle
+            m_vao->drawElements(static_cast<gl::GLenum>(GL_TRIANGLES), m_numFaces * 3, static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr);
+
+            m_renderProgram->release();
+
+            m_vao->unbind();
+
+            m_window->display();
+
+            FrameMark;
+            TracyGpuCollect;
+        }
+    }
 
     return 0;
 }
