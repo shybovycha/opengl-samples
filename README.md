@@ -138,7 +138,7 @@ simple GUI with [Dear ImGUI](https://github.com/ocornut/imgui)
 
 #### [21-deferred-rendering](/samples/21-deferred-rendering)
 
-![](/Screenshots/sample-21-deferred-rendering-1.png)
+![](/Screenshots/sample-21-deferred-rendering-2.png)
 
 deferred rendering, aka render different attributes of each pixel to the framebuffers first
 and then combine them all into a final frame in one go (potentially applying post-processing effects) and display on the screen in one go
