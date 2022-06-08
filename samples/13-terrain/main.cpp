@@ -683,7 +683,7 @@ int main()
     settings.minorVersion = 2;
     settings.attributeFlags = sf::ContextSettings::Attribute::Core;
 
-#ifdef SYSTEM_DARWIN
+#if defined(SYSTEM_DARWIN) || defined(HIGH_DPI)
     auto videoMode = sf::VideoMode(2048, 1536);
 #else
     auto videoMode = sf::VideoMode(1024, 768);
@@ -816,7 +816,7 @@ int main()
 
     sf::Image textureImage;
 
-    if (!textureImage.loadFromFile("media/texture.jpg"))
+    if (!textureImage.loadFromFile("media/sand1.jpg"))
     {
         std::cerr << "[ERROR] Can not load texture" << std::endl;
         return 1;

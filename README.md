@@ -91,7 +91,7 @@ rendering particles; simple particle engine (TODO: should use [SPARK](https://gi
 
 #### [13-terrain](/samples/13-terrain)
 
-![](/Screenshots/sample-13-terrain-2.png)
+![](/Screenshots/sample-13-terrain-3.png)
 
 rendering a terrain; very simple, not paginated (TODO)
 
