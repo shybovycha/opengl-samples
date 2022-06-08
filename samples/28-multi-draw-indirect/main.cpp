@@ -89,7 +89,7 @@ public:
     {
     }
 
-    static std::shared_ptr<StaticScene> fromFile(std::string filename, std::vector<std::filesystem::path> materialLookupPaths = {}, unsigned int assimpImportFlags = 0)
+    static std::shared_ptr<StaticScene> fromFile(std::string filename, std::vector<std::filesystem::path> materialLookupPaths = {}, unsigned int assimpImportFlags = aiProcess_Triangulate)
     {
         static auto importer = std::make_unique<Assimp::Importer>();
         auto scene = importer->ReadFile(filename, assimpImportFlags);
@@ -284,9 +284,9 @@ public:
 
     ~StaticGeometryDrawable()
     {
-        albedoTextures->textureHandle().makeNonResident();
-        normalTextures->textureHandle().makeNonResident();
-        emissionTextures->textureHandle().makeNonResident();
+        // albedoTextures->textureHandle().makeNonResident();
+        // normalTextures->textureHandle().makeNonResident();
+        // emissionTextures->textureHandle().makeNonResident();
     }
 
     void addScene(std::string sceneName, std::shared_ptr<StaticScene> scene)
@@ -324,8 +324,6 @@ public:
     {
         std::vector<unsigned int> m_indices;
 
-        unsigned int baseVertex = 0;
-
         m_drawCommands.clear();
         m_normalizedVertexData.clear();
 
@@ -336,14 +334,15 @@ public:
         {
             auto scene = sceneKV.second.scene;
 
-            unsigned int firstIndex = 0; // static_cast<unsigned int>(m_indices.size());
-            unsigned int baseInstance = 0; // static_cast<unsigned int>(m_drawCommands.size());
-
-            unsigned int elementCount = 0;
-            unsigned int vertexCount = 0;
-
             for (auto& mesh : scene->meshes)
             {
+                unsigned int firstIndex = static_cast<unsigned int>(m_indices.size());
+                unsigned int baseInstance = 0;
+                unsigned int baseVertex = static_cast<unsigned int>(m_normalizedVertexData.size());
+
+                unsigned int elementCount = 0;
+                unsigned int vertexCount = 0;
+
                 const auto numVertices = mesh.vertexPositions.size();
 
                 for (size_t i = 0; i < numVertices; ++i)
@@ -359,28 +358,29 @@ public:
 
                 elementCount += mesh.indices.size();
                 vertexCount += numVertices;
+
+                // if a scene contains multiple meshes, each of them will have their indexes reset (e.g. start from 0), so to count for that have to issue more draw commands
+                StaticGeometryDrawCommand drawCommand {
+                    .elementCount = static_cast<unsigned int>(mesh.indices.size()), // the number of elements to draw (triangles in this case)
+                    .instanceCount = 1,
+                    .firstIndex = firstIndex, // this is the offset of the index data in the unified index data buffer
+                    .baseVertex = baseVertex, // this is the offset of vertex data sub-array within a big-big buffer of vertex data; essentially the first vertex' index of current object in unified vertex data buffer
+                    .baseInstance = baseInstance
+                };
+
+                std::cout << "[DEBUG] Draw command: { "
+                          << "elementCount: " << drawCommand.elementCount << "; "
+                          << "instanceCount: " << drawCommand.instanceCount << "; "
+                          << "firstIndex: " << drawCommand.firstIndex << "; "
+                          << "baseVertex: " << drawCommand.baseVertex << "; "
+                          << "baseInstance: " << drawCommand.baseInstance << " }"
+                          << "\n";
+
+                m_drawCommands.push_back(drawCommand);
+
+                // have to add redundant data to the objectDataBuffer and objectInstanceDataBuffer to count for multiple meshes within the same scene
+                m_objectData.push_back(sceneKV.second.objectData); // TODO: the offset for the object/instance data here is incorrect
             }
-
-            StaticGeometryDrawCommand drawCommand {
-                .elementCount = elementCount, // vertexCount // pen (vs: 205, fs: 406, idxs: 1266) & table (vs: 146, fs: 260, idxs: 780) & scroll (vs: 273, fs: 422) - faces * 3, ink bottle (vs: 120, fs: 236) & lantern (vs: 106, fs: 204, idxs: 612) - vertices
-                .instanceCount = 1,
-                .firstIndex = firstIndex,
-                .baseVertex = baseVertex,
-                .baseInstance = baseInstance
-            };
-
-            std::cout << "[DEBUG] Draw command: { " <<
-                "elementCount: " << drawCommand.elementCount << "; " <<
-                "instanceCount: " << drawCommand.instanceCount << "; " <<
-                "firstIndex: " << drawCommand.firstIndex << "; " <<
-                "baseVertex: " << drawCommand.baseVertex << "; " <<
-                "baseInstance: " << drawCommand.baseInstance << " }" << "\n";
-
-            m_drawCommands.push_back(drawCommand);
-
-            baseVertex += vertexCount;
-
-            m_objectData.push_back(sceneKV.second.objectData);
 
             m_objectInstanceData.insert(m_objectInstanceData.end(), sceneKV.second.instanceData.begin(), sceneKV.second.instanceData.end());
         }
@@ -516,9 +516,9 @@ public:
             ++i;
         }
 
-        albedoTextures->textureHandle().makeResident();
-        normalTextures->textureHandle().makeResident();
-        emissionTextures->textureHandle().makeResident();
+        // albedoTextures->textureHandle().makeResident();
+        // normalTextures->textureHandle().makeResident();
+        // emissionTextures->textureHandle().makeResident();
     }
 
 private:
@@ -656,22 +656,29 @@ int main()
 
     staticDrawable->addSceneInstance("lantern", { .transformation = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.75f, 3.85f, -0.75f)), glm::vec3(0.5f)) });
 
-    staticDrawable->addSceneInstance("scroll", { .transformation = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.85f, 0.0f)), glm::vec3(0.5f)) });
+    staticDrawable->addSceneInstance("scroll", { .transformation = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.85f, 0.0f)), glm::vec3(1.0f)) });
 
     staticDrawable->addSceneInstance("pen", {
         .transformation =
-            glm::translate(glm::vec3(0.35f, 3.95f, -0.75f)) *
-            glm::scale(glm::vec3(0.05f)) *
-            (glm::rotate(glm::radians(12.5f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)))
+            // (glm::rotate(glm::radians(12.5f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) *
+            glm::scale(glm::mat4(1.0f), glm::vec3(0.35f, 3.95f, -0.75f))
     });
 
     staticDrawable->addSceneInstance("table", { .transformation = glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) });
 
     staticDrawable->build();
 
-    simpleProgram->setUniform("albedoTextures", staticDrawable->albedoTextures->textureHandle().handle());
-    simpleProgram->setUniform("normalTextures", staticDrawable->normalTextures->textureHandle().handle());
-    simpleProgram->setUniform("emissionTextures", staticDrawable->emissionTextures->textureHandle().handle());
+    // simpleProgram->setUniform("albedoTextures", staticDrawable->albedoTextures->textureHandle().handle());
+    // simpleProgram->setUniform("normalTextures", staticDrawable->normalTextures->textureHandle().handle());
+    // simpleProgram->setUniform("emissionTextures", staticDrawable->emissionTextures->textureHandle().handle());
+
+    staticDrawable->albedoTextures->bindActive(1);
+    staticDrawable->albedoTextures->bindActive(2);
+    staticDrawable->albedoTextures->bindActive(3);
+
+    simpleProgram->setUniform("albedoTextures", 1);
+    simpleProgram->setUniform("normalTextures", 2);
+    simpleProgram->setUniform("emissionTextures", 2);
 
     std::cout << "done" << std::endl;
 
@@ -811,7 +818,9 @@ int main()
 
         staticDrawable->m_vao->bind();
 
-        staticDrawable->m_vao->multiDrawElementsIndirect(static_cast<gl::GLenum>(GL_TRIANGLES), static_cast<gl::GLenum>(GL_UNSIGNED_INT), 0, staticDrawable->m_drawCommands.size(), 0);
+        ::glMultiDrawElementsIndirect(static_cast<gl::GLenum>(GL_TRIANGLES), static_cast<gl::GLenum>(GL_UNSIGNED_INT), nullptr, staticDrawable->m_drawCommands.size(), 0);
+
+        // staticDrawable->m_vao->multiDrawElementsIndirect(static_cast<gl::GLenum>(GL_TRIANGLES), static_cast<gl::GLenum>(GL_UNSIGNED_INT), 0, staticDrawable->m_drawCommands.size(), 0);
 
         simpleProgram->release();
 
@@ -823,6 +832,10 @@ int main()
 
         window.display();
     }
+
+    staticDrawable->albedoTextures->unbindActive(1);
+    staticDrawable->albedoTextures->unbindActive(2);
+    staticDrawable->albedoTextures->unbindActive(3);
 
     return 0;
 }
