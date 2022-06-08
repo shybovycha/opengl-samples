@@ -25,9 +25,9 @@ vec4 msaa( sampler2D tex, vec2 uv ) {
     acc += texture(tex, (uv + vec2(b, a)));
     acc /= 4.0;
 
-    vec4 color = pow(acc, vec4(1.0 / 2.2));
+    // vec4 color = pow(acc, vec4(1.0 / 2.2));
 
-    return color;
+    return acc;
 }
 
 void main()

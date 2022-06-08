@@ -184,7 +184,8 @@ faster anti-aliasing algorithm
 
 #### [23-multi-sample-anti-aliasing](/samples/23-multi-sample-anti-aliasing)
 
-![](/Screenshots/sample-23-msaa.png)
+![](/Screenshots/sample-23-msaa-0.png)
+![](/Screenshots/sample-23-msaa-1.png)
 
 MSAA algorithm
 
