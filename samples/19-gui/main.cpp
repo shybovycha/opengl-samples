@@ -40,7 +40,7 @@ int main()
     settings.minorVersion = 6;
     settings.attributeFlags = sf::ContextSettings::Attribute::Core;
 
-#ifdef SYSTEM_DARWIN
+#ifdef HIGH_DPI
     auto videoMode = sf::VideoMode(2048, 1536);
 #else
     auto videoMode = sf::VideoMode(1024, 768);
