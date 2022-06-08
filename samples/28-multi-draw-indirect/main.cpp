@@ -329,9 +329,15 @@ public:
         m_drawCommands.clear();
         m_normalizedVertexData.clear();
 
+        std::vector<StaticObjectData> m_objectData;
+        std::vector<StaticObjectInstanceData> m_objectInstanceData;
+
         for (auto& sceneKV : m_scenes)
         {
             auto scene = sceneKV.second.scene;
+
+            unsigned int elementCount = 0;
+            unsigned int vertexCount = 0;
 
             for (auto& mesh : scene->meshes)
             {
@@ -348,25 +354,33 @@ public:
 
                 m_indices.insert(m_indices.end(), mesh.indices.begin(), mesh.indices.end());
 
-                StaticGeometryDrawCommand drawCommand {
-                    .elementCount = static_cast<unsigned int>(mesh.indices.size()),
-                    .instanceCount = 1, // TODO: generate commands dynamically whenever the data is changed
-                    .firstIndex = 0,
-                    .baseVertex = baseVertex,
-                    .baseInstance = 0
-                };
-
-                m_drawCommands.push_back(drawCommand);
-
-                baseVertex += numVertices;
+                elementCount += mesh.indices.size();
+                vertexCount += numVertices;
             }
-        }
 
-        /*m_vao.reset();
-        m_drawCommandBuffer.reset();
-        m_geometryDataBuffer.reset();
-        m_elementBuffer.reset();
-        m_objectDataBuffer.reset();*/
+            StaticGeometryDrawCommand drawCommand {
+                .elementCount = elementCount,
+                .instanceCount = 1,
+                .firstIndex = 0,
+                .baseVertex = baseVertex,
+                .baseInstance = 0
+            };
+
+            std::cout << "[DEBUG] Draw command: { " <<
+                "elementCount: " << drawCommand.elementCount << "; " <<
+                "instanceCount: " << drawCommand.instanceCount << "; " <<
+                "firstIndex: " << drawCommand.firstIndex << "; " <<
+                "baseVertex: " << drawCommand.baseVertex << "; " <<
+                "baseInstance: " << drawCommand.baseInstance << " }" << "\n";
+
+            m_drawCommands.push_back(drawCommand);
+
+            baseVertex += vertexCount;
+
+            m_objectData.push_back(sceneKV.second.objectData);
+
+            m_objectInstanceData.insert(m_objectInstanceData.end(), sceneKV.second.instanceData.begin(), sceneKV.second.instanceData.end());
+        }
 
         // generate draw command buffer
         m_drawCommandBuffer->setData(m_drawCommands, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW)); // draw commands can technically be changed
@@ -379,38 +393,28 @@ public:
         m_vao->binding(0)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(0);
 
-        m_vao->binding(0)->setAttribute(1); // attribute 1 uses same data format, so it can be bound to the same binding point
+        m_vao->binding(1)->setAttribute(1);
+        m_vao->binding(1)->setBuffer(m_geometryDataBuffer.get(), offsetof(NormalizedVertex, normal), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(1)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(1);
 
-        m_vao->binding(1)->setAttribute(2);
-        m_vao->binding(1)->setBuffer(m_geometryDataBuffer.get(), offsetof(NormalizedVertex, uv), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
-        m_vao->binding(1)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->binding(2)->setAttribute(2);
+        m_vao->binding(2)->setBuffer(m_geometryDataBuffer.get(), offsetof(NormalizedVertex, uv), sizeof(NormalizedVertex)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(2)->setFormat(2, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(2);
 
         // generate element buffer
         m_elementBuffer->setData(m_indices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
 
+        std::cout << "[DEBUG] Index buffer elements: " << m_indices.size() << "\n";
+
         m_vao->bindElementBuffer(m_elementBuffer.get());
 
-        // generate object data buffer
-        std::vector<StaticObjectData> m_objectData;
-
-        for (auto& sceneDescKV : m_scenes)
-        {
-            m_objectData.push_back(sceneDescKV.second.objectData);
-        }
-
-        // std::transform(m_scenes.begin(), m_scenes.end(), m_objectData.begin(), [](std::pair<std::string, StaticSceneDescriptor> sceneDescKV) { return sceneDescKV.second.objectData; });
+        std::cout << "[DEBUG] Object data buffer elements: " << m_objectData.size() << "\n";
 
         m_objectDataBuffer->setData(m_objectData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
 
-        // generate object **instance** data buffer
-        std::vector<StaticObjectInstanceData> m_objectInstanceData;
-
-        for (auto& sceneDescKV : m_scenes)
-        {
-            m_objectInstanceData.insert(m_objectInstanceData.end(), sceneDescKV.second.instanceData.begin(), sceneDescKV.second.instanceData.end());
-        }
+        std::cout << "[DEBUG] Instance data buffer elements: " << m_objectInstanceData.size() << "\n";
 
         m_objectInstanceDataBuffer->setData(m_objectInstanceData, static_cast<gl::GLenum>(GL_DYNAMIC_COPY));
 
@@ -567,7 +571,7 @@ int main()
     settings.minorVersion = 6;
     settings.attributeFlags = sf::ContextSettings::Attribute::Core;
 
-#ifdef SYSTEM_DARWIN
+#if defined(SYSTEM_DARWIN) || defined(HIGH_DPI)
     auto videoMode = sf::VideoMode(2048, 1536);
 #else
     auto videoMode = sf::VideoMode(1024, 768);
@@ -629,24 +633,36 @@ int main()
 
     std::cout << "[INFO] Loading 3D models..." << std::endl;
 
-    auto duckScene = AssimpStaticModelLoader::fromFile("media/duck.obj", { "media" });
+    auto inkBottleScene = AssimpStaticModelLoader::fromFile("media/ink-bottle.obj", { "media" });
     auto lanternScene = AssimpStaticModelLoader::fromFile("media/lantern.obj", { "media" });
     auto scrollScene = AssimpStaticModelLoader::fromFile("media/scroll.obj", { "media" });
     auto penScene = AssimpStaticModelLoader::fromFile("media/pen-lowpoly.obj", { "media" });
+    auto tableScene = AssimpStaticModelLoader::fromFile("media/table.obj", { "media" });
 
     std::cout << "[INFO] Convert 3D models to static data..." << std::endl;
 
     auto staticDrawable = std::make_unique<StaticGeometryDrawable>();
 
-    staticDrawable->addScene("duck", duckScene);
+    staticDrawable->addScene("inkBottle", inkBottleScene);
     staticDrawable->addScene("lantern", lanternScene);
     staticDrawable->addScene("scroll", scrollScene);
     staticDrawable->addScene("pen", penScene);
+    staticDrawable->addScene("table", tableScene);
 
-    staticDrawable->addSceneInstance("duck", { .transformation = glm::mat4() });
-    staticDrawable->addSceneInstance("lantern", { .transformation = glm::translate(glm::vec3(0.0f, 0.5f, 0.0f)) });
-    staticDrawable->addSceneInstance("scroll", { .transformation = glm::translate(glm::vec3(0.5f, 0.5f, 0.5f)) });
-    staticDrawable->addSceneInstance("pen", { .transformation = glm::translate(glm::vec3(0.5f, 0.5f, 0.5f)) });
+    staticDrawable->addSceneInstance("inkBottle", { .transformation = glm::translate(glm::vec3(-1.75f, 3.85f, 1.05f)) * glm::scale(glm::vec3(0.5f)) });
+
+    staticDrawable->addSceneInstance("lantern", { .transformation = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.75f, 3.85f, -0.75f)), glm::vec3(0.5f)) });
+
+    staticDrawable->addSceneInstance("scroll", { .transformation = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.85f, 0.0f)), glm::vec3(0.5f)) });
+
+    staticDrawable->addSceneInstance("pen", {
+        .transformation =
+            glm::translate(glm::vec3(0.35f, 3.95f, -0.75f)) *
+            glm::scale(glm::vec3(0.05f)) *
+            (glm::rotate(glm::radians(12.5f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)))
+    });
+
+    staticDrawable->addSceneInstance("table", { .transformation = glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) });
 
     staticDrawable->build();
 
