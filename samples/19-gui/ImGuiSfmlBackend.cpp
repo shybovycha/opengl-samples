@@ -127,7 +127,12 @@ void initImGuiStyles(ImGuiIO& io)
 {
     ImGui::StyleColorsLight();
 
-    // io.FontGlobalScale = 2.0f;
+#ifdef HIGH_DPI
+    io.FontGlobalScale = 2.0f;
+
+    auto style = &ImGui::GetStyle();
+    style->ScaleAllSizes(2.0f);
+#endif
 }
 
 void beforeImGuiInit(std::function<void(ImGuiIO&)> fn)

@@ -27,6 +27,13 @@ target_link_libraries(${EXECUTABLE_NAME} PRIVATE assimp::assimp)
 find_package(imgui CONFIG REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE imgui::imgui)
 
+# options
+option(HIGH_DPI "2x pixel density" ON)
+
+if(HIGH_DPI)
+    target_compile_definitions(${EXECUTABLE_NAME} PRIVATE HIGH_DPI)
+endif()
+
 # copy media
 add_custom_command(TARGET ${EXECUTABLE_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../media $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/media)
 add_custom_command(TARGET ${EXECUTABLE_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/media $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/media)

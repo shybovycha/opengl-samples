@@ -1,4 +1,4 @@
-# Advanced modern OpenGL rendering technique & optimization samples
+﻿# Advanced modern OpenGL rendering technique & optimization samples
 
 This repo contains a number of samples of some advanced rendering techniques with modern OpenGL.
 Modern as in 4.4 .. 4.6. There are also few samples showing the rendering optimization techniques.
@@ -129,6 +129,8 @@ rendering skybox
 rendering reflective objects (using cubemaps)
 
 #### [19-gui](/samples/19-gui)
+
+![](/Screenshots/sample-19-gui.png)
 
 simple GUI with [Dear ImGUI](https://github.com/ocornut/imgui)
 
