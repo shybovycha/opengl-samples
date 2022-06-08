@@ -177,8 +177,8 @@ optimizing shadow mapping for large (think outdoor, landscape) scenes
 
 #### [22-fast-approximation-anti-aliasing](/samples/22-fast-approximation-anti-aliasing)
 
-![](/Screenshots/sample-22-fxaa-0.png)
-![](/Screenshots/sample-22-fxaa-4.png)
+![](/Screenshots/sample-22-fxaa-5.png)
+![](/Screenshots/sample-22-fxaa-6.png)
 
 faster anti-aliasing algorithm
 
