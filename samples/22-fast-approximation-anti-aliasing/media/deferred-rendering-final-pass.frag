@@ -52,7 +52,7 @@ void main()
         float lightDistance = length(light.position - fragmentPosition);
         float attenuation = 1.0 / (attenuation_constant + (attenuation_linear * lightDistance) + (attenuation_quadratic * lightDistance * lightDistance));
 
-        vec4 diffuse = max(dot(normal, lightDirection), 0.0) * light.color;
+        vec4 diffuse = max(dot(normal, lightDirection), 0.0) * albedoColor * light.color;
 
         lighting += diffuse * attenuation;
     }
