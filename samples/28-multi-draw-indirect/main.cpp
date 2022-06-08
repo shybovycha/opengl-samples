@@ -336,6 +336,9 @@ public:
         {
             auto scene = sceneKV.second.scene;
 
+            unsigned int firstIndex = 0; // static_cast<unsigned int>(m_indices.size());
+            unsigned int baseInstance = 0; // static_cast<unsigned int>(m_drawCommands.size());
+
             unsigned int elementCount = 0;
             unsigned int vertexCount = 0;
 
@@ -359,11 +362,11 @@ public:
             }
 
             StaticGeometryDrawCommand drawCommand {
-                .elementCount = elementCount,
+                .elementCount = elementCount, // vertexCount // pen (vs: 205, fs: 406, idxs: 1266) & table (vs: 146, fs: 260, idxs: 780) & scroll (vs: 273, fs: 422) - faces * 3, ink bottle (vs: 120, fs: 236) & lantern (vs: 106, fs: 204, idxs: 612) - vertices
                 .instanceCount = 1,
-                .firstIndex = 0,
+                .firstIndex = firstIndex,
                 .baseVertex = baseVertex,
-                .baseInstance = 0
+                .baseInstance = baseInstance
             };
 
             std::cout << "[DEBUG] Draw command: { " <<
@@ -536,7 +539,7 @@ private:
         std::vector<StaticObjectInstanceData> instanceData;
     };
 
-    struct NormalizedVertex
+    struct alignas(16) NormalizedVertex
     {
         glm::vec3 position;
         glm::vec3 normal;
