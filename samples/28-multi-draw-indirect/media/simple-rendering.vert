@@ -40,9 +40,10 @@ void main()
     vsOut.normal = vertexNormal;
     vsOut.textureCoord = vec2(vertexTextureCoord.x, vertexTextureCoord.y);
     vsOut.objectID = gl_DrawID;
-    vsOut.instanceID = gl_InstanceID;
 
     uint objectInstanceIndex = objectData[gl_DrawID].instanceDataOffset + gl_InstanceID;
+
+    vsOut.instanceID = objectInstanceIndex;
 
     mat4 model = transformations[objectInstanceIndex];
 
