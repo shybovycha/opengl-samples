@@ -378,12 +378,18 @@ public:
 
                 m_drawCommands.push_back(drawCommand);
 
+                sceneKV.second.objectData.instanceDataOffset = m_objectInstanceData.size();
+
                 // have to add redundant data to the objectDataBuffer and objectInstanceDataBuffer to count for multiple meshes within the same scene
                 m_objectData.push_back(sceneKV.second.objectData); // TODO: the offset for the object/instance data here is incorrect
             }
 
+            std::cout << "[DEBUG] End object " << sceneKV.first << "; instances to add: " << sceneKV.second.instanceData.size() << "\n";
+
             m_objectInstanceData.insert(m_objectInstanceData.end(), sceneKV.second.instanceData.begin(), sceneKV.second.instanceData.end());
         }
+
+        std::cout << "[DEBUG] Object data: " << m_objectData.size() << "; instance data: " << m_objectInstanceData.size() << "\n";
 
         // generate draw command buffer
         m_drawCommandBuffer->setData(m_drawCommands, static_cast<gl::GLenum>(GL_DYNAMIC_DRAW)); // draw commands can technically be changed
@@ -656,12 +662,11 @@ int main()
 
     staticDrawable->addSceneInstance("lantern", { .transformation = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-1.75f, 3.85f, -0.75f)), glm::vec3(0.5f)) });
 
-    staticDrawable->addSceneInstance("scroll", { .transformation = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.85f, 0.0f)), glm::vec3(1.0f)) });
+    staticDrawable->addSceneInstance("scroll", { .transformation = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.85f, 0.0f)), glm::vec3(0.5f)) });
 
     staticDrawable->addSceneInstance("pen", {
-        .transformation =
-            // (glm::rotate(glm::radians(12.5f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) *
-            glm::scale(glm::mat4(1.0f), glm::vec3(0.35f, 3.95f, -0.75f))
+        .transformation = 
+            glm::translate(glm::vec3(0.35f, 3.95f, -0.75f)) * glm::scale(glm::vec3(0.05f)) * (glm::rotate(glm::radians(12.5f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)))
     });
 
     staticDrawable->addSceneInstance("table", { .transformation = glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) });

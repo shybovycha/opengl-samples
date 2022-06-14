@@ -198,6 +198,8 @@ HBAO, nVidia algorithm, optimization for performance and quality over SSAO
 
 #### [28-multi-draw-indirect](/samples/28-multi-draw-indirect)
 
-![](/Screenshots/sample-28-draw-multi-indirect.png)
+![](/Screenshots/sample-28-draw-multi-indirect-1.png)
+![](/Screenshots/sample-28-draw-multi-indirect-2.png)
+![](/Screenshots/sample-28-draw-multi-indirect-3.png)
 
 optimized "batched" rendering using modern OpenGL capabilities (`glMultiDrawIndirect`), reducing the number of draw calls
