@@ -3,7 +3,23 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(demo-scene-3 VERSION 1.0.2 LANGUAGES CXX)
 
 set(EXECUTABLE_NAME demo-scene-3)
-set(SOURCES "main.cpp" "ImGuiSfmlBackend.hpp" "ImGuiSfmlBackend.cpp")
+set(SOURCES 
+    "main.cpp"
+    #"ImGuiSfmlBackend.hpp"
+    "ImGuiSfmlBackend.cpp"
+    #"AbstractParticleParamsGenerator.hpp"
+    "AbstractParticleParamsGenerator.cpp"
+    #"Mesh.hpp"
+    "Mesh.cpp"
+    #"Model.hpp"
+    "Model.cpp"
+    #"Particle.hpp"
+    "Particle.cpp"
+    #"SimpleParticle.hpp"
+    "SimpleParticle.cpp"
+    #"UniformParticleParamsGenerator.hpp"
+    "UniformParticleParamsGenerator.cpp"
+)
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
