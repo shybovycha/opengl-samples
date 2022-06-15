@@ -446,18 +446,251 @@ private:
     float m_lifetime;
 };
 
-template <class TParticle>
-class AbstractParticleAttributeGenerator
+class AbstractRandomVectorGenerator
 {
 public:
-    virtual void generate(TParticle* particle) = 0;
+    virtual glm::vec3 generateUnitVector() = 0;
+};
+
+class AbstractParticleParamsGenerator
+{
+public:
+    virtual float generateLifetime()
+    {
+        return generateFloat(m_minLifetime, m_maxLifetime);
+    }
+
+    virtual glm::vec3 generateVelocity()
+    {
+        auto velocityScale = generateFloat(m_minVelocity, m_maxVelocity);
+
+        glm::vec3 velocityOffset;
+
+        while (glm::dot(velocityOffset, m_velocityDirection) <= 0.0f)
+        {
+            velocityOffset = generateUnitVector();
+        }
+
+        return velocityOffset * velocityScale;
+    }
+
+    virtual float generateScale()
+    {
+        return generateFloat(m_minScale, m_maxScale);
+    }
+
+    virtual float generateMass()
+    {
+        return generateFloat(m_minMass, m_maxMass);
+    }
+
+    virtual float generateRotation()
+    {
+        auto angle = generateFloat(m_minRotation, m_maxRotation);
+
+        return glm::radians(angle);
+    }
+
+    virtual glm::vec3 generatePosition()
+    {
+        glm::vec3 offset = generateUnitVector();
+
+        auto offsetScale = generateFloat(m_minPositionOffset, m_maxPositionOffset);
+
+        return m_origin + offset * offsetScale;
+    }
+
+public:
+    float getMinLifetime() const
+    {
+        return m_minLifetime;
+    }
+
+    float getMaxLifetime() const
+    {
+        return m_minLifetime;
+    }
+
+    float getMinMass() const
+    {
+        return m_minMass;
+    }
+
+    float getMaxMass() const
+    {
+        return m_minMass;
+    }
+
+    float getMinRotation() const
+    {
+        return m_minRotation;
+    }
+
+    float getMaxRotation() const
+    {
+        return m_minRotation;
+    }
+
+    float getMinScale() const
+    {
+        return m_minScale;
+    }
+
+    float getMaxScale() const
+    {
+        return m_minScale;
+    }
+
+    float getMinVelocity() const
+    {
+        return m_minVelocity;
+    }
+
+    float getMaxVelocity() const
+    {
+        return m_minVelocity;
+    }
+
+    glm::vec3 getVelocityDirection() const
+    {
+        return m_velocityDirection;
+    }
+
+    float getMinPositionOffset() const
+    {
+        return m_minPositionOffset;
+    }
+
+    float getMaxPositionOffset() const
+    {
+        return m_minPositionOffset;
+    }
+
+    glm::vec3 getOrigin() const
+    {
+        return m_origin;
+    }
+
+public:
+    void setLifetimeInterval(float minLifetime, float maxLifetime)
+    {
+        m_minLifetime = minLifetime;
+        m_maxLifetime = maxLifetime;
+    }
+
+    void setMassInterval(float minMass, float maxMass)
+    {
+        m_minMass = minMass;
+        m_maxMass = maxMass;
+    }
+
+    void setRotationInterval(float minRotation, float maxRotation)
+    {
+        m_minRotation = minRotation;
+        m_maxRotation = maxRotation;
+    }
+
+    void setScaleInterval(float minScale, float maxScale)
+    {
+        m_minScale = minScale;
+        m_maxScale = maxScale;
+    }
+
+    void setVelocityInterval(float minVelocity, float maxVelocity, glm::vec3 velocityDirection)
+    {
+        m_minVelocity = minVelocity;
+        m_maxVelocity = maxVelocity;
+        m_velocityDirection = velocityDirection;
+    }
+
+    void setPositionInterval(float minPositionOffset, float maxPositionOffset, glm::vec3 origin)
+    {
+        m_minPositionOffset = minPositionOffset;
+        m_maxPositionOffset = maxPositionOffset;
+        m_origin = origin;
+    }
+
+protected:
+    virtual glm::vec3 generateUnitVector() = 0;
+
+    virtual float generateFloat(float minValue, float maxValue) = 0;
+
+    virtual unsigned int generateUInt(unsigned int minValue, unsigned int maxValue) = 0;
+
+private:
+    float m_minLifetime;
+    float m_maxLifetime;
+
+    float m_minScale;
+    float m_maxScale;
+
+    float m_minRotation;
+    float m_maxRotation;
+
+    float m_minMass;
+    float m_maxMass;
+
+    float m_minVelocity;
+    float m_maxVelocity;
+    glm::vec3 m_velocityDirection;
+
+    float m_minPositionOffset;
+    float m_maxPositionOffset;
+    glm::vec3 m_origin;
+};
+
+class UniformParticleParamsGenerator : public AbstractParticleParamsGenerator
+{
+public:
+    UniformParticleParamsGenerator() :
+        m_generator(std::default_random_engine(m_randomDevice()))
+    {
+    }
+
+protected:
+    glm::vec3 generateUnitVector() override
+    {
+        std::uniform_real_distribution<> distribution(-1.0f, 1.0f);
+
+        auto x = distribution(m_generator);
+        auto y = distribution(m_generator);
+        auto z = distribution(m_generator);
+
+        return glm::vec3(x, y, z);
+    }
+
+    float generateFloat(float minValue, float maxValue) override
+    {
+        std::uniform_real_distribution<> distribution(minValue, maxValue);
+
+        return distribution(m_generator);
+    }
+
+    unsigned int generateUInt(unsigned int minValue, unsigned int maxValue) override
+    {
+        std::uniform_int_distribution<> distribution(minValue, maxValue);
+
+        return static_cast<unsigned int>(distribution(m_generator));
+    }
+
+private:
+    std::random_device m_randomDevice;
+    std::default_random_engine m_generator;
 };
 
 template <class TParticle>
 class AbstractParticleEmitter
 {
 public:
+    AbstractParticleEmitter(std::shared_ptr<AbstractParticleParamsGenerator> paramsGenerator) :
+        m_paramsGenerator(std::move(paramsGenerator))
+    {
+    }
+
     virtual void emit(TParticle* particle) = 0;
+
+protected:
+    std::shared_ptr<AbstractParticleParamsGenerator> m_paramsGenerator;
 };
 
 template <class TParticle>
@@ -576,69 +809,19 @@ private:
 class SimpleParticleEmitter : public AbstractParticleEmitter<SimpleParticle>
 {
 public:
-    SimpleParticleEmitter(
-        std::function<float()> lifetime,
-        std::function<glm::vec3()> position,
-        std::function<glm::vec3()> velocity,
-        std::function<float()> scale,
-        std::function<float()> mass,
-        std::function<float()> rotation
-    ) :
-        m_lifetime(lifetime),
-        m_origin(position),
-        m_velocity(velocity),
-        m_scale(scale),
-        m_mass(mass),
-        m_rotation(rotation)
+    SimpleParticleEmitter(std::shared_ptr<AbstractParticleParamsGenerator> paramsGenerator) :
+        AbstractParticleEmitter(paramsGenerator)
     {}
 
     void emit(SimpleParticle* particle) override
     {
-        particle->setLifetime(m_lifetime());
-        particle->setPosition(m_origin());
-        particle->setVelocity(m_velocity());
-        particle->setMass(m_mass());
-        particle->setRotation(m_rotation());
-        particle->setScale(m_scale());
+        particle->setLifetime(m_paramsGenerator->generateLifetime());
+        particle->setPosition(m_paramsGenerator->generatePosition());
+        particle->setVelocity(m_paramsGenerator->generateVelocity());
+        particle->setMass(m_paramsGenerator->generateMass());
+        particle->setRotation(m_paramsGenerator->generateRotation());
+        particle->setScale(m_paramsGenerator->generateScale());
     }
-
-    void setVelocity(std::function<glm::vec3()> velocity)
-    {
-        m_velocity = std::move(velocity);
-    }
-
-    void setOrigin(std::function<glm::vec3()> origin)
-    {
-        m_origin = std::move(origin);
-    }
-
-    void setLifetime(std::function<float()> lifetime)
-    {
-        m_lifetime = std::move(lifetime);
-    }
-
-    void setMass(std::function<float()> mass)
-    {
-        m_mass = std::move(mass);
-    }
-
-    void setScale(std::function<float()> scale)
-    {
-        m_scale = std::move(scale);
-    }
-
-    void setRotation(std::function<float()> rotation)
-    {
-        m_rotation = std::move(rotation);
-    }
-
-private:
-    std::function<glm::vec3()> m_velocity;
-    std::function<glm::vec3()> m_origin;
-    std::function<float()> m_lifetime;
-    std::function<float()> m_mass;
-    std::function<float()> m_scale;
-    std::function<float()> m_rotation;
 };
 
 class SimpleParticleAffector : public AbstractParticleAffector<SimpleParticle>
@@ -1044,23 +1227,16 @@ int main()
 
     auto particleModel = Model::fromAiNode(quadScene, quadScene->mRootNode);
 
-    std::random_device randomDevice;
-    std::default_random_engine gen(randomDevice()); // alternatively, use std::mt19937
+    auto randomParticleGenerator = std::make_shared<UniformParticleParamsGenerator>();
 
-    std::uniform_real_distribution<> lifetimeDistribution(1.0, 5.0);
-    std::uniform_real_distribution<> scaleDistribution(0.1, 0.5);
-    std::uniform_real_distribution<> massDistribution(0.01, 0.1);
-    std::uniform_real_distribution<> rotationDistribution(-180.0, 180.0);
+    randomParticleGenerator->setLifetimeInterval(1.0f, 5.0f);
+    randomParticleGenerator->setScaleInterval(0.1f, 0.5f);
+    randomParticleGenerator->setMassInterval(0.01f, 0.1f);
+    randomParticleGenerator->setRotationInterval(-180.0f, 180.0f);
+    randomParticleGenerator->setPositionInterval(0.0f, 6.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+    randomParticleGenerator->setVelocityInterval(0.2f, 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
 
-    std::uniform_real_distribution<> vectorComponentDistribution(0.0, 1.0);
-    
-    auto particleEmitter = std::make_shared<SimpleParticleEmitter>(
-        [&]() { return lifetimeDistribution(gen); },
-        [&]() { return glm::vec3(0.0f, vectorComponentDistribution(gen), 0.0f); },
-        [&]() { return glm::vec3(vectorComponentDistribution(gen), 0.0f, 0.0f); },
-        [&]() { return scaleDistribution(gen); },
-        [&]() { return massDistribution(gen); },
-        [&]() { return glm::radians(rotationDistribution(gen)); } );
+    auto particleEmitter = std::make_shared<SimpleParticleEmitter>(randomParticleGenerator);
 
     auto particleAffector = std::make_shared<SimpleParticleAffector>();
     auto particleRenderer = std::make_unique<SimpleParticleRenderer>(std::move(particleModel), std::move(particleTexture));
@@ -1137,12 +1313,13 @@ int main()
     std::vector<std::string> emitterTypes = { "Circle", "Rectangle", "Sphere", "Box" };
     int selectedEmitterTypeIdx = 0;
 
-    float particleMass[2] = { 0.0f, 0.0f };
-    float particleRotation[2] = { 0.0f, 0.0f };
-    float particleLifetime[2] = { 0.0f, 0.0f };
-    float particleVelocityDir[3] = { 0.0f, 0.0f, 0.0f };
-    float particleVelocityScale[2] = { 0.0f, 0.0f };
-    float particlePosition[3] = { 0.0f, 0.0f, 0.0f };
+    float particleMass[2] = { randomParticleGenerator->getMinMass(), randomParticleGenerator->getMaxMass() };
+    float particleScale[2] = { randomParticleGenerator->getMinScale(), randomParticleGenerator->getMaxScale() };
+    float particleRotation[2] = { randomParticleGenerator->getMinRotation(), randomParticleGenerator->getMaxRotation() };
+    float particleLifetime[2] = { randomParticleGenerator->getMinLifetime(), randomParticleGenerator->getMaxLifetime() };
+    float particleVelocityDir[3] = { randomParticleGenerator->getVelocityDirection().x, randomParticleGenerator->getVelocityDirection().y, randomParticleGenerator->getVelocityDirection().z };
+    float particleVelocityScale[2] = { randomParticleGenerator->getMinScale(), randomParticleGenerator->getMaxScale() };
+    float particlePosition[3] = { randomParticleGenerator->getOrigin().x, randomParticleGenerator->getOrigin().y, randomParticleGenerator->getOrigin().z };
 
     glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
 
@@ -1387,56 +1564,27 @@ int main()
                     isControllingCamera = true;
                 }
 
-                /*if (ImGui::CollapsingHeader("Help"))
+                if (ImGui::DragFloat2("Mass", particleMass, 0.01f, 0.0f, 1.0f))
                 {
-                    std::ostringstream s;
-                    s << "You have found a checkbox: "
-                      << "["
-                      << (checkValue ? "x" : " ")
-                      << "]";
+                    randomParticleGenerator->setMassInterval(particleMass[0], particleMass[1]);
+                }
 
-                    ImGui::Text(s.str().c_str());
-
-                    ImGui::Checkbox("Checkbox: ", &checkValue);
-                }*/
-
-                ImGui::DragFloat2("Mass", particleMass, 0.01f, 0.0f, 1.0f);
+                if (ImGui::DragFloat2("Scale", particleScale, 0.1f, 0.0f, 100.0f))
+                {
+                    randomParticleGenerator->setScaleInterval(particleScale[0], particleScale[1]);
+                }
                 
-                ImGui::DragFloat2("Rotation", particleRotation, 0.01f, 0.0f, 1.0f);
-                ImGui::DragFloat2("Lifetime", particleLifetime, 0.1f, 0.0f, 100.0f);
+                if (ImGui::DragFloat2("Rotation", particleRotation, 0.01f, 0.0f, 1.0f))
+                {
+                    randomParticleGenerator->setRotationInterval(particleRotation[0], particleRotation[1]);
+                }
                 
+                if (ImGui::DragFloat2("Lifetime", particleLifetime, 0.1f, 0.0f, 100.0f))
+                {
+                    randomParticleGenerator->setLifetimeInterval(particleLifetime[0], particleLifetime[1]);
+                }
+
                 ImGui::DragFloat3("Velocity direction", particleVelocityDir, 0.01f, -0.1f, 1.0f);
-
-                // TODO: can't simply set a function =(
-                /*particleEmitter->setMass([&]() { return std::uniform_real_distribution<>(particleMass[0], particleMass[1])(gen); });
-
-                particleEmitter->setRotation([&]() { return std::uniform_real_distribution<>(particleRotation[0], particleRotation[1])(gen); });
-
-                particleEmitter->setLifetime([&]() { return std::uniform_real_distribution<>(particleLifetime[0], particleLifetime[1])(gen); });
-
-                particleEmitter->setVelocity([&]() {
-                    auto dist1 = std::uniform_real_distribution<>(0.0f, particleVelocityDir[0]);
-                    auto dist2 = std::uniform_real_distribution<>(0.0f, particleVelocityDir[1]);
-                    auto dist3 = std::uniform_real_distribution<>(0.0f, particleVelocityDir[2]);
-
-                    auto scaleDist = std::uniform_real_distribution<>(particleVelocityScale[0], particleVelocityScale[1]);
-
-                    auto x = dist1(gen);
-                    auto y = dist2(gen);
-                    auto z = dist3(gen);
-
-                    auto scale = scaleDist(gen);
-
-                    return glm::vec3(x, y, z) * static_cast<float>(scale);
-                });
-
-                particleEmitter->setOrigin([&]() {
-                    auto dist1 = std::uniform_real_distribution<>(0.0f, particlePosition[0]);
-                    auto dist2 = std::uniform_real_distribution<>(0.0f, particlePosition[1]);
-                    auto dist3 = std::uniform_real_distribution<>(0.0f, particlePosition[2]);
-
-                    return glm::vec3(dist1(gen), dist2(gen), dist3(gen));
-                });*/
 
                 // tooltip
                 ImGui::SameLine();
@@ -1449,7 +1597,10 @@ int main()
                     ImGui::EndTooltip();
                 }
 
-                ImGui::DragFloat2("Velocity scale", particleVelocityScale, 0.1f, 0.0f, 100.0f);
+                if (ImGui::DragFloat2("Velocity scale", particleVelocityScale, 0.1f, 0.0f, 100.0f))
+                {
+                    randomParticleGenerator->setVelocityInterval(particleVelocityScale[0], particleVelocityScale[1], glm::vec3(particleVelocityDir[0], particleVelocityDir[1], particleVelocityDir[2]));
+                }
 
                 if (ImGui::BeginCombo("Emitter type", emitterTypes[selectedEmitterTypeIdx].c_str(), 0))
                 {
