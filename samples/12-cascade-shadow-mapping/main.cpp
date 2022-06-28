@@ -694,10 +694,10 @@ int main()
 
     std::vector<glm::mat4> lightViewProjectionMatrices;
     std::vector<float> splitDepths;
-    std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
+    const std::vector<float> splits{ { 0.0f, 0.05f, 0.2f, 0.5f, 1.0f } };
 
     // these vertices define view frustum in screen space coordinates
-    std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
+    constexpr std::array<glm::vec3, 8> _cameraFrustumSliceCornerVertices{
         {
             { -1.0f, -1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f },
             { -1.0f, -1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f, 1.0f, 1.0f },
@@ -812,19 +812,19 @@ int main()
 
             glm::mat4 proj = glm::inverse(cameraProjection * cameraView);
 
-            std::array<glm::vec3, 8> _entireFrustum;
+            std::array<glm::vec3, 8> _entireFrustum{};
 
             std::transform(
                 _cameraFrustumSliceCornerVertices.begin(),
                 _cameraFrustumSliceCornerVertices.end(),
                 _entireFrustum.begin(),
-                [&](glm::vec3 p) {
+                [proj](glm::vec3 p) {
                     glm::vec4 v = proj * glm::vec4(p, 1.0f);
                     return glm::vec3(v) / v.w;
                 }
             );
 
-            std::array<glm::vec3, 4> _frustumEdgeDirections;
+            std::array<glm::vec3, 4> _frustumEdgeDirections {};
 
             for (auto i = 0; i < 4; ++i)
             {

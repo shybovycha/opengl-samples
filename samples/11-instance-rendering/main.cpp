@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <format>
 
 #include <tracy/Tracy.hpp>
 
@@ -1185,7 +1186,9 @@ int main()
         // measure time since last frame, in seconds
         float deltaTime = static_cast<float>(clock.restart().asSeconds());
 
-        window.setTitle("Hello, Instanced particle rendering! FPS: " + std::to_string(1.0f / deltaTime));
+        const auto title = std::format("Hello, Instanced particle rendering! [frame render time, sec: {}]", deltaTime);
+
+        window.setTitle(title);
 
         while (window.pollEvent(event))
         {

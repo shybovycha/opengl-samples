@@ -777,7 +777,7 @@ public:
             { 0.0f, 0.0f, 1.0f },
         };
 
-        std::transform(vertices.begin(), vertices.end(), vertices.begin(), [&](glm::vec3 p) { return p * m_size; });
+        vertices = vertices | std::views::transform([m_size](glm::vec3 p) { return p * m_size; });
 
         std::vector<unsigned int> indices{
             2, 1, 0,

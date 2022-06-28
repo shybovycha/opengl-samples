@@ -641,7 +641,7 @@ public:
         for (auto& kv : skyboxTextures)
         {
             const auto target = kv.first;
-            auto image = kv.second;
+            auto& image = kv.second;
 
             if (target == gl::GL_TEXTURE_CUBE_MAP_POSITIVE_Y || target == gl::GL_TEXTURE_CUBE_MAP_NEGATIVE_Y)
             {
@@ -743,7 +743,7 @@ public:
             { 0.0f, 0.0f, 1.0f },
         };
 
-        std::transform(vertices.begin(), vertices.end(), vertices.begin(), [&](glm::vec3 p) { return p * m_size; });
+        std::for_each(vertices.begin(), vertices.end(), [this](glm::vec3 p) { return p * m_size; });
 
         std::vector<unsigned int> indices{
             2, 1, 0,

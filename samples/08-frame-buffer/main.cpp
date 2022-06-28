@@ -73,9 +73,9 @@ public:
     {
         std::cout << "[INFO] Creating buffer objects...";
 
-        std::vector<glm::vec3> vertices;
-        std::vector<glm::vec3> normals;
-        std::vector<glm::vec2> uvs;
+        std::vector<glm::vec3> vertices(mesh->mNumVertices);
+        std::vector<glm::vec3> normals(mesh->mNumVertices);
+        std::vector<glm::vec2> uvs(mesh->mNumVertices);
 
         for (auto i = 0; i < mesh->mNumVertices; ++i)
         {
@@ -107,7 +107,7 @@ public:
             }
         }
 
-        std::vector<GLuint> indices;
+        std::vector<GLuint> indices(mesh->mNumFaces * 3);
 
         for (auto i = 0; i < mesh->mNumFaces; ++i)
         {
@@ -187,10 +187,10 @@ public:
                     std::filesystem::path{ "../" + imagePath }
                 };*/
 
-                for (auto path : materialLookupPaths) {
+                for (auto& path : materialLookupPaths) {
                     std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
 
-                    const auto filePath = std::filesystem::path(path).append(imagePath);
+                    const auto& filePath = std::filesystem::path(path).append(imagePath);
 
                     if (std::filesystem::exists(filePath)) {
                         imagePath = filePath.string();
