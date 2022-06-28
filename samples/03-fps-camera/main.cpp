@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <format>
 
 #include <glbinding/gl/gl.h>
 
@@ -44,11 +45,9 @@ int main()
     auto videoMode = sf::VideoMode(1024, 768);
 #endif
 
-    sf::Window window(videoMode, "Hello Camera!", sf::Style::Default, settings);
+    sf::Window window(videoMode, "Hello, Camera!", sf::Style::Default, settings);
 
-    globjects::init([](const char* name) {
-        return sf::Context::getFunction(name);
-    });
+    globjects::init(sf::Context::getFunction);
 
     globjects::DebugMessage::enable(); // enable automatic messages if KHR_debug is available
 
@@ -129,11 +128,9 @@ int main()
         // measure time since last frame, in seconds
         float deltaTime = static_cast<float>(clock.restart().asSeconds());
 
-        std::ostringstream title;
+        const auto title = std::format("Hello, Camera! [frame render time, sec: {}]", deltaTime);
 
-        title << "Hello camera [frame render time, sec: " << deltaTime << "]";
-
-        window.setTitle(title.str());
+        window.setTitle(title);
 
         while (window.pollEvent(event))
         {

@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <format>
 
 #include <glbinding/gl/gl.h>
 
@@ -1082,7 +1083,9 @@ int main()
         // measure time since last frame, in seconds
         float deltaTime = static_cast<float>(clock.restart().asSeconds());
 
-        window.setTitle("Hello, Particles! FPS: " + std::to_string(1.0f / deltaTime));
+        const auto title = std::format("Hello, Particles! [frame render time, sec: {}]", deltaTime);
+
+        window.setTitle(title);
 
         while (window.pollEvent(event))
         {
