@@ -3,9 +3,12 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(11-instance-rendering VERSION 1.0.2 LANGUAGES CXX)
 
 set(EXECUTABLE_NAME 11-instance-rendering)
-set(SOURCES "main.cpp")
+set(SOURCES "src/main.cpp" "src/common/Mesh.cpp" "src/common/Model.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
+
+target_include_directories(${EXECUTABLE_NAME} PRIVATE "src")
+target_precompile_headers(${EXECUTABLE_NAME} PRIVATE "src/common/stdafx.hpp")
 
 target_compile_features(${EXECUTABLE_NAME} PRIVATE cxx_std_20)
 
