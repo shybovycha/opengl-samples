@@ -3,7 +3,7 @@ add_requires("glm")
 add_requires("imgui")
 add_requires("vcpkg::globjects", { alias = "globjects" })
 add_requires("vcpkg::glbinding", { alias = "glbinding" })
-add_requires("vcpkg::assimp", { alias = "assimp" })
+add_requires("assimp")
 
 target("19-gui")
   set_languages("cxx20")

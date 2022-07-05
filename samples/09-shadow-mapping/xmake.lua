@@ -2,7 +2,7 @@ add_requires("sfml ~2.5.1", { alias = "sfml" })
 add_requires("glm")
 add_requires("vcpkg::globjects", { alias = "globjects" })
 add_requires("vcpkg::glbinding", { alias = "glbinding" })
-add_requires("vcpkg::assimp", { alias = "assimp" })
+add_requires("assimp")
 
 target("09-shadow-mapping")
   set_languages("cxx20")
