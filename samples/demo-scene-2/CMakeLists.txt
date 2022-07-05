@@ -13,7 +13,7 @@ target_compile_features(${EXECUTABLE_NAME} PRIVATE cxx_std_20)
 target_precompile_headers(${EXECUTABLE_NAME} PUBLIC ${PRECOMPILED_HEADER})
 
 find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
-target_link_libraries(${EXECUTABLE_NAME} PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE sfml-system sfml-graphics sfml-window)
 
 find_package(globjects CONFIG REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE globjects::globjects)
