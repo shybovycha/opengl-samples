@@ -3,7 +3,6 @@
 #include "stdafx.hpp"
 
 #include "AbstractMesh.hpp"
-#include "AbstractMeshBuilder.hpp"
 #include "MultiMeshModel.hpp"
 
 class AssimpModel : public MultiMeshModel

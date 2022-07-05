@@ -1,4 +1,4 @@
-#include "AbstractSkyboxBuilder.hpp"
+#include "Skybox.hpp"
 
 AbstractSkyboxBuilder* AbstractSkyboxBuilder::size(float size)
 {

@@ -36,9 +36,6 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/Window.hpp>
 
-#include "AssimpModel.hpp"
-#include "Skybox.hpp"
-
 #ifdef WIN32
 using namespace gl;
 #endif

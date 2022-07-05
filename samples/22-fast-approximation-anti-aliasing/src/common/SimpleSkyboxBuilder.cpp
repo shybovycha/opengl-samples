@@ -1,4 +1,4 @@
-#include "SimpleSkyboxBuilder.hpp"
+#include "Skybox.hpp"
 
 SimpleSkyboxBuilder::SimpleSkyboxBuilder() :
     AbstractSkyboxBuilder()
