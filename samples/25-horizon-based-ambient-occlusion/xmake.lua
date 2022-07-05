@@ -8,6 +8,8 @@ target("25-horizon-based-ambient-occlusion")
   set_languages("cxx20")
   set_kind("binary")
 
+  set_pcxxheader("src/stdafx.hpp")
+
   add_packages("sfml", "glm", "globjects", "glbinding", "assimp")
 
   if is_plat("macosx") then
@@ -20,7 +22,7 @@ target("25-horizon-based-ambient-occlusion")
     add_ldflags("/LTCG")
   end
 
-  add_files("main.cpp")
+  add_files("src/main.cpp", "src/AbstractMesh.cpp", "src/AbstractSkyboxBuilder.cpp", "src/AsbtractMeshBuilder.cpp", "src/AssimpModel.cpp", "src/CubemapSkyboxBuilder.cpp", "src/main.cpp", "src/MultimeshModel.cpp", "src/SimpleSkyboxBuilder.cpp", "src/SingleMeshModel.cpp", "src/Skybox.cpp",)
 
   after_build(function (target)
     os.cp("$(scriptdir)/../media", path.join(path.directory(target:targetfile()), "media"))

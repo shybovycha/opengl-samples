@@ -3,9 +3,13 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(25-horizon-based-ambient-occlusion VERSION 1.0.2 LANGUAGES CXX)
 
 set(EXECUTABLE_NAME 25-horizon-based-ambient-occlusion)
-set(SOURCES "main.cpp")
+set(SOURCES "src/main.cpp" "src/AbstractMesh.cpp" "src/AbstractSkyboxBuilder.cpp" "src/AbstractMeshBuilder.cpp" "src/AssimpModel.cpp" "src/CubemapSkyboxBuilder.cpp" "src/main.cpp" "src/MultimeshModel.cpp" "src/SimpleSkyboxBuilder.cpp" "src/SingleMeshModel.cpp" "src/Skybox.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
+
+target_include_directories(${EXECUTABLE_NAME} PRIVATE "src")
+
+target_precompile_headers(${EXECUTABLE_NAME} PRIVATE "src/stdafx.hpp")
 
 target_compile_features(${EXECUTABLE_NAME} PRIVATE cxx_std_20)
 
