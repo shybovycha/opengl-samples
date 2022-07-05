@@ -2,7 +2,7 @@ add_requires("sfml ~2.5.1", { alias = "sfml" })
 add_requires("glm")
 add_requires("vcpkg::globjects", { alias = "globjects" })
 add_requires("vcpkg::glbinding", { alias = "glbinding" })
-add_requires("vcpkg::assimp", { alias = "assimp" })
+add_requires("assimp")
 
 target("10-particles")
   set_languages("cxx20")
@@ -18,7 +18,10 @@ target("10-particles")
     add_frameworks("Foundation", "OpenGL", "IOKit", "Cocoa", "Carbon")
   end
 
-  add_files("main.cpp")
+  set_pcxxheader("src/common/stdafx.hpp")
+
+  add_files("src/main.cpp", "src/common/Mesh.cpp", "src/common/Model.cpp")
+  add_includedirs("src/")
 
   after_build(function (target)
     os.cp("$(scriptdir)/../media", path.join(path.directory(target:targetfile()), "media"))
