@@ -18,7 +18,10 @@ target("09-shadow-mapping")
     add_frameworks("Foundation", "OpenGL", "IOKit", "Cocoa", "Carbon")
   end
 
-  add_files("main.cpp")
+  set_pcxxheader("src/common/stdafx.hpp")
+
+  add_files("src/main.cpp", "src/common/Mesh.cpp", "src/common/Model.cpp")
+  add_includedirs("src/")
 
   after_build(function (target)
     os.cp("$(scriptdir)/../media", path.join(path.directory(target:targetfile()), "media"))
