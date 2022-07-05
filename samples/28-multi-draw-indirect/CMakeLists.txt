@@ -3,9 +3,13 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(28-multi-draw-indirect VERSION 1.0.2 LANGUAGES CXX)
 
 set(EXECUTABLE_NAME 28-multi-draw-indirect)
-set(SOURCES "main.cpp")
+set(SOURCES "src/main.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
+
+target_include_directories(${EXECUTABLE_NAME} PRIVATE "src")
+
+target_precompile_headers(${EXECUTABLE_NAME} PRIVATE "src/common/stdafx.hpp")
 
 target_compile_features(${EXECUTABLE_NAME} PRIVATE cxx_std_20)
 
