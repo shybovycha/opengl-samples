@@ -10,6 +10,8 @@ target("18-reflection")
 
   set_pcxxheader("src/common/stdafx.hpp")
 
+  add_includedirs("src/")
+
   add_packages("sfml", "glm", "globjects", "glbinding", "assimp")
 
   if is_plat("macosx") then
