@@ -1,7 +1,7 @@
-#include "stdafx.hpp"
+#include "common/stdafx.hpp"
 
-#include "AssimpModel.hpp"
-#include "Skybox.hpp"
+#include "common/AssimpModel.hpp"
+#include "common/Skybox.hpp"
 
 struct alignas(16) PointLightDescriptor
 {
