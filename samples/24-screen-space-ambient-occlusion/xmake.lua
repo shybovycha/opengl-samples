@@ -8,6 +8,10 @@ target("24-screen-space-ambient-occlusion")
   set_languages("cxx20")
   set_kind("binary")
 
+  set_pcxxheader("src/stdafx.hpp")
+
+  add_includedirs("src/")
+
   add_packages("sfml", "glm", "globjects", "glbinding", "assimp")
 
   if is_plat("macosx") then
@@ -18,7 +22,7 @@ target("24-screen-space-ambient-occlusion")
     add_frameworks("Foundation", "OpenGL", "IOKit", "Cocoa", "Carbon")
   end
 
-  add_files("main.cpp")
+  add_files("src/main.cpp", "src/AbstractMesh.cpp", "src/AbstractSkyboxBuilder.cpp", "src/AsbtractMeshBuilder.cpp", "src/AssimpModel.cpp", "src/CubemapSkyboxBuilder.cpp", "src/main.cpp", "src/MultimeshModel.cpp", "src/SimpleSkyboxBuilder.cpp", "src/SingleMeshModel.cpp", "src/Skybox.cpp")
 
   after_build(function (target)
     os.cp("$(scriptdir)/../media", path.join(path.directory(target:targetfile()), "media"))
