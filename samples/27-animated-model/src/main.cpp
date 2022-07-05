@@ -5,6 +5,15 @@
 #include "common/StaticMesh.hpp"
 #include "common/StaticModel.hpp"
 
+/*
+
+TODO:
+
+1. replace multiple vectors of data + multiple buffer objects for mesh rendering with one unified buffer and a Vertex struct with multiple params (normal, tangent, uv, position, etc.)
+2. StaticMesh would use StaticVertex (no boneIds and boneWeights attributes) whereas AnimatedMesh would use AnimatedVertex (with boneIds and boneWeights attributes)
+
+*/
+
 struct BoneTransformation
 {
     glm::vec3 position;
@@ -36,11 +45,246 @@ struct ModelAnimator
     float time;
 };
 
+struct AnimatedVertex
+{
+    glm::vec3 position;
+    glm::vec3 normal;
+    // glm::vec3 tangent;
+    // glm::vec3 bitangent;
+    glm::vec2 uv;
+    glm::vec4 boneIds;
+    glm::vec4 boneWeights;
+};
+
+class AnimatedMesh : public AbstractDrawable
+{
+    friend class AnimatedMeshBuilder;
+
+public:
+    static std::shared_ptr<AnimatedMeshBuilder> builder()
+    {
+        return std::make_shared<AnimatedMeshBuilder>();
+    }
+
+    AnimatedMesh(
+        std::vector<AnimatedVertex> vertexData,
+        std::vector<unsigned int> indices,
+        std::vector<globjects::Texture*> textures,
+        std::unique_ptr<globjects::VertexArray> vao,
+        std::unique_ptr<globjects::Buffer> vertexDataBuffer,
+        std::unique_ptr<globjects::Buffer> indexBuffer) :
+
+        m_vertexData(std::move(vertexData)),
+        m_indices(std::move(indices)),
+        m_textures(textures),
+        m_vao(std::move(vao)),
+        m_vertexDataBuffer(std::move(vertexDataBuffer)),
+        m_indexBuffer(std::move(indexBuffer))
+    {
+    }
+
+    void draw() override
+    {
+    }
+
+    void drawInstanced(unsigned int instances) override
+    {
+    }
+
+    void bind() override
+    {
+    }
+
+    void unbind() override
+    {
+    }
+
+private:
+    std::unique_ptr<globjects::VertexArray> m_vao;
+
+    std::unique_ptr<globjects::Buffer> m_vertexDataBuffer;
+    std::unique_ptr<globjects::Buffer> m_indexBuffer;
+
+    std::vector<globjects::Texture*> m_textures;
+
+    std::vector<unsigned int> m_indices;
+    std::vector<AnimatedVertex> m_vertexData;
+};
+
+class AnimatedMeshBuilder
+{
+public:
+    AnimatedMeshBuilder() :
+        m_boneIdsAttributeIndex(0),
+        m_boneWeightsAttributeIndex(0),
+        m_positionAttributeIndex(0),
+        m_normalAttributeIndex(0),
+        m_uvAttributeIndex(0)
+    {
+    }
+
+    AnimatedMeshBuilder* addVertex(glm::vec3 position, glm::vec3 normal, glm::vec2 uv)
+    {
+        AnimatedVertex vertex { .position = position, .normal = normal, .uv = uv, .boneIds = glm::u32vec4(), .boneWeights = glm::vec4() };
+
+        m_vertexData.push_back(vertex);
+        
+        return this;
+    }
+
+    AnimatedMeshBuilder* addVertex(glm::vec3 position, glm::vec3 normal, glm::vec2 uv, glm::vec4 boneIds, glm::vec4 boneWeights)
+    {
+        AnimatedVertex vertex { .position = position, .normal = normal, .uv = uv, .boneIds = boneIds, .boneWeights = boneWeights };
+
+        m_vertexData.push_back(vertex);
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* addIndices(std::vector<unsigned int> indices)
+    {
+        m_indices.insert(indices.end(), indices.begin(), indices.end());
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* addTexture(std::unique_ptr<globjects::Texture> texture)
+    {
+        m_textures.push_back(texture.get());
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* addTexture(globjects::Texture* texture)
+    {
+        m_textures.push_back(texture);
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* addTextures(std::vector<std::unique_ptr<globjects::Texture>> textures)
+    {
+        for (auto& texture : textures)
+        {
+            m_textures.push_back(texture.get());
+        }
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* addTextures(std::vector<globjects::Texture*> textures)
+    {
+        m_textures.insert(m_textures.end(), textures.begin(), textures.end());
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* setPositionAttributerIndex(unsigned int positionAttributeIndex)
+    {
+        m_positionAttributeIndex = positionAttributeIndex;
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* setNormalAttributerIndex(unsigned int normalAttributeIndex)
+    {
+        m_normalAttributeIndex = normalAttributeIndex;
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* setUVAttributerIndex(unsigned int uvAttributeIndex)
+    {
+        m_uvAttributeIndex = uvAttributeIndex;
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* setBoneIdsAttributerIndex(unsigned int boneIdsAttributeIndex)
+    {
+        m_boneIdsAttributeIndex = boneIdsAttributeIndex;
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* setBoneWeightsAttributerIndex(unsigned int boneWeightsAttributeIndex)
+    {
+        m_boneWeightsAttributeIndex = boneWeightsAttributeIndex;
+
+        return this;
+    }
+
+    std::unique_ptr<AnimatedMesh> build()
+    {
+        m_vertexDataBuffer = std::make_unique<globjects::Buffer>();
+
+        m_vertexDataBuffer->setData(m_vertexData, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+        m_indexBuffer = std::make_unique<globjects::Buffer>();
+
+        m_indexBuffer->setData(m_indices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+        m_vao = std::make_unique<globjects::VertexArray>();
+
+        m_vao->bindElementBuffer(m_indexBuffer.get());
+
+        m_vao->binding(m_positionAttributeIndex)->setAttribute(m_positionAttributeIndex);
+        m_vao->binding(m_positionAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, position), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_positionAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(m_positionAttributeIndex);
+
+        m_vao->binding(m_normalAttributeIndex)->setAttribute(m_normalAttributeIndex);
+        m_vao->binding(m_normalAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, normal), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_normalAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(m_normalAttributeIndex);
+
+        m_vao->binding(m_uvAttributeIndex)->setAttribute(m_uvAttributeIndex);
+        m_vao->binding(m_uvAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, uv), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_uvAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(m_uvAttributeIndex);
+
+        m_vao->binding(m_boneIdsAttributeIndex)->setAttribute(m_boneIdsAttributeIndex);
+        m_vao->binding(m_boneIdsAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, boneIds), sizeof(glm::vec4)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_boneIdsAttributeIndex)->setFormat(4, static_cast<gl::GLenum>(GL_UNSIGNED_INT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(m_boneIdsAttributeIndex);
+
+        m_vao->binding(m_boneWeightsAttributeIndex)->setAttribute(m_boneWeightsAttributeIndex);
+        m_vao->binding(m_boneWeightsAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, boneWeights), sizeof(glm::vec4)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_boneWeightsAttributeIndex)->setFormat(4, static_cast<gl::GLenum>(GL_UNSIGNED_INT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(m_boneWeightsAttributeIndex);
+
+        return std::make_unique<AnimatedMesh>(
+            std::move(m_vertexData), 
+            std::move(m_indices), 
+            std::move(m_textures), 
+            std::move(m_vao),
+            std::move(m_vertexDataBuffer),
+            std::move(m_indexBuffer));
+    }
+
+private:
+    std::vector<AnimatedVertex> m_vertexData;
+    std::vector<unsigned int> m_indices;
+    std::vector<globjects::Texture*> m_textures;
+
+    std::unique_ptr<globjects::VertexArray> m_vao;
+    std::unique_ptr<globjects::Buffer> m_vertexDataBuffer;
+    std::unique_ptr<globjects::Buffer> m_indexBuffer;
+
+    unsigned int m_positionAttributeIndex;
+    unsigned int m_normalAttributeIndex;
+    unsigned int m_uvAttributeIndex;
+    unsigned int m_boneIdsAttributeIndex;
+    unsigned int m_boneWeightsAttributeIndex;
+};
+
 class AnimatedModel : public AbstractDrawable
 {
 public:
-    AnimatedModel() :
-        AbstractDrawable()
+    AnimatedModel(std::vector<Bone> skeleton, std::vector<std::unique_ptr<AnimatedMesh>> meshes) :
+        AbstractDrawable(),
+
+        m_skin(std::move(meshes))
     {
     }
 
@@ -65,9 +309,9 @@ public:
     }
 
 private:
-    std::shared_ptr<Bone> m_skeleton;
+    std::vector<Bone> m_skeleton;
+    std::vector<std::unique_ptr<AnimatedMesh>> m_skin;
 };
-
 
 class AssimpModelLoader
 {
@@ -104,11 +348,12 @@ protected:
 
     /*static std::shared_ptr<AnimatedModel> animatedModelFromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
-        std::vector<std::shared_ptr<AnimatedMesh>> meshes;
+        std::vector<std::shared_ptr<StaticMesh>> skin;
+        std::shared_ptr<Bone> skeleton;
 
-        processAnimatedAiNode(scene, node, materialLookupPaths, meshes);
+        processAnimatedAiNode(scene, node, materialLookupPaths, skin, std::move(skeleton));
 
-        return std::make_shared<StaticModel>(std::move(meshes));
+        return std::make_shared<AnimatedModel>(std::move(skin));
     }*/
 
     static void processStaticAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<StaticMesh>>& meshes)
@@ -127,6 +372,23 @@ protected:
             processStaticAiNode(scene, child, materialLookupPaths, meshes);
         }
     }
+
+    //static void processAnimatedAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<AnimatedMesh>>& skin, std::vector<std::unique_ptr<Bone>>& skeleton)
+    //{
+    //    for (auto t = 0; t < node->mNumMeshes; ++t)
+    //    {
+    //        auto mesh = staticMeshFromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
+    //        skin.push_back(std::move(mesh));
+    //    }
+
+    //    for (auto i = 0; i < node->mNumChildren; ++i)
+    //    {
+    //        auto child = node->mChildren[i];
+    //        // auto childTransformation = parentTransformation + assimpMatrixToGlm(child->mTransformation);
+
+    //        processAnimatedAiNode(scene, child, materialLookupPaths, skin, std::move(skeleton));
+    //    }
+    //}
 
     static std::unique_ptr<StaticMesh> staticMeshFromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
@@ -153,20 +415,6 @@ protected:
             textures
         );
 
-        //if (mesh->HasBones())
-        //{
-        //    // TODO: create AnimatedMesh instance
-        //    return StaticMesh::builder()
-        //        ->addVertices(vertices)
-        //        ->addIndices(indices)
-        //        ->addNormals(normals)
-        //        ->addTangentsBitangents(tangents, bitangents)
-        //        ->addUVs(uvs)
-        //        ->addTextures(textures)
-        //        ->build();
-        //}
-        //else
-        //{
         return StaticMesh::builder()
             ->addVertices(vertices)
             ->addIndices(indices)
@@ -175,8 +423,17 @@ protected:
             ->addUVs(uvs)
             ->addTextures(textures)
             ->build();
-        // }
     }
+
+    /*static void skeletonDataFromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {}, std::shared_ptr<Bone> skeleton)
+    {
+        if (!mesh->HasBones())
+        {
+            return;
+        }
+
+        mesh->mBones
+    }*/
 
     static void loadMeshData(
         const aiScene* scene, 
