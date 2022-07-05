@@ -18,7 +18,10 @@ target("13-terrain")
     add_frameworks("Foundation", "OpenGL", "IOKit", "Cocoa", "Carbon")
   end
 
-  add_files("main.cpp")
+  set_pcxxheader("src/common/stdafx.hpp")
+
+  add_files("src/main.cpp", "src/common/AbstractMesh.cpp", "src/common/AbstractMeshBuilder.cpp", "src/common/AssimpModel.cpp", "src/common/MultimeshModel.cpp", "src/common/SingleMeshModel.cpp")
+  add_includedirs("src/")
 
   after_build(function (target)
     os.cp("$(scriptdir)/media", path.join(path.directory(target:targetfile()), "media"))
