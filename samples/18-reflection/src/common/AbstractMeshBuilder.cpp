@@ -1,4 +1,4 @@
-#include "AbstractMeshBuilder.hpp"
+#include "AbstractMesh.hpp"
 
 AbstractMeshBuilder::AbstractMeshBuilder() :
     m_positionAttributeIndex(0),
