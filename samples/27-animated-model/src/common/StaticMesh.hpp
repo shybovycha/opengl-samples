@@ -12,7 +12,12 @@ public:
     static std::shared_ptr<StaticMeshBuilder> builder();
 
     StaticMesh(
-        size_t numIndices,
+        std::vector<glm::vec3> vertices,
+        std::vector<glm::vec3> normals,
+        std::vector<glm::vec3> tangents,
+        std::vector<glm::vec3> bitangents,
+        std::vector<glm::vec2> uvs,
+        std::vector<unsigned int> indices,
         std::vector<globjects::Texture*> textures,
         std::unique_ptr<globjects::VertexArray> vao,
         std::unique_ptr<globjects::Buffer> vertexBuffer,
@@ -22,7 +27,7 @@ public:
         std::unique_ptr<globjects::Buffer> bitangentBuffer,
         std::unique_ptr<globjects::Buffer> uvBuffer);
 
-    StaticMesh(std::unique_ptr<StaticMesh> otherMesh);
+    StaticMesh(std::shared_ptr<StaticMesh> otherMesh);
 
     void setTransformation(glm::mat4 transformation);
 
@@ -48,7 +53,12 @@ protected:
 
     std::vector<globjects::Texture*> m_textures;
 
-    size_t m_numIndices;
+    std::vector<unsigned int> m_indices;
+    std::vector<glm::vec3> m_vertices;
+    std::vector<glm::vec3> m_normals;
+    std::vector<glm::vec3> m_tangents;
+    std::vector<glm::vec3> m_bitangents;
+    std::vector<glm::vec2> m_uvs;
 
     glm::mat4 m_transformation;
 };

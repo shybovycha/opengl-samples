@@ -1,109 +1,39 @@
 #include "common/stdafx.hpp"
 
-#include "common/AssimpStaticModelLoader.hpp"
 #include "common/AbstractDrawable.hpp"
 #include "common/Skybox.hpp"
+#include "common/StaticMesh.hpp"
+#include "common/StaticModel.hpp"
 
-class BoneTransformation
+struct BoneTransformation
 {
-private:
-    glm::vec3 m_position;
-    glm::quat m_rotation;
+    glm::vec3 position;
+    glm::vec3 scale;
+    glm::quat rotation;
 };
 
-class Bone
+struct Bone
 {
-private:
-    std::string m_name;
-    std::vector<std::unique_ptr<Bone>> m_children;
-    glm::mat4 m_transformation;
+    std::string name;
+    std::vector<std::shared_ptr<Bone>> children;
+    glm::mat4 transformation;
 };
 
-class AnimationKeyframe
+struct AnimationKeyframe
 {
-private:
-    std::vector<BoneTransformation> m_transformations;
-    float m_timestamp;
+    std::vector<BoneTransformation> transformations;
+    float timestamp;
 };
 
-class Animation
+struct Animation
 {
-private:
-    std::vector<AnimationKeyframe> m_keyframes;
+    std::vector<AnimationKeyframe> keyframes;
 };
 
-class ModelAnimator
+struct ModelAnimator
 {
-private:
-    std::shared_ptr<Animation> m_animation;
-    float m_time;
-};
-
-class AnimatedModel : public AbstractDrawable
-{
-public:
-    AnimatedModel() :
-        AbstractDrawable()
-    {
-    }
-
-    void draw() override
-    {
-        // TODO
-    }
-
-    void drawInstanced(unsigned int instances) override
-    {
-        // TODO
-    }
-
-    void bind() override
-    {
-        // TODO
-    }
-
-    void unbind() override
-    {
-        // TODO
-    }
-
-private:
-    std::unique_ptr<Bone> m_skeleton;
-};
-
-class BoneTransformation
-{
-private:
-    glm::vec3 m_position;
-    glm::quat m_rotation;
-};
-
-class Bone
-{
-private:
-    std::string m_name;
-    std::vector<std::unique_ptr<Bone>> m_children;
-    glm::mat4 m_transformation;
-};
-
-class AnimationKeyframe
-{
-private:
-    std::vector<BoneTransformation> m_transformations;
-    float m_timestamp;
-};
-
-class Animation
-{
-private:
-    std::vector<AnimationKeyframe> m_keyframes;
-};
-
-class ModelAnimator
-{
-private:
-    std::shared_ptr<Animation> m_animation;
-    float m_time;
+    std::shared_ptr<Animation> animation;
+    float time;
 };
 
 class AnimatedModel : public AbstractDrawable
@@ -135,15 +65,18 @@ public:
     }
 
 private:
-    std::unique_ptr<Bone> m_skeleton;
+    std::shared_ptr<Bone> m_skeleton;
 };
 
-/*class AssimpAnimatedModelLoader
+
+class AssimpModelLoader
 {
 public:
-    AssimpAnimatedModelLoader() {}
+    AssimpModelLoader()
+    {
+    }
 
-    static std::unique_ptr<AnimatedModel> fromFile(std::string filename, std::vector<std::filesystem::path> materialLookupPaths = {}, unsigned int assimpImportFlags = 0)
+    static std::shared_ptr<StaticModel> staticModelFromFile(std::string filename, std::vector<std::filesystem::path> materialLookupPaths = {}, unsigned int assimpImportFlags = 0)
     {
         static auto importer = std::make_unique<Assimp::Importer>();
         auto scene = importer->ReadFile(filename, assimpImportFlags);
@@ -154,26 +87,35 @@ public:
             return nullptr;
         }
 
-        auto model = fromAiNode(scene, scene->mRootNode, materialLookupPaths);
+        auto model = staticModelFromAiNode(scene, scene->mRootNode, materialLookupPaths);
 
         return std::move(model);
     }
 
 protected:
-    static std::unique_ptr<AnimatedModel> fromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
+    static std::shared_ptr<StaticModel> staticModelFromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
-        std::vector<std::unique_ptr<AnimatedMesh>> meshes;
+        std::vector<std::unique_ptr<StaticMesh>> meshes;
 
-        processAiNode(scene, node, materialLookupPaths, meshes);
+        processStaticAiNode(scene, node, materialLookupPaths, meshes);
 
-        return std::make_unique<AnimatedModel>(std::move(meshes));
+        return std::make_shared<StaticModel>(std::move(meshes));
     }
 
-    static void processAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<AnimatedMesh>>& meshes)
+    /*static std::shared_ptr<AnimatedModel> animatedModelFromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
+    {
+        std::vector<std::shared_ptr<AnimatedMesh>> meshes;
+
+        processAnimatedAiNode(scene, node, materialLookupPaths, meshes);
+
+        return std::make_shared<StaticModel>(std::move(meshes));
+    }*/
+
+    static void processStaticAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<StaticMesh>>& meshes)
     {
         for (auto t = 0; t < node->mNumMeshes; ++t)
         {
-            auto mesh = fromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
+            auto mesh = staticMeshFromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
             meshes.push_back(std::move(mesh));
         }
 
@@ -182,14 +124,12 @@ protected:
             auto child = node->mChildren[i];
             // auto childTransformation = parentTransformation + assimpMatrixToGlm(child->mTransformation);
 
-            processAiNode(scene, child, materialLookupPaths, meshes);
+            processStaticAiNode(scene, child, materialLookupPaths, meshes);
         }
     }
 
-    static std::unique_ptr<AnimatedMesh> fromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
+    static std::unique_ptr<StaticMesh> staticMeshFromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
-        std::cout << "[INFO] Creating buffer objects...";
-
         std::vector<glm::vec3> vertices;
         std::vector<glm::vec3> normals;
         std::vector<glm::vec3> tangents;
@@ -197,6 +137,60 @@ protected:
         std::vector<glm::vec2> uvs;
 
         std::vector<GLuint> indices;
+
+        std::vector<globjects::Texture*> textures;
+
+        loadMeshData(
+            scene,
+            mesh,
+            materialLookupPaths,
+            vertices,
+            normals,
+            tangents,
+            bitangents,
+            uvs,
+            indices,
+            textures
+        );
+
+        //if (mesh->HasBones())
+        //{
+        //    // TODO: create AnimatedMesh instance
+        //    return StaticMesh::builder()
+        //        ->addVertices(vertices)
+        //        ->addIndices(indices)
+        //        ->addNormals(normals)
+        //        ->addTangentsBitangents(tangents, bitangents)
+        //        ->addUVs(uvs)
+        //        ->addTextures(textures)
+        //        ->build();
+        //}
+        //else
+        //{
+        return StaticMesh::builder()
+            ->addVertices(vertices)
+            ->addIndices(indices)
+            ->addNormals(normals)
+            ->addTangentsBitangents(tangents, bitangents)
+            ->addUVs(uvs)
+            ->addTextures(textures)
+            ->build();
+        // }
+    }
+
+    static void loadMeshData(
+        const aiScene* scene, 
+        aiMesh* mesh, 
+        std::vector<std::filesystem::path>& materialLookupPaths,
+        std::vector<glm::vec3>& vertices,
+        std::vector<glm::vec3>& normals,
+        std::vector<glm::vec3>& tangents,
+        std::vector<glm::vec3>& bitangents,
+        std::vector<glm::vec2>& uvs,
+        std::vector<GLuint>& indices,
+        std::vector<globjects::Texture*>& textures)
+    {
+        std::cout << "[INFO] Creating buffer objects...";
 
         for (auto i = 0; i < mesh->mNumVertices; ++i)
         {
@@ -222,14 +216,12 @@ protected:
                 glm::vec3 tangent(
                     mesh->mTangents[i].x,
                     mesh->mTangents[i].y,
-                    mesh->mTangents[i].z
-                );
+                    mesh->mTangents[i].z);
 
                 glm::vec3 bitangent(
                     mesh->mBitangents[i].x,
                     mesh->mBitangents[i].y,
-                    mesh->mBitangents[i].z
-                );
+                    mesh->mBitangents[i].z);
 
                 tangents.push_back(tangent);
                 bitangents.push_back(bitangent);
@@ -248,7 +240,7 @@ protected:
 
         for (auto i = 0; i < mesh->mNumFaces; ++i)
         {
-            auto face = mesh->mFaces[i];
+            const auto face = mesh->mFaces[i];
 
             for (auto t = 0; t < face.mNumIndices; ++t)
             {
@@ -260,25 +252,33 @@ protected:
 
         std::cout << "[INFO] Loading textures...";
 
-        std::vector<globjects::Texture*> textures;
-
         if (mesh->mMaterialIndex >= 0)
         {
-            auto material = scene->mMaterials[mesh->mMaterialIndex];
+            const auto material = scene->mMaterials[mesh->mMaterialIndex];
 
-            for (auto i = 0; i < material->GetTextureCount(aiTextureType_DIFFUSE); ++i)
+            const auto numDiffuseTextures = material->GetTextureCount(aiTextureType_DIFFUSE);
+
+            for (auto i = 0; i < numDiffuseTextures; ++i)
             {
                 aiString str;
                 material->GetTexture(aiTextureType_DIFFUSE, i, &str);
 
-                std::string imagePath{ str.C_Str() };
+                std::string imagePath { str.C_Str() };
 
-                for (auto path : materialLookupPaths) {
+                // TODO: extract the "std::string resolveFile(std::string)" helper
+                /* std::vector<std::filesystem::path> lookupPaths = {
+                    imagePath,
+                    std::filesystem::path{ "../" + imagePath }
+                };*/
+
+                for (auto path : materialLookupPaths)
+                {
                     std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
 
                     const auto filePath = std::filesystem::path(path).append(imagePath);
 
-                    if (std::filesystem::exists(filePath)) {
+                    if (std::filesystem::exists(filePath))
+                    {
                         imagePath = filePath.string();
                         break;
                     }
@@ -317,17 +317,9 @@ protected:
         }
 
         std::cout << "done" << std::endl;
-
-        return AnimatedMesh::builder()
-            ->addVertices(vertices)
-            ->addIndices(indices)
-            ->addNormals(normals)
-            ->addTangentsBitangents(tangents, bitangents)
-            ->addUVs(uvs)
-            ->addTextures(textures)
-            ->build();
     }
-};*/
+};
+
 
 struct alignas(16) PointLightDescriptor
 {
@@ -546,14 +538,14 @@ int main()
 
     std::cout << "[INFO] Loading 3D model...";
 
-    auto quadModel = AssimpStaticModelLoader::fromFile("media/quad.obj", {}, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
+    auto quadModel = AssimpModelLoader::staticModelFromFile("media/quad.obj", {}, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
-    auto houseModel = AssimpStaticModelLoader::fromFile("media/house1.obj", { "media" });
+    auto houseModel = AssimpModelLoader::staticModelFromFile("media/house1.obj", { "media" });
 
     // INFO: this transformation is hard-coded specifically for Chicken.3ds model
     houseModel->setTransformation(glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(2.0f)), glm::vec3(0.0f, 0.75f, 0.0f)));
 
-    auto tableModel = AssimpStaticModelLoader::fromFile("media/table.obj", { "media" });
+    auto tableModel = AssimpModelLoader::staticModelFromFile("media/table.obj", { "media" });
 
     tableModel->setTransformation(
         // glm::translate(glm::vec3(0.0f, 0.06f, 0.0f)) *
@@ -561,10 +553,10 @@ int main()
         (glm::rotate(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)))
     );
 
-    std::unique_ptr<StaticModel> lanternModel = nullptr;
+    std::shared_ptr<StaticModel> lanternModel = nullptr;
 
     {
-        lanternModel = AssimpStaticModelLoader::fromFile("media/lantern.obj", { "media" });
+        lanternModel = AssimpModelLoader::staticModelFromFile("media/lantern.obj", { "media" });
 
         lanternModel->setTransformation(
             glm::translate(glm::vec3(-1.75f, 3.91f, -0.75f)) *
@@ -625,7 +617,7 @@ int main()
         lanternSpecularMapImage.release();
     }
 
-    std::unique_ptr<StaticModel> penModel = nullptr;
+    std::shared_ptr<StaticModel> penModel = nullptr;
     std::unique_ptr<globjects::Texture> penNormalMapTexture = nullptr;
 
     {
@@ -653,7 +645,7 @@ int main()
             static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
             reinterpret_cast<const gl::GLvoid*>(penNormalMapImage->getPixelsPtr()));
 
-        penModel = AssimpStaticModelLoader::fromFile("media/pen-lowpoly.obj", { "media" });
+        penModel = AssimpModelLoader::staticModelFromFile("media/pen-lowpoly.obj", { "media" });
 
         // rotate -> scale -> translate; can be done as series of matrix multiplications M_translation * M_scale * M_rotation
         // each of the components, in turn, can also be a series of matrix multiplications: M_rotation = M_rotate_z * M_rotate_y * M_rotate_x
@@ -666,7 +658,7 @@ int main()
         penNormalMapImage.release();
     }
 
-    auto scrollModel = AssimpStaticModelLoader::fromFile("media/scroll.obj", { "media" });
+    auto scrollModel = AssimpModelLoader::staticModelFromFile("media/scroll.obj", { "media" });
 
     scrollModel->setTransformation(
         glm::translate(glm::vec3(0.0f, 3.85f, 0.0f)) *
@@ -701,7 +693,7 @@ int main()
             reinterpret_cast<const gl::GLvoid*>(inkBottleNormalMapImage->getPixelsPtr()));
     }
 
-    auto inkBottleModel = AssimpStaticModelLoader::fromFile("media/ink-bottle.obj", { "media" });
+    auto inkBottleModel = AssimpModelLoader::staticModelFromFile("media/ink-bottle.obj", { "media" });
 
     inkBottleModel->setTransformation(
         glm::translate(glm::vec3(-1.75f, 3.86f, 1.05f)) *
@@ -773,21 +765,6 @@ int main()
         nullptr
     );
 
-    auto deferredFragmentLightSpacePositionTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
-
-    deferredFragmentLightSpacePositionTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-    deferredFragmentLightSpacePositionTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
-
-    deferredFragmentLightSpacePositionTexture->image2D(
-        0,
-        static_cast<gl::GLenum>(GL_RGB32F),
-        glm::vec2(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)),
-        0,
-        static_cast<gl::GLenum>(GL_RGB),
-        static_cast<gl::GLenum>(GL_FLOAT),
-        nullptr
-    );
-
     auto deferredFragmentDepthTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
 
     deferredFragmentDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
@@ -807,7 +784,7 @@ int main()
     deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), deferredFragmentPositionTexture.get());
     deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT1), deferredFragmentNormalTexture.get());
     deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT2), deferredFragmentAlbedoTexture.get());
-    deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT3), deferredFragmentLightSpacePositionTexture.get());
+    // deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT3), deferredFragmentLightSpacePositionTexture.get());
     deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), deferredFragmentDepthTexture.get());
 
     // tell framebuffer it actually needs to render to **BOTH** textures, but does not have to output anywhere (last NONE argument, iirc)
@@ -815,7 +792,7 @@ int main()
         static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0),
         static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT1),
         static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT2),
-        static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT3),
+        // static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT3),
         static_cast<gl::GLenum>(GL_NONE)
     });
 
@@ -1010,23 +987,10 @@ int main()
             glDepthFunc(GL_LEQUAL);
             glDisable(GL_CULL_FACE);
 
-            /*skyboxRenderingProgram->use();
-            skyboxRenderingProgram->setUniform("projection", cameraProjection);
-            skyboxRenderingProgram->setUniform("view", glm::mat4(glm::mat3(cameraView)));
-
-            skyboxRenderingProgram->setUniform("cubeMap", 1);
-
-            skybox->bind();
-            skybox->draw();
-            skybox->unbind();
-
-            skyboxRenderingProgram->release();*/
-
             deferredRenderingPrePassProgram->use();
 
             deferredRenderingPrePassProgram->setUniform("projection", cameraProjection);
             deferredRenderingPrePassProgram->setUniform("view", cameraView);
-            deferredRenderingPrePassProgram->setUniform("lightSpaceMatrix", lightProjection);
 
             deferredRenderingPrePassProgram->setUniform("diffuseTexture", 1);
             deferredRenderingPrePassProgram->setUniform("normalMapTexture", 2);
@@ -1050,7 +1014,6 @@ int main()
             lanternModel->unbind();
 
             deferredRenderingPrePassProgram->setUniform("model", penModel->getTransformation());
-            deferredRenderingPrePassProgram->setUniform("normalMapTexture", 2);
 
             penNormalMapTexture->bindActive(2);
 
@@ -1085,91 +1048,7 @@ int main()
             deferredRenderingFramebuffer->unbind();
         }
 
-        // second render pass - shadow mapping
-        {
-            shadowMapFramebuffer->bind();
-
-            ::glViewport(0, 0, static_cast<GLsizei>(shadowMapSize), static_cast<GLsizei>(shadowMapSize));
-            ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
-
-            // glDepthFunc(GL_LEQUAL);
-            // glDisable(GL_CULL_FACE);
-            // glCullFace(GL_FRONT);
-
-            /*skyboxRenderingProgram->use();
-            skyboxRenderingProgram->setUniform("projection", cameraProjection);
-            skyboxRenderingProgram->setUniform("view", glm::mat4(glm::mat3(cameraView)));
-
-            skyboxRenderingProgram->setUniform("cubeMap", 1);
-
-            skybox->bind();
-            skybox->draw();
-            skybox->unbind();
-
-            skyboxRenderingProgram->release();*/
-
-            shadowMappingProgram->use();
-
-            shadowMappingProgram->setUniform("lightSpaceMatrix", lightSpaceMatrix);
-
-            shadowMappingProgram->setUniform("model", houseModel->getTransformation());
-
-            houseModel->bind();
-            houseModel->draw();
-            houseModel->unbind();
-
-            shadowMappingProgram->setUniform("model", tableModel->getTransformation());
-
-            tableModel->bind();
-            tableModel->draw();
-            tableModel->unbind();
-
-            shadowMappingProgram->setUniform("model", lanternModel->getTransformation());
-
-            lanternModel->bind();
-            lanternModel->draw();
-            lanternModel->unbind();
-
-            shadowMappingProgram->setUniform("model", penModel->getTransformation());
-
-            // penNormalMapTexture->bindActive(2);
-
-            penModel->bind();
-            penModel->draw();
-            penModel->unbind();
-
-            // penNormalMapTexture->unbindActive(2);
-
-            shadowMappingProgram->setUniform("model", inkBottleModel->getTransformation());
-
-            // inkBottleNormalMapTexture->bindActive(2);
-
-            inkBottleModel->bind();
-            inkBottleModel->draw();
-            inkBottleModel->unbind();
-
-            // inkBottleNormalMapTexture->unbindActive(2);
-
-            shadowMappingProgram->setUniform("model", scrollModel->getTransformation());
-
-            glDisable(GL_CULL_FACE);
-
-            scrollModel->bind();
-            scrollModel->draw();
-            scrollModel->unbind();
-
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
-
-            shadowMappingProgram->release();
-
-            shadowMapFramebuffer->unbind();
-        }
-
-        // third render pass - merge textures from the deferred rendering pre-pass into a final frame
+        // second render pass - merge textures from the deferred rendering pre-pass into a final frame
         {
             ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
             ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
@@ -1177,29 +1056,17 @@ int main()
 
             deferredRenderingFinalPassProgram->use();
 
-            deferredFragmentPositionTexture->textureHandle().makeResident();
-            deferredFragmentNormalTexture->textureHandle().makeResident();
-            deferredFragmentAlbedoTexture->textureHandle().makeResident();
-
-            deferredFragmentLightSpacePositionTexture->textureHandle().makeResident();
-            shadowMapTexture->textureHandle().makeResident();
+            deferredFragmentPositionTexture->bindActive(2);
+            deferredFragmentNormalTexture->bindActive(3);
+            deferredFragmentAlbedoTexture->bindActive(4);
 
             pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
 
-            deferredRenderingFinalPassProgram->setUniform("positionTexture", deferredFragmentPositionTexture->textureHandle().handle());
-            deferredRenderingFinalPassProgram->setUniform("normalTexture", deferredFragmentNormalTexture->textureHandle().handle());
-            deferredRenderingFinalPassProgram->setUniform("albedoTexture", deferredFragmentAlbedoTexture->textureHandle().handle());
-
-            deferredRenderingFinalPassProgram->setUniform("lightSpaceCoord", deferredFragmentLightSpacePositionTexture->textureHandle().handle());
-            deferredRenderingFinalPassProgram->setUniform("shadowMap", shadowMapTexture->textureHandle().handle());
+            deferredRenderingFinalPassProgram->setUniform("positionTexture", 2);
+            deferredRenderingFinalPassProgram->setUniform("normalTexture", 3);
+            deferredRenderingFinalPassProgram->setUniform("albedoTexture", 4);
 
             deferredRenderingFinalPassProgram->setUniform("cameraPosition", cameraPos);
-            deferredRenderingFinalPassProgram->setUniform("projection", cameraProjection);
-            deferredRenderingFinalPassProgram->setUniform("view", cameraView);
-
-            deferredRenderingFinalPassProgram->setUniform("lightSpaceMatrix", lightSpaceMatrix);
-            deferredRenderingFinalPassProgram->setUniform("sunDirection", -lightPosition);
-            deferredRenderingFinalPassProgram->setUniform("sunColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
             quadModel->bind();
             quadModel->draw();
@@ -1207,12 +1074,9 @@ int main()
 
             pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
 
-            deferredFragmentPositionTexture->textureHandle().makeNonResident();
-            deferredFragmentNormalTexture->textureHandle().makeNonResident();
-            deferredFragmentAlbedoTexture->textureHandle().makeNonResident();
-
-            deferredFragmentLightSpacePositionTexture->textureHandle().makeNonResident();
-            shadowMapTexture->textureHandle().makeNonResident();
+            deferredFragmentPositionTexture->unbindActive(2);
+            deferredFragmentNormalTexture->unbindActive(3);
+            deferredFragmentAlbedoTexture->unbindActive(4);
 
             deferredRenderingFinalPassProgram->release();
         }

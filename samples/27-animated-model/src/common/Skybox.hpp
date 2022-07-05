@@ -66,5 +66,5 @@ public:
 
     static CubemapSkyboxBuilder* fromCubemap(globjects::Texture* cubemapTexture);
 
-    Skybox(std::unique_ptr<StaticMesh> mesh);
+    Skybox(std::shared_ptr<StaticMesh> mesh);
 };

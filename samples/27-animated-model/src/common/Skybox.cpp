@@ -10,7 +10,7 @@ CubemapSkyboxBuilder* Skybox::fromCubemap(globjects::Texture* cubemapTexture)
     return new CubemapSkyboxBuilder(cubemapTexture);
 }
 
-Skybox::Skybox(std::unique_ptr<StaticMesh> mesh) :
+Skybox::Skybox(std::shared_ptr<StaticMesh> mesh) :
     StaticMesh(std::move(mesh))
 {
 }
