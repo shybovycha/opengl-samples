@@ -3,12 +3,13 @@ add_requires("glm")
 add_requires("vcpkg::globjects", { alias = "globjects" })
 add_requires("vcpkg::glbinding", { alias = "glbinding" })
 add_requires("vcpkg::assimp", { alias = "assimp" })
+add_requires("vcpkg::tracy", { alias = "tracy" })
 
 target("11-instance-rendering")
   set_languages("cxx20")
   set_kind("binary")
 
-  add_packages("sfml", "glm", "globjects", "glbinding", "assimp")
+  add_packages("sfml", "glm", "globjects", "glbinding", "assimp", "tracy")
 
   if is_plat("macosx") then
     -- this prevents "-[SFOpenGLView enableKeyRepeat]: unrecognized selector sent to instance 0x7fa5c2507970" runtime exception

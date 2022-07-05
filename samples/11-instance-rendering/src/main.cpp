@@ -1,6 +1,5 @@
 #include "common/stdafx.hpp"
 
-// #include "common/Mesh.hpp"
 #include "common/Model.hpp"
 
 void* operator new(std::size_t count)
