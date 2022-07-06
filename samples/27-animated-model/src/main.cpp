@@ -20,6 +20,12 @@ struct BoneTransformation
 
 struct Bone
 {
+    Bone(std::string name, glm::mat4 transformation) :
+        name(name),
+        transformation(transformation)
+    {
+    }
+
     std::string name;
     std::vector<std::shared_ptr<Bone>> children;
     glm::mat4 transformation;
@@ -797,6 +803,9 @@ protected:
         std::vector<glm::vec3> tangents;
         std::vector<glm::vec3> bitangents;
         std::vector<glm::vec2> uvs;
+        
+        std::vector<glm::uvec4> boneIds;
+        std::vector<glm::vec4> boneWeights;
 
         std::vector<GLuint> indices;
 
@@ -814,6 +823,14 @@ protected:
             indices,
             textures);
 
+        boneIds.resize(vertices.size());
+        boneWeights.resize(vertices.size());
+
+        std::vector<std::shared_ptr<Bone>> bones;
+        std::vector<std::shared_ptr<Animation>> animations;
+
+        skeletonDataFromAiMesh(scene, mesh, materialLookupPaths, bones, animations, boneIds, boneWeights);
+
         auto builder = AnimatedMesh::builder();
 
         for (auto i = 0; i < vertices.size(); ++i)
@@ -830,7 +847,17 @@ protected:
                 vertex.uv = uvs[i];
             }
 
-            builder->addVertex(vertex); //, boneIds[i], boneWeights[i]);
+            if (boneIds.size() > 0 && i < boneIds.size())
+            {
+                vertex.boneIds = boneIds[i];
+            }
+
+            if (boneWeights.size() > 0 && i < boneWeights.size())
+            {
+                vertex.boneWeights = boneWeights[i];
+            }
+
+            builder->addVertex(vertex);
         }
 
         return builder
@@ -839,15 +866,104 @@ protected:
             ->build();
     }
 
-    /*static void skeletonDataFromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {}, std::shared_ptr<Bone> skeleton)
+    static void skeletonDataFromAiMesh(
+        const aiScene* scene, 
+        aiMesh* mesh, 
+        std::vector<std::filesystem::path> materialLookupPaths, 
+        std::vector<std::shared_ptr<Bone>>& bones, 
+        std::vector<std::shared_ptr<Animation>>& animations,
+        std::vector<glm::uvec4>& boneIds,
+        std::vector<glm::vec4>& boneWeights)
     {
         if (!mesh->HasBones())
         {
             return;
         }
 
-        mesh->mBones
-    }*/
+        std::map<std::string, std::shared_ptr<Bone>> boneByName;
+        std::map<unsigned int, unsigned short> boneDataComponentIndexes;
+
+        for (auto i = 0; i < mesh->mNumBones; ++i)
+        {
+            auto aiBone = mesh->mBones[i];
+
+            std::string boneName = aiBone->mName.C_Str();
+
+            glm::mat4 transformation {
+                aiBone->mOffsetMatrix.a1,
+                aiBone->mOffsetMatrix.b1,
+                aiBone->mOffsetMatrix.c1,
+                aiBone->mOffsetMatrix.d1,
+
+                aiBone->mOffsetMatrix.a2,
+                aiBone->mOffsetMatrix.b2,
+                aiBone->mOffsetMatrix.c2,
+                aiBone->mOffsetMatrix.d2,
+
+                aiBone->mOffsetMatrix.a3,
+                aiBone->mOffsetMatrix.b3,
+                aiBone->mOffsetMatrix.c3,
+                aiBone->mOffsetMatrix.d4,
+
+                aiBone->mOffsetMatrix.a4,
+                aiBone->mOffsetMatrix.b4,
+                aiBone->mOffsetMatrix.d3,
+                aiBone->mOffsetMatrix.c4,
+            };
+
+            auto bone = std::make_shared<Bone>(boneName, transformation);
+
+            boneByName[boneName] = bone;
+
+            for (auto t = 0; t < aiBone->mNumWeights; ++t)
+            {
+                auto vertexWeight = aiBone->mWeights[t];
+
+                if (boneDataComponentIndexes.find(vertexWeight.mVertexId) == boneDataComponentIndexes.end())
+                {
+                    boneDataComponentIndexes[vertexWeight.mVertexId] = 0;
+                }
+
+                boneIds[vertexWeight.mVertexId][boneDataComponentIndexes[vertexWeight.mVertexId]] = boneByName.size() - 1;
+                boneWeights[vertexWeight.mVertexId][boneDataComponentIndexes[vertexWeight.mVertexId]] = vertexWeight.mWeight;
+
+                boneDataComponentIndexes[vertexWeight.mVertexId] = boneDataComponentIndexes[vertexWeight.mVertexId] + 1;
+            }
+        }
+
+        for (auto i = 0; i < scene->mNumAnimations; ++i)
+        {
+            auto aiAnimation = scene->mAnimations[i];
+
+            std::map<float, AnimationKeyframe> keyframes;
+
+            // aiAnimation->mNumChannels
+            // aiAnimation->mDuration
+            // aiAnimation->mTicksPerSecond
+            for (auto t = 0; t < aiAnimation->mNumChannels; ++t)
+            {
+                auto aiChannel = aiAnimation->mChannels[t];
+
+                std::string boneName = aiChannel->mNodeName.C_Str();
+
+                for (int j = 0; j < aiChannel->mNumPositionKeys; ++j)
+                {
+                    auto key = aiChannel->mPositionKeys[j];
+
+                    if (keyframes.find(key.mTime) == keyframes.end())
+                    {
+                        keyframes[key.mTime] = AnimationKeyframe {};
+                    }
+
+                    BoneTransformation boneTransformation { .position = glm::vec3(key.mValue.x, key.mValue.y, key.mValue.z) };
+
+                    keyframes[key.mTime].transformations.push_back(boneTransformation);
+                }
+            }
+            
+            // std::string animationName = aiAnimation->mName.C_Str();
+        }
+    }
 
     static void loadMeshData(
         const aiScene* scene, 
