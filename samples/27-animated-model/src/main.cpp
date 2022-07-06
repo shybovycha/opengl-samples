@@ -141,10 +141,10 @@ class AnimatedMeshBuilder
 public:
     AnimatedMeshBuilder() :
         m_boneIdsAttributeIndex(0),
-        m_boneWeightsAttributeIndex(0),
-        m_positionAttributeIndex(0),
-        m_normalAttributeIndex(0),
-        m_uvAttributeIndex(0)
+        m_boneWeightsAttributeIndex(1),
+        m_positionAttributeIndex(2),
+        m_normalAttributeIndex(3),
+        m_uvAttributeIndex(4)
     {
     }
 
@@ -471,8 +471,8 @@ class StaticMeshBuilder
 public:
     StaticMeshBuilder() :
         m_positionAttributeIndex(0),
-        m_normalAttributeIndex(0),
-        m_uvAttributeIndex(0)
+        m_normalAttributeIndex(1),
+        m_uvAttributeIndex(2)
     {
     }
 
@@ -566,17 +566,17 @@ public:
         m_vao->bindElementBuffer(m_indexBuffer.get());
 
         m_vao->binding(m_positionAttributeIndex)->setAttribute(m_positionAttributeIndex);
-        m_vao->binding(m_positionAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(StaticVertex, position), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_positionAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(StaticVertex, position), sizeof(StaticVertex)); // number of elements in buffer, stride, size of buffer element
         m_vao->binding(m_positionAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(m_positionAttributeIndex);
 
         m_vao->binding(m_normalAttributeIndex)->setAttribute(m_normalAttributeIndex);
-        m_vao->binding(m_normalAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(StaticVertex, normal), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_normalAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(StaticVertex, normal), sizeof(StaticVertex)); // number of elements in buffer, stride, size of buffer element
         m_vao->binding(m_normalAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(m_normalAttributeIndex);
 
         m_vao->binding(m_uvAttributeIndex)->setAttribute(m_uvAttributeIndex);
-        m_vao->binding(m_uvAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(StaticVertex, uv), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_uvAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(StaticVertex, uv), sizeof(StaticVertex)); // number of elements in buffer, stride, size of buffer element
         m_vao->binding(m_uvAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(m_uvAttributeIndex);
 
