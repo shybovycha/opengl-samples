@@ -166,9 +166,16 @@ public:
         return this;
     }
 
+    AnimatedMeshBuilder* addVertex(AnimatedVertex vertex)
+    {
+        m_vertexData.push_back(vertex);
+
+        return this;
+    }
+
     AnimatedMeshBuilder* addIndices(std::vector<unsigned int> indices)
     {
-        m_indices.insert(indices.end(), indices.begin(), indices.end());
+        m_indices.insert(m_indices.end(), indices.begin(), indices.end());
 
         return this;
     }
@@ -487,7 +494,7 @@ public:
 
     StaticMeshBuilder* addIndices(std::vector<unsigned int> indices)
     {
-        m_indices.insert(indices.end(), indices.begin(), indices.end());
+        m_indices.insert(m_indices.end(), indices.begin(), indices.end());
 
         return this;
     }
@@ -811,9 +818,19 @@ protected:
 
         for (auto i = 0; i < vertices.size(); ++i)
         {
-            AnimatedVertex vertex { .position = vertices[i], .normal = normals[i], .uv = uvs[i] };
+            AnimatedVertex vertex { .position = vertices[i] };
 
-            builder->addVertex(vertices[i], normals[i], uvs[i]); //, boneIds[i], boneWeights[i]);
+            if (normals.size() > 0 && i < normals.size())
+            {
+                vertex.normal = normals[i];
+            }
+
+            if (uvs.size() > 0 && i < uvs.size())
+            {
+                vertex.uv = uvs[i];
+            }
+
+            builder->addVertex(vertex); //, boneIds[i], boneWeights[i]);
         }
 
         return builder
@@ -1014,147 +1031,6 @@ int main()
 
     std::cout << "[INFO] Creating shaders..." << std::endl;
 
-    std::cout << "[INFO] Compiling deferred rendering pre-pass vertex shader...";
-
-    auto deferredRenderingPrePassVertexSource = globjects::Shader::sourceFromFile("media/deferred-rendering-pre-pass.vert");
-    auto deferredRenderingPrePassVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(deferredRenderingPrePassVertexSource.get());
-    auto deferredRenderingPrePassVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), deferredRenderingPrePassVertexShaderTemplate.get());
-
-    if (!deferredRenderingPrePassVertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile deferred rendering pre-pass vertex shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling deferred rendering pre-pass fragment shader...";
-
-    auto deferredRenderingPrePassFragmentSource = globjects::Shader::sourceFromFile("media/deferred-rendering-pre-pass.frag");
-    auto deferredRenderingPrePassFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(deferredRenderingPrePassFragmentSource.get());
-    auto deferredRenderingPrePassFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), deferredRenderingPrePassFragmentShaderTemplate.get());
-
-    if (!deferredRenderingPrePassFragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile deferred rendering pre-pass fragment shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[DEBUG] Linking deferred rendering pre-pass shaders..." << std::endl;
-
-    auto deferredRenderingPrePassProgram = std::make_unique<globjects::Program>();
-    deferredRenderingPrePassProgram->attach(deferredRenderingPrePassVertexShader.get(), deferredRenderingPrePassFragmentShader.get());
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling deferred rendering final pass vertex shader...";
-
-    auto deferredRenderingFinalPassVertexSource = globjects::Shader::sourceFromFile("media/deferred-rendering-final-pass.vert");
-    auto deferredRenderingFinalPassVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(deferredRenderingFinalPassVertexSource.get());
-    auto deferredRenderingFinalPassVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), deferredRenderingFinalPassVertexShaderTemplate.get());
-
-    if (!deferredRenderingFinalPassVertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile deferred rendering final pass vertex shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling deferred rendering final pass fragment shader...";
-
-    auto deferredRenderingFinalPassFragmentSource = globjects::Shader::sourceFromFile("media/deferred-rendering-final-pass.frag");
-    auto deferredRenderingFinalPassFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(deferredRenderingFinalPassFragmentSource.get());
-    auto deferredRenderingFinalPassFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), deferredRenderingFinalPassFragmentShaderTemplate.get());
-
-    if (!deferredRenderingFinalPassFragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile deferred rendering final pass fragment shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[DEBUG] Linking deferred rendering final pass shaders..." << std::endl;
-
-    auto deferredRenderingFinalPassProgram = std::make_unique<globjects::Program>();
-    deferredRenderingFinalPassProgram->attach(deferredRenderingFinalPassVertexShader.get(), deferredRenderingFinalPassFragmentShader.get());
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling shadow mapping vertex shader...";
-
-    auto shadowMappingVertexSource = globjects::Shader::sourceFromFile("media/shadow-mapping-directional.vert");
-    auto shadowMappingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowMappingVertexSource.get());
-    auto shadowMappingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), shadowMappingVertexShaderTemplate.get());
-
-    if (!shadowMappingVertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile vertex shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling shadow mapping fragment shader...";
-
-    auto shadowMappingFragmentSource = globjects::Shader::sourceFromFile("media/shadow-mapping-directional.frag");
-    auto shadowMappingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(shadowMappingFragmentSource.get());
-    auto shadowMappingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), shadowMappingFragmentShaderTemplate.get());
-
-    if (!shadowMappingFragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile fragment shader" << std::endl;
-        return 1;
-    }
-
-    auto shadowMappingProgram = std::make_unique<globjects::Program>();
-    shadowMappingProgram->attach(shadowMappingVertexShader.get(), shadowMappingFragmentShader.get());
-
-    auto shadowMappingLightSpaceUniform = shadowMappingProgram->getUniform<glm::mat4>("lightSpaceMatrix");
-    auto shadowMappingModelTransformationUniform = shadowMappingProgram->getUniform<glm::mat4>("modelTransformation");
-
-    std::cout << "done" << std::endl;
-
-    /* std::cout << "[INFO] Compiling skybox rendering vertex shader...";
-
-    auto skyboxRenderingVertexSource = globjects::Shader::sourceFromFile("media/skybox.vert");
-    auto skyboxRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(skyboxRenderingVertexSource.get());
-    auto skyboxRenderingVertexShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_VERTEX_SHADER), skyboxRenderingVertexShaderTemplate.get());
-
-    if (!skyboxRenderingVertexShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile skybox rendering vertex shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[INFO] Compiling skybox rendering fragment shader...";
-
-    auto skyboxRenderingFragmentSource = globjects::Shader::sourceFromFile("media/skybox.frag");
-    auto skyboxRenderingFragmentShaderTemplate = globjects::Shader::applyGlobalReplacements(skyboxRenderingFragmentSource.get());
-    auto skyboxRenderingFragmentShader = std::make_unique<globjects::Shader>(static_cast<gl::GLenum>(GL_FRAGMENT_SHADER), skyboxRenderingFragmentShaderTemplate.get());
-
-    if (!skyboxRenderingFragmentShader->compile())
-    {
-        std::cerr << "[ERROR] Can not compile skybox rendering fragment shader" << std::endl;
-        return 1;
-    }
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[DEBUG] Linking skybox rendering shaders..." << std::endl;
-
-    auto skyboxRenderingProgram = std::make_unique<globjects::Program>();
-    skyboxRenderingProgram->attach(skyboxRenderingVertexShader.get(), skyboxRenderingFragmentShader.get());
-
-    auto skyboxRenderingModelTransformationUniform = skyboxRenderingProgram->getUniform<glm::mat4>("modelTransformation");
-
-    std::cout << "done" << std::endl;*/
-
     std::cout << "[INFO] Compiling simple vertex shader...";
 
     auto simpleVertexSource = globjects::Shader::sourceFromFile("media/simple-rendering.vert");
@@ -1190,7 +1066,9 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Loading 3D model...";
+    std::cout << "[INFO] Loading 3D models...";
+
+    auto dancingCactusModel = AssimpModelLoader::animatedModelFromFile("media/dancing-cactus.gltf", { "media" }, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
     auto quadModel = AssimpModelLoader::staticModelFromFile("media/quad.obj", {}, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
@@ -1356,143 +1234,6 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    /*std::cout << "[DEBUG] Initializing skybox...";
-
-    auto skybox = Skybox::builder()
-        ->top("media/skybox-top.png")
-        ->bottom("media/skybox-bottom.png")
-        ->left("media/skybox-left.png")
-        ->right("media/skybox-right.png")
-        ->front("media/skybox-front.png")
-        ->back("media/skybox-back.png")
-        ->size(40.0f)
-        ->build();
-
-    std::cout << "done" << std::endl;*/
-
-    std::cout << "[DEBUG] Initializing framebuffers...";
-
-    std::cout << "[DEBUG] Initializing deferred rendering frame buffer...";
-
-    auto deferredFragmentPositionTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
-
-    deferredFragmentPositionTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-    deferredFragmentPositionTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
-
-    deferredFragmentPositionTexture->image2D(
-        0,
-        static_cast<gl::GLenum>(GL_RGB32F),
-        glm::vec2(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)),
-        0,
-        static_cast<gl::GLenum>(GL_RGB),
-        static_cast<gl::GLenum>(GL_FLOAT),
-        nullptr
-    );
-
-    auto deferredFragmentNormalTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
-
-    deferredFragmentNormalTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-    deferredFragmentNormalTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
-
-    deferredFragmentNormalTexture->image2D(
-        0,
-        static_cast<gl::GLenum>(GL_RGB32F),
-        glm::vec2(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)),
-        0,
-        static_cast<gl::GLenum>(GL_RGB),
-        static_cast<gl::GLenum>(GL_FLOAT),
-        nullptr
-    );
-
-    auto deferredFragmentAlbedoTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
-
-    deferredFragmentAlbedoTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-    deferredFragmentAlbedoTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
-
-    deferredFragmentAlbedoTexture->image2D(
-        0,
-        static_cast<gl::GLenum>(GL_RGBA8),
-        glm::vec2(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)),
-        0,
-        static_cast<gl::GLenum>(GL_RGBA),
-        static_cast<gl::GLenum>(GL_UNSIGNED_BYTE),
-        nullptr
-    );
-
-    auto deferredFragmentDepthTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
-
-    deferredFragmentDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<GLint>(GL_LINEAR));
-    deferredFragmentDepthTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<GLint>(GL_LINEAR));
-
-    deferredFragmentDepthTexture->image2D(
-        0,
-        static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
-        glm::vec2(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)),
-        0,
-        static_cast<gl::GLenum>(GL_DEPTH_COMPONENT),
-        static_cast<gl::GLenum>(GL_FLOAT),
-        nullptr
-    );
-
-    auto deferredRenderingFramebuffer = std::make_unique<globjects::Framebuffer>();
-    deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), deferredFragmentPositionTexture.get());
-    deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT1), deferredFragmentNormalTexture.get());
-    deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT2), deferredFragmentAlbedoTexture.get());
-    // deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT3), deferredFragmentLightSpacePositionTexture.get());
-    deferredRenderingFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_DEPTH_ATTACHMENT), deferredFragmentDepthTexture.get());
-
-    // tell framebuffer it actually needs to render to **BOTH** textures, but does not have to output anywhere (last NONE argument, iirc)
-    deferredRenderingFramebuffer->setDrawBuffers({
-        static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0),
-        static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT1),
-        static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT2),
-        // static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT3),
-        static_cast<gl::GLenum>(GL_NONE)
-    });
-
-    deferredRenderingFramebuffer->printStatus(true);
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[DEBUG] Initializing shadowMapTexture...";
-
-    const float shadowMapSize = 2048.0f;
-
-    auto shadowMapTexture = std::make_unique<globjects::Texture>(static_cast<gl::GLenum>(GL_TEXTURE_2D));
-
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MIN_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_MAG_FILTER), static_cast<gl::GLenum>(GL_LINEAR));
-
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_S), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_WRAP_T), static_cast<gl::GLenum>(GL_CLAMP_TO_BORDER));
-
-    shadowMapTexture->setParameter(static_cast<gl::GLenum>(GL_TEXTURE_BORDER_COLOR), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-
-    shadowMapTexture->image2D(
-        0,
-        static_cast<gl::GLenum>(GL_RGB10),
-        glm::vec2(shadowMapSize, shadowMapSize),
-        0,
-        static_cast<gl::GLenum>(GL_RGB),
-        static_cast<gl::GLenum>(GL_FLOAT),
-        nullptr);
-
-    std::cout << "done" << std::endl;
-
-    std::cout << "[DEBUG] Initializing frame buffer...";
-
-    auto shadowMapFramebuffer = std::make_unique<globjects::Framebuffer>();
-    shadowMapFramebuffer->attachTexture(static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), shadowMapTexture.get());
-    shadowMapFramebuffer->setDrawBuffers({ static_cast<gl::GLenum>(GL_COLOR_ATTACHMENT0), static_cast<gl::GLenum>(GL_NONE) });
-
-    auto shadowMapRenderBuffer = std::make_unique<globjects::Renderbuffer>();
-    shadowMapRenderBuffer->storage(static_cast<gl::GLenum>(GL_DEPTH24_STENCIL8), shadowMapSize, shadowMapSize);
-    shadowMapFramebuffer->attachRenderBuffer(static_cast<gl::GLenum>(GL_DEPTH_STENCIL_ATTACHMENT), shadowMapRenderBuffer.get());
-
-    shadowMapFramebuffer->printStatus(true);
-
-    std::cout << "done" << std::endl;
-
     std::cout << "[INFO] Preparing data buffers...";
 
     std::vector<PointLightDescriptor> pointLights{ { glm::vec3(-1.75f, 3.85f, -0.75f), 0.5f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) } };
@@ -1629,111 +1370,71 @@ int main()
             cameraPos + cameraForward,
             cameraUp);
 
-        // first render pass - prepare for deferred rendering by rendering to the entire scene to a deferred rendering framebuffer's attachments
-        {
-            deferredRenderingFramebuffer->bind();
+        ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
+        ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
-            ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
+        glDepthFunc(GL_LEQUAL);
+        glDisable(GL_CULL_FACE);
 
-            glEnable(static_cast<gl::GLenum>(GL_DEPTH_TEST));
-            glDepthFunc(GL_LEQUAL);
-            glDisable(GL_CULL_FACE);
+        simpleProgram->use();
 
-            deferredRenderingPrePassProgram->use();
+        simpleProgram->setUniform("projection", cameraProjection);
+        simpleProgram->setUniform("view", cameraView);
 
-            deferredRenderingPrePassProgram->setUniform("projection", cameraProjection);
-            deferredRenderingPrePassProgram->setUniform("view", cameraView);
+        simpleProgram->setUniform("diffuseTexture", 1);
+        simpleProgram->setUniform("normalMapTexture", 2);
 
-            deferredRenderingPrePassProgram->setUniform("diffuseTexture", 1);
-            deferredRenderingPrePassProgram->setUniform("normalMapTexture", 2);
+        simpleProgram->setUniform("model", houseModel->getTransformation());
 
-            deferredRenderingPrePassProgram->setUniform("model", houseModel->getTransformation());
+        houseModel->bind();
+        houseModel->draw();
+        houseModel->unbind();
 
-            houseModel->bind();
-            houseModel->draw();
-            houseModel->unbind();
+        simpleProgram->setUniform("model", tableModel->getTransformation());
 
-            deferredRenderingPrePassProgram->setUniform("model", tableModel->getTransformation());
+        tableModel->bind();
+        tableModel->draw();
+        tableModel->unbind();
 
-            tableModel->bind();
-            tableModel->draw();
-            tableModel->unbind();
+        simpleProgram->setUniform("model", lanternModel->getTransformation());
 
-            deferredRenderingPrePassProgram->setUniform("model", lanternModel->getTransformation());
+        lanternModel->bind();
+        lanternModel->draw();
+        lanternModel->unbind();
 
-            lanternModel->bind();
-            lanternModel->draw();
-            lanternModel->unbind();
+        simpleProgram->setUniform("model", penModel->getTransformation());
 
-            deferredRenderingPrePassProgram->setUniform("model", penModel->getTransformation());
+        penNormalMapTexture->bindActive(2);
 
-            penNormalMapTexture->bindActive(2);
+        penModel->bind();
+        penModel->draw();
+        penModel->unbind();
 
-            penModel->bind();
-            penModel->draw();
-            penModel->unbind();
+        penNormalMapTexture->unbindActive(2);
 
-            penNormalMapTexture->unbindActive(2);
+        simpleProgram->setUniform("model", inkBottleModel->getTransformation());
 
-            deferredRenderingPrePassProgram->setUniform("model", inkBottleModel->getTransformation());
+        inkBottleNormalMapTexture->bindActive(2);
 
-            inkBottleNormalMapTexture->bindActive(2);
+        inkBottleModel->bind();
+        inkBottleModel->draw();
+        inkBottleModel->unbind();
 
-            inkBottleModel->bind();
-            inkBottleModel->draw();
-            inkBottleModel->unbind();
+        inkBottleNormalMapTexture->unbindActive(2);
 
-            inkBottleNormalMapTexture->unbindActive(2);
+        simpleProgram->setUniform("model", scrollModel->getTransformation());
 
-            deferredRenderingPrePassProgram->setUniform("model", scrollModel->getTransformation());
+        glDisable(GL_CULL_FACE);
 
-            glDisable(GL_CULL_FACE);
+        scrollModel->bind();
+        scrollModel->draw();
+        scrollModel->unbind();
 
-            scrollModel->bind();
-            scrollModel->draw();
-            scrollModel->unbind();
+        glEnable(GL_CULL_FACE);
 
-            glEnable(GL_CULL_FACE);
-
-            deferredRenderingPrePassProgram->release();
-
-            deferredRenderingFramebuffer->unbind();
-        }
-
-        // second render pass - merge textures from the deferred rendering pre-pass into a final frame
-        {
-            ::glViewport(0, 0, static_cast<GLsizei>(window.getSize().x), static_cast<GLsizei>(window.getSize().y));
-            ::glClearColor(static_cast<gl::GLfloat>(1.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(0.0f), static_cast<gl::GLfloat>(1.0f));
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            deferredRenderingFinalPassProgram->use();
-
-            deferredFragmentPositionTexture->bindActive(2);
-            deferredFragmentNormalTexture->bindActive(3);
-            deferredFragmentAlbedoTexture->bindActive(4);
-
-            pointLightDataBuffer->bindBase(GL_SHADER_STORAGE_BUFFER, 5);
-
-            deferredRenderingFinalPassProgram->setUniform("positionTexture", 2);
-            deferredRenderingFinalPassProgram->setUniform("normalTexture", 3);
-            deferredRenderingFinalPassProgram->setUniform("albedoTexture", 4);
-
-            deferredRenderingFinalPassProgram->setUniform("cameraPosition", cameraPos);
-
-            quadModel->bind();
-            quadModel->draw();
-            quadModel->unbind();
-
-            pointLightDataBuffer->unbind(GL_SHADER_STORAGE_BUFFER, 5);
-
-            deferredFragmentPositionTexture->unbindActive(2);
-            deferredFragmentNormalTexture->unbindActive(3);
-            deferredFragmentAlbedoTexture->unbindActive(4);
-
-            deferredRenderingFinalPassProgram->release();
-        }
+        simpleProgram->release();
 
         // done rendering the frame
 
