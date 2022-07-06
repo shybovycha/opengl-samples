@@ -140,11 +140,11 @@ class AnimatedMeshBuilder
 {
 public:
     AnimatedMeshBuilder() :
-        m_boneIdsAttributeIndex(0),
-        m_boneWeightsAttributeIndex(1),
-        m_positionAttributeIndex(2),
-        m_normalAttributeIndex(3),
-        m_uvAttributeIndex(4)
+        m_positionAttributeIndex(0),
+        m_normalAttributeIndex(1),
+        m_uvAttributeIndex(2),
+        m_boneIdsAttributeIndex(3),
+        m_boneWeightsAttributeIndex(4)
     {
     }
 
@@ -268,27 +268,27 @@ public:
         m_vao->bindElementBuffer(m_indexBuffer.get());
 
         m_vao->binding(m_positionAttributeIndex)->setAttribute(m_positionAttributeIndex);
-        m_vao->binding(m_positionAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, position), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_positionAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, position), sizeof(AnimatedVertex)); // number of elements in buffer, stride, size of buffer element
         m_vao->binding(m_positionAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(m_positionAttributeIndex);
 
         m_vao->binding(m_normalAttributeIndex)->setAttribute(m_normalAttributeIndex);
-        m_vao->binding(m_normalAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, normal), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_normalAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, normal), sizeof(AnimatedVertex)); // number of elements in buffer, stride, size of buffer element
         m_vao->binding(m_normalAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(m_normalAttributeIndex);
 
         m_vao->binding(m_uvAttributeIndex)->setAttribute(m_uvAttributeIndex);
-        m_vao->binding(m_uvAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, uv), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_uvAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, uv), sizeof(AnimatedVertex)); // number of elements in buffer, stride, size of buffer element
         m_vao->binding(m_uvAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(m_uvAttributeIndex);
 
         m_vao->binding(m_boneIdsAttributeIndex)->setAttribute(m_boneIdsAttributeIndex);
-        m_vao->binding(m_boneIdsAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, boneIds), sizeof(glm::vec4)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_boneIdsAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, boneIds), sizeof(AnimatedVertex)); // number of elements in buffer, stride, size of buffer element
         m_vao->binding(m_boneIdsAttributeIndex)->setFormat(4, static_cast<gl::GLenum>(GL_UNSIGNED_INT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(m_boneIdsAttributeIndex);
 
         m_vao->binding(m_boneWeightsAttributeIndex)->setAttribute(m_boneWeightsAttributeIndex);
-        m_vao->binding(m_boneWeightsAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, boneWeights), sizeof(glm::vec4)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_boneWeightsAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(AnimatedVertex, boneWeights), sizeof(AnimatedVertex)); // number of elements in buffer, stride, size of buffer element
         m_vao->binding(m_boneWeightsAttributeIndex)->setFormat(4, static_cast<gl::GLenum>(GL_UNSIGNED_INT)); // number of data elements per buffer element (vertex), type of data
         m_vao->enable(m_boneWeightsAttributeIndex);
 
@@ -1070,6 +1070,13 @@ int main()
 
     auto dancingCactusModel = AssimpModelLoader::animatedModelFromFile("media/dancing-cactus.gltf", { "media" }, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
+    // Translation * Rotation * Scale
+    dancingCactusModel->setTransformation(
+        glm::translate(glm::vec3(3.3f, 3.75f, -0.9f)) *
+        glm::rotate(glm::radians(-120.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+        glm::scale(glm::vec3(0.5f))
+    );
+
     auto quadModel = AssimpModelLoader::staticModelFromFile("media/quad.obj", {}, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
     auto houseModel = AssimpModelLoader::staticModelFromFile("media/house1.obj", { "media" });
@@ -1433,6 +1440,12 @@ int main()
         scrollModel->unbind();
 
         glEnable(GL_CULL_FACE);
+
+        simpleProgram->setUniform("model", dancingCactusModel->getTransformation());
+
+        dancingCactusModel->bind();
+        dancingCactusModel->draw();
+        dancingCactusModel->unbind();
 
         simpleProgram->release();
 
