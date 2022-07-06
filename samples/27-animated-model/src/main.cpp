@@ -2,8 +2,6 @@
 
 #include "common/AbstractDrawable.hpp"
 #include "common/Skybox.hpp"
-#include "common/StaticMesh.hpp"
-#include "common/StaticModel.hpp"
 
 /*
 
@@ -85,18 +83,41 @@ public:
 
     void draw() override
     {
+        m_vao->drawElements(
+            static_cast<gl::GLenum>(GL_TRIANGLES),
+            m_indices.size(),
+            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+            nullptr);
     }
 
     void drawInstanced(unsigned int instances) override
     {
+        m_vao->drawElementsInstanced(
+            static_cast<gl::GLenum>(GL_TRIANGLES),
+            m_indices.size(),
+            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+            nullptr,
+            instances);
     }
 
     void bind() override
     {
+        m_vao->bind();
+
+        for (auto& texture : m_textures)
+        {
+            texture->bindActive(1);
+        }
     }
 
     void unbind() override
     {
+        m_vao->unbind();
+
+        for (auto& texture : m_textures)
+        {
+            texture->unbindActive(1);
+        }
     }
 
 private:
@@ -290,27 +311,332 @@ public:
 
     void draw() override
     {
-        // TODO
+        for (auto& mesh : m_skin)
+        {
+            mesh->draw();
+        }
     }
 
     void drawInstanced(unsigned int instances) override
     {
-        // TODO
+        for (auto& mesh : m_skin)
+        {
+            mesh->drawInstanced(instances);
+        }
     }
 
     void bind() override
     {
-        // TODO
+        for (auto& mesh : m_skin)
+        {
+            mesh->bind();
+        }
     }
 
     void unbind() override
     {
-        // TODO
+        for (auto& mesh : m_skin)
+        {
+            mesh->unbind();
+        }
+    }
+
+
+    void setTransformation(glm::mat4 transformation)
+    {
+        m_transformation = transformation;
+    }
+
+    glm::mat4 getTransformation() const
+    {
+        return m_transformation;
     }
 
 private:
     std::vector<Bone> m_skeleton;
     std::vector<std::unique_ptr<AnimatedMesh>> m_skin;
+    glm::mat4 m_transformation; // TODO: replace with instances
+};
+
+struct StaticVertex
+{
+    glm::vec3 position;
+    glm::vec3 normal;
+    // glm::vec3 tangent;
+    // glm::vec3 bitangent;
+    glm::vec2 uv;
+};
+
+class StaticMesh : public AbstractDrawable
+{
+    friend class StaticMeshBuilder;
+
+public:
+    static std::shared_ptr<StaticMeshBuilder> builder()
+    {
+        return std::make_shared<StaticMeshBuilder>();
+    }
+
+    StaticMesh(
+        std::vector<StaticVertex> vertexData,
+        std::vector<unsigned int> indices,
+        std::vector<globjects::Texture*> textures,
+        std::unique_ptr<globjects::VertexArray> vao,
+        std::unique_ptr<globjects::Buffer> vertexDataBuffer,
+        std::unique_ptr<globjects::Buffer> indexBuffer) :
+
+        m_vertexData(std::move(vertexData)),
+        m_indices(std::move(indices)),
+        m_textures(textures),
+        m_vao(std::move(vao)),
+        m_vertexDataBuffer(std::move(vertexDataBuffer)),
+        m_indexBuffer(std::move(indexBuffer))
+    {
+    }
+
+    void draw() override
+    {
+        m_vao->drawElements(
+            static_cast<gl::GLenum>(GL_TRIANGLES),
+            m_indices.size(),
+            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+            nullptr);
+    }
+
+    void drawInstanced(unsigned int instances) override
+    {
+        m_vao->drawElementsInstanced(
+            static_cast<gl::GLenum>(GL_TRIANGLES),
+            m_indices.size(),
+            static_cast<gl::GLenum>(GL_UNSIGNED_INT),
+            nullptr,
+            instances);
+    }
+
+    void bind() override
+    {
+        m_vao->bind();
+
+        for (auto& texture : m_textures)
+        {
+            texture->bindActive(1);
+        }
+    }
+
+    void unbind() override
+    {
+        m_vao->unbind();
+
+        for (auto& texture : m_textures)
+        {
+            texture->unbindActive(1);
+        }
+    }
+
+private:
+    std::unique_ptr<globjects::VertexArray> m_vao;
+
+    std::unique_ptr<globjects::Buffer> m_vertexDataBuffer;
+    std::unique_ptr<globjects::Buffer> m_indexBuffer;
+
+    std::vector<globjects::Texture*> m_textures;
+
+    std::vector<unsigned int> m_indices;
+    std::vector<StaticVertex> m_vertexData;
+};
+
+class StaticMeshBuilder
+{
+public:
+    StaticMeshBuilder() :
+        m_positionAttributeIndex(0),
+        m_normalAttributeIndex(0),
+        m_uvAttributeIndex(0)
+    {
+    }
+
+    StaticMeshBuilder* addVertex(glm::vec3 position, glm::vec3 normal, glm::vec2 uv)
+    {
+        StaticVertex vertex { .position = position, .normal = normal, .uv = uv };
+
+        m_vertexData.push_back(vertex);
+
+        return this;
+    }
+
+    StaticMeshBuilder* addVertices(std::vector<StaticVertex> vertices)
+    {
+        m_vertexData.insert(m_vertexData.end(), vertices.begin(), vertices.end());
+
+        return this;
+    }
+
+    StaticMeshBuilder* addIndices(std::vector<unsigned int> indices)
+    {
+        m_indices.insert(indices.end(), indices.begin(), indices.end());
+
+        return this;
+    }
+
+    StaticMeshBuilder* addTexture(std::unique_ptr<globjects::Texture> texture)
+    {
+        m_textures.push_back(texture.get());
+
+        return this;
+    }
+
+    StaticMeshBuilder* addTexture(globjects::Texture* texture)
+    {
+        m_textures.push_back(texture);
+
+        return this;
+    }
+
+    StaticMeshBuilder* addTextures(std::vector<std::unique_ptr<globjects::Texture>> textures)
+    {
+        for (auto& texture : textures)
+        {
+            m_textures.push_back(texture.get());
+        }
+
+        return this;
+    }
+
+    StaticMeshBuilder* addTextures(std::vector<globjects::Texture*> textures)
+    {
+        m_textures.insert(m_textures.end(), textures.begin(), textures.end());
+
+        return this;
+    }
+
+    StaticMeshBuilder* setPositionAttributerIndex(unsigned int positionAttributeIndex)
+    {
+        m_positionAttributeIndex = positionAttributeIndex;
+
+        return this;
+    }
+
+    StaticMeshBuilder* setNormalAttributerIndex(unsigned int normalAttributeIndex)
+    {
+        m_normalAttributeIndex = normalAttributeIndex;
+
+        return this;
+    }
+
+    StaticMeshBuilder* setUVAttributerIndex(unsigned int uvAttributeIndex)
+    {
+        m_uvAttributeIndex = uvAttributeIndex;
+
+        return this;
+    }
+
+    std::unique_ptr<StaticMesh> build()
+    {
+        m_vertexDataBuffer = std::make_unique<globjects::Buffer>();
+
+        m_vertexDataBuffer->setData(m_vertexData, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+        m_indexBuffer = std::make_unique<globjects::Buffer>();
+
+        m_indexBuffer->setData(m_indices, static_cast<gl::GLenum>(GL_STATIC_DRAW));
+
+        m_vao = std::make_unique<globjects::VertexArray>();
+
+        m_vao->bindElementBuffer(m_indexBuffer.get());
+
+        m_vao->binding(m_positionAttributeIndex)->setAttribute(m_positionAttributeIndex);
+        m_vao->binding(m_positionAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(StaticVertex, position), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_positionAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(m_positionAttributeIndex);
+
+        m_vao->binding(m_normalAttributeIndex)->setAttribute(m_normalAttributeIndex);
+        m_vao->binding(m_normalAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(StaticVertex, normal), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_normalAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(m_normalAttributeIndex);
+
+        m_vao->binding(m_uvAttributeIndex)->setAttribute(m_uvAttributeIndex);
+        m_vao->binding(m_uvAttributeIndex)->setBuffer(m_vertexDataBuffer.get(), offsetof(StaticVertex, uv), sizeof(glm::vec3)); // number of elements in buffer, stride, size of buffer element
+        m_vao->binding(m_uvAttributeIndex)->setFormat(3, static_cast<gl::GLenum>(GL_FLOAT)); // number of data elements per buffer element (vertex), type of data
+        m_vao->enable(m_uvAttributeIndex);
+
+        return std::make_unique<StaticMesh>(
+            std::move(m_vertexData),
+            std::move(m_indices),
+            std::move(m_textures),
+            std::move(m_vao),
+            std::move(m_vertexDataBuffer),
+            std::move(m_indexBuffer));
+    }
+
+private:
+    std::vector<StaticVertex> m_vertexData;
+    std::vector<unsigned int> m_indices;
+    std::vector<globjects::Texture*> m_textures;
+
+    std::unique_ptr<globjects::VertexArray> m_vao;
+    std::unique_ptr<globjects::Buffer> m_vertexDataBuffer;
+    std::unique_ptr<globjects::Buffer> m_indexBuffer;
+
+    unsigned int m_positionAttributeIndex;
+    unsigned int m_normalAttributeIndex;
+    unsigned int m_uvAttributeIndex;
+};
+
+class StaticModel : public AbstractDrawable
+{
+public:
+    StaticModel(std::vector<std::unique_ptr<StaticMesh>> meshes) :
+        AbstractDrawable(),
+
+        m_meshes(std::move(meshes))
+    {
+    }
+
+    void draw() override
+    {
+        for (auto& mesh : m_meshes)
+        {
+            mesh->draw();
+        }
+    }
+
+    void drawInstanced(unsigned int instances) override
+    {
+        for (auto& mesh : m_meshes)
+        {
+            mesh->drawInstanced(instances);
+        }
+    }
+
+    void bind() override
+    {
+        for (auto& mesh : m_meshes)
+        {
+            mesh->bind();
+        }
+    }
+
+    void unbind() override
+    {
+        for (auto& mesh : m_meshes)
+        {
+            mesh->unbind();
+        }
+    }
+
+    void setTransformation(glm::mat4 transformation)
+    {
+        m_transformation = transformation;
+    }
+
+    glm::mat4 getTransformation() const
+    {
+        return m_transformation;
+    }
+
+private:
+    std::vector<std::unique_ptr<StaticMesh>> m_meshes;
+    glm::mat4 m_transformation; // TODO: replace this with instances
 };
 
 class AssimpModelLoader
@@ -331,9 +657,7 @@ public:
             return nullptr;
         }
 
-        auto model = staticModelFromAiNode(scene, scene->mRootNode, materialLookupPaths);
-
-        return std::move(model);
+        return staticModelFromAiNode(scene, scene->mRootNode, materialLookupPaths);
     }
 
 protected:
@@ -415,12 +739,18 @@ protected:
             textures
         );
 
+        std::vector<StaticVertex> staticVertices;
+
+        for (auto i = 0; i < vertices.size(); ++i)
+        {
+            StaticVertex vertex { .position = vertices[i], .normal = normals[i], .uv = uvs[i] };
+
+            staticVertices.push_back(vertex);
+        }
+
         return StaticMesh::builder()
-            ->addVertices(vertices)
+            ->addVertices(staticVertices)
             ->addIndices(indices)
-            ->addNormals(normals)
-            ->addTangentsBitangents(tangents, bitangents)
-            ->addUVs(uvs)
             ->addTextures(textures)
             ->build();
     }
