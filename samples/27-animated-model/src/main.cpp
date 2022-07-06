@@ -1,7 +1,6 @@
 #include "common/stdafx.hpp"
 
 #include "common/AbstractDrawable.hpp"
-#include "common/Skybox.hpp"
 
 /*
 
@@ -68,13 +67,15 @@ public:
         std::vector<AnimatedVertex> vertexData,
         std::vector<unsigned int> indices,
         std::vector<globjects::Texture*> textures,
+        std::vector<std::shared_ptr<Animation>> animations,
         std::unique_ptr<globjects::VertexArray> vao,
         std::unique_ptr<globjects::Buffer> vertexDataBuffer,
         std::unique_ptr<globjects::Buffer> indexBuffer) :
 
         m_vertexData(std::move(vertexData)),
         m_indices(std::move(indices)),
-        m_textures(textures),
+        m_textures(std::move(textures)),
+        m_animations(std::move(animations)),
         m_vao(std::move(vao)),
         m_vertexDataBuffer(std::move(vertexDataBuffer)),
         m_indexBuffer(std::move(indexBuffer))
@@ -130,6 +131,9 @@ private:
 
     std::vector<unsigned int> m_indices;
     std::vector<AnimatedVertex> m_vertexData;
+
+    std::vector<std::shared_ptr<Animation>> m_animations;
+    std::vector<std::unique_ptr<ModelAnimator>> m_animators;
 };
 
 class AnimatedMeshBuilder
@@ -196,6 +200,13 @@ public:
     AnimatedMeshBuilder* addTextures(std::vector<globjects::Texture*> textures)
     {
         m_textures.insert(m_textures.end(), textures.begin(), textures.end());
+
+        return this;
+    }
+
+    AnimatedMeshBuilder* addAnimation(std::shared_ptr<Animation> animation)
+    {
+        m_animations.push_back(animation);
 
         return this;
     }
@@ -278,6 +289,7 @@ public:
             std::move(m_vertexData), 
             std::move(m_indices), 
             std::move(m_textures), 
+            std::move(m_animations), 
             std::move(m_vao),
             std::move(m_vertexDataBuffer),
             std::move(m_indexBuffer));
@@ -287,6 +299,7 @@ private:
     std::vector<AnimatedVertex> m_vertexData;
     std::vector<unsigned int> m_indices;
     std::vector<globjects::Texture*> m_textures;
+    std::vector<std::shared_ptr<Animation>> m_animations;
 
     std::unique_ptr<globjects::VertexArray> m_vao;
     std::unique_ptr<globjects::Buffer> m_vertexDataBuffer;
@@ -302,9 +315,10 @@ private:
 class AnimatedModel : public AbstractDrawable
 {
 public:
-    AnimatedModel(std::vector<Bone> skeleton, std::vector<std::unique_ptr<AnimatedMesh>> meshes) :
+    AnimatedModel(std::vector<std::unique_ptr<Bone>> skeleton, std::vector<std::unique_ptr<AnimatedMesh>> meshes) :
         AbstractDrawable(),
 
+        m_skeleton(std::move(skeleton)),
         m_skin(std::move(meshes))
     {
     }
@@ -353,7 +367,7 @@ public:
     }
 
 private:
-    std::vector<Bone> m_skeleton;
+    std::vector<std::unique_ptr<Bone>> m_skeleton;
     std::vector<std::unique_ptr<AnimatedMesh>> m_skin;
     glm::mat4 m_transformation; // TODO: replace with instances
 };
@@ -660,6 +674,20 @@ public:
         return staticModelFromAiNode(scene, scene->mRootNode, materialLookupPaths);
     }
 
+    static std::shared_ptr<AnimatedModel> animatedModelFromFile(std::string filename, std::vector<std::filesystem::path> materialLookupPaths = {}, unsigned int assimpImportFlags = 0)
+    {
+        static auto importer = std::make_unique<Assimp::Importer>();
+        auto scene = importer->ReadFile(filename, assimpImportFlags);
+
+        if (!scene)
+        {
+            std::cerr << "failed: " << importer->GetErrorString() << std::endl;
+            return nullptr;
+        }
+
+        return animatedModelFromAiNode(scene, scene->mRootNode, materialLookupPaths);
+    }
+
 protected:
     static std::shared_ptr<StaticModel> staticModelFromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
@@ -670,15 +698,15 @@ protected:
         return std::make_shared<StaticModel>(std::move(meshes));
     }
 
-    /*static std::shared_ptr<AnimatedModel> animatedModelFromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
+    static std::shared_ptr<AnimatedModel> animatedModelFromAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
-        std::vector<std::shared_ptr<StaticMesh>> skin;
-        std::shared_ptr<Bone> skeleton;
+        std::vector<std::unique_ptr<AnimatedMesh>> skin;
+        std::vector<std::unique_ptr<Bone>> skeleton;
 
-        processAnimatedAiNode(scene, node, materialLookupPaths, skin, std::move(skeleton));
+        processAnimatedAiNode(scene, node, materialLookupPaths, skin, skeleton);
 
-        return std::make_shared<AnimatedModel>(std::move(skin));
-    }*/
+        return std::make_shared<AnimatedModel>(std::move(skeleton), std::move(skin));
+    }
 
     static void processStaticAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<StaticMesh>>& meshes)
     {
@@ -697,22 +725,22 @@ protected:
         }
     }
 
-    //static void processAnimatedAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<AnimatedMesh>>& skin, std::vector<std::unique_ptr<Bone>>& skeleton)
-    //{
-    //    for (auto t = 0; t < node->mNumMeshes; ++t)
-    //    {
-    //        auto mesh = staticMeshFromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
-    //        skin.push_back(std::move(mesh));
-    //    }
+    static void processAnimatedAiNode(const aiScene* scene, aiNode* node, std::vector<std::filesystem::path> materialLookupPaths, std::vector<std::unique_ptr<AnimatedMesh>>& skin, std::vector<std::unique_ptr<Bone>>& skeleton)
+    {
+        for (auto t = 0; t < node->mNumMeshes; ++t)
+        {
+            auto mesh = animatedMeshFromAiMesh(scene, scene->mMeshes[node->mMeshes[t]], materialLookupPaths);
+            skin.push_back(std::move(mesh));
+        }
 
-    //    for (auto i = 0; i < node->mNumChildren; ++i)
-    //    {
-    //        auto child = node->mChildren[i];
-    //        // auto childTransformation = parentTransformation + assimpMatrixToGlm(child->mTransformation);
+        for (auto i = 0; i < node->mNumChildren; ++i)
+        {
+            auto child = node->mChildren[i];
+            // auto childTransformation = parentTransformation + assimpMatrixToGlm(child->mTransformation);
 
-    //        processAnimatedAiNode(scene, child, materialLookupPaths, skin, std::move(skeleton));
-    //    }
-    //}
+            processAnimatedAiNode(scene, child, materialLookupPaths, skin, skeleton);
+        }
+    }
 
     static std::unique_ptr<StaticMesh> staticMeshFromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
     {
@@ -750,6 +778,45 @@ protected:
 
         return StaticMesh::builder()
             ->addVertices(staticVertices)
+            ->addIndices(indices)
+            ->addTextures(textures)
+            ->build();
+    }
+
+    static std::unique_ptr<AnimatedMesh> animatedMeshFromAiMesh(const aiScene* scene, aiMesh* mesh, std::vector<std::filesystem::path> materialLookupPaths = {})
+    {
+        std::vector<glm::vec3> vertices;
+        std::vector<glm::vec3> normals;
+        std::vector<glm::vec3> tangents;
+        std::vector<glm::vec3> bitangents;
+        std::vector<glm::vec2> uvs;
+
+        std::vector<GLuint> indices;
+
+        std::vector<globjects::Texture*> textures;
+
+        loadMeshData(
+            scene,
+            mesh,
+            materialLookupPaths,
+            vertices,
+            normals,
+            tangents,
+            bitangents,
+            uvs,
+            indices,
+            textures);
+
+        auto builder = AnimatedMesh::builder();
+
+        for (auto i = 0; i < vertices.size(); ++i)
+        {
+            AnimatedVertex vertex { .position = vertices[i], .normal = normals[i], .uv = uvs[i] };
+
+            builder->addVertex(vertices[i], normals[i], uvs[i]); //, boneIds[i], boneWeights[i]);
+        }
+
+        return builder
             ->addIndices(indices)
             ->addTextures(textures)
             ->build();
@@ -1051,7 +1118,7 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[INFO] Compiling skybox rendering vertex shader...";
+    /* std::cout << "[INFO] Compiling skybox rendering vertex shader...";
 
     auto skyboxRenderingVertexSource = globjects::Shader::sourceFromFile("media/skybox.vert");
     auto skyboxRenderingVertexShaderTemplate = globjects::Shader::applyGlobalReplacements(skyboxRenderingVertexSource.get());
@@ -1086,7 +1153,7 @@ int main()
 
     auto skyboxRenderingModelTransformationUniform = skyboxRenderingProgram->getUniform<glm::mat4>("modelTransformation");
 
-    std::cout << "done" << std::endl;
+    std::cout << "done" << std::endl;*/
 
     std::cout << "[INFO] Compiling simple vertex shader...";
 
@@ -1289,7 +1356,7 @@ int main()
 
     std::cout << "done" << std::endl;
 
-    std::cout << "[DEBUG] Initializing skybox...";
+    /*std::cout << "[DEBUG] Initializing skybox...";
 
     auto skybox = Skybox::builder()
         ->top("media/skybox-top.png")
@@ -1301,7 +1368,7 @@ int main()
         ->size(40.0f)
         ->build();
 
-    std::cout << "done" << std::endl;
+    std::cout << "done" << std::endl;*/
 
     std::cout << "[DEBUG] Initializing framebuffers...";
 

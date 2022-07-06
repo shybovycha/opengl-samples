@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(27-animated-model VERSION 1.0.2 LANGUAGES CXX)
 
 set(EXECUTABLE_NAME 27-animated-model)
-set(SOURCES "src/main.cpp" "src/common/AbstractSkyboxBuilder.cpp" "src/common/CubemapSkyboxBuilder.cpp" "src/common/SimpleSkyboxBuilder.cpp" "src/common/Skybox.cpp" "src/common/StaticMesh.cpp" "src/common/StaticModel.cpp")
+set(SOURCES "src/main.cpp") # "src/common/AbstractSkyboxBuilder.cpp" "src/common/CubemapSkyboxBuilder.cpp" "src/common/SimpleSkyboxBuilder.cpp" "src/common/Skybox.cpp")
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
