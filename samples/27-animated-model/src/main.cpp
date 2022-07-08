@@ -11,30 +11,36 @@ TODO:
 
 */
 
-struct BoneTransformation
-{
-    glm::vec3 position;
-    glm::vec3 scale;
-    glm::quat rotation;
-};
+//struct BoneTransformation
+//{
+//    glm::vec3 position;
+//    glm::vec3 scale;
+//    glm::quat rotation;
+//};
 
 struct Bone
 {
     Bone(std::string name, glm::mat4 transformation) :
         name(name),
-        transformation(transformation)
+        transformation(transformation),
+        id(0),
+        parent(nullptr),
+        children(std::vector<std::shared_ptr<Bone>>())
     {
     }
 
+    unsigned int id;
     std::string name;
-    std::vector<std::shared_ptr<Bone>> children;
     glm::mat4 transformation;
+
+    std::vector<std::shared_ptr<Bone>> children;
+    std::shared_ptr<Bone> parent;
 };
 
 struct AnimationKeyframe
 {
-    std::vector<BoneTransformation> transformations;
     float timestamp;
+    std::vector<glm::mat4> transformations;
 };
 
 struct Animation
@@ -823,13 +829,38 @@ protected:
             indices,
             textures);
 
-        boneIds.resize(vertices.size());
-        boneWeights.resize(vertices.size());
+        // TODO: apply this transformation to __all__ models to prevent the blender <-> opengl coordinate systems mess and the need for constant rotate(glm::vec3(?, ?, ?), glm::radians(-90.0f))
+        /*auto gimat = scene->mRootNode->mTransformation.Inverse();
+
+        glm::mat4 globalInverseTransformation {
+            gimat.a1,
+            gimat.b1,
+            gimat.c1,
+            gimat.d1,
+
+            gimat.a2,
+            gimat.b2,
+            gimat.c2,
+            gimat.d2,
+
+            gimat.a3,
+            gimat.b3,
+            gimat.c3,
+            gimat.d3,
+
+            gimat.a4,
+            gimat.b4,
+            gimat.c4,
+            gimat.d4,
+        };*/
 
         std::vector<std::shared_ptr<Bone>> bones;
         std::vector<std::shared_ptr<Animation>> animations;
+        std::map<std::string, std::shared_ptr<Bone>> boneByName;
 
-        skeletonDataFromAiMesh(scene, mesh, materialLookupPaths, bones, animations, boneIds, boneWeights);
+        skeletonDataFromAiMesh(scene, mesh, bones, boneByName, boneIds, boneWeights);
+
+        animationDataFromAiMesh(scene, mesh, animations, boneByName);
 
         auto builder = AnimatedMesh::builder();
 
@@ -869,9 +900,8 @@ protected:
     static void skeletonDataFromAiMesh(
         const aiScene* scene, 
         aiMesh* mesh, 
-        std::vector<std::filesystem::path> materialLookupPaths, 
-        std::vector<std::shared_ptr<Bone>>& bones, 
-        std::vector<std::shared_ptr<Animation>>& animations,
+        std::vector<std::shared_ptr<Bone>>& bones,
+        std::map<std::string, std::shared_ptr<Bone>>& boneByName,
         std::vector<glm::uvec4>& boneIds,
         std::vector<glm::vec4>& boneWeights)
     {
@@ -880,7 +910,11 @@ protected:
             return;
         }
 
-        std::map<std::string, std::shared_ptr<Bone>> boneByName;
+        boneIds.resize(mesh->mNumVertices);
+        boneWeights.resize(mesh->mNumVertices);
+
+        // std::map<std::string, std::shared_ptr<Bone>> boneByName;
+        // std::map<std::string, unsigned int> boneIdByName;
         std::map<unsigned int, unsigned short> boneDataComponentIndexes;
 
         for (auto i = 0; i < mesh->mNumBones; ++i)
@@ -913,6 +947,9 @@ protected:
 
             auto bone = std::make_shared<Bone>(boneName, transformation);
 
+            bone->id = bones.size();
+            bones.push_back(bone);
+
             boneByName[boneName] = bone;
 
             for (auto t = 0; t < aiBone->mNumWeights; ++t)
@@ -930,7 +967,14 @@ protected:
                 boneDataComponentIndexes[vertexWeight.mVertexId] = boneDataComponentIndexes[vertexWeight.mVertexId] + 1;
             }
         }
+    }
 
+    static void animationDataFromAiMesh(
+        const aiScene* scene,
+        aiMesh* mesh,
+        std::vector<std::shared_ptr<Animation>>& animations,
+        std::map<std::string, std::shared_ptr<Bone>>& boneByName)
+    {
         for (auto i = 0; i < scene->mNumAnimations; ++i)
         {
             auto aiAnimation = scene->mAnimations[i];
@@ -945,6 +989,12 @@ protected:
                 auto aiChannel = aiAnimation->mChannels[t];
 
                 std::string boneName = aiChannel->mNodeName.C_Str();
+                std::shared_ptr<Bone> bone = boneByName[boneName];
+
+                if (bone == nullptr)
+                {
+                    continue;
+                }
 
                 for (int j = 0; j < aiChannel->mNumPositionKeys; ++j)
                 {
@@ -952,16 +1002,72 @@ protected:
 
                     if (keyframes.find(key.mTime) == keyframes.end())
                     {
-                        keyframes[key.mTime] = AnimationKeyframe {};
+                        keyframes[key.mTime] = AnimationKeyframe { .timestamp = static_cast<float>(key.mTime), .transformations = std::vector<glm::mat4>(boneByName.size()) };
+
+                        for (int mi = 0; mi < boneByName.size(); ++mi)
+                        {
+                            keyframes[key.mTime].transformations[mi] = glm::mat4(1.0);
+                        }
                     }
 
-                    BoneTransformation boneTransformation { .position = glm::vec3(key.mValue.x, key.mValue.y, key.mValue.z) };
+                    glm::mat4 boneTransformation = keyframes[key.mTime].transformations[bone->id];
 
-                    keyframes[key.mTime].transformations.push_back(boneTransformation);
+                    boneTransformation = boneTransformation * glm::translate(glm::vec3(key.mValue.x, key.mValue.y, key.mValue.z));
+
+                    keyframes[key.mTime].transformations[bone->id] = boneTransformation;
+                }
+
+                for (int j = 0; j < aiChannel->mNumRotationKeys; ++j)
+                {
+                    auto key = aiChannel->mRotationKeys[j];
+
+                    if (keyframes.find(key.mTime) == keyframes.end())
+                    {
+                        keyframes[key.mTime] = AnimationKeyframe { .timestamp = static_cast<float>(key.mTime), .transformations = std::vector<glm::mat4>(boneByName.size()) };
+
+                        for (int mi = 0; mi < boneByName.size(); ++mi)
+                        {
+                            keyframes[key.mTime].transformations[mi] = glm::mat4(1.0);
+                        }
+                    }
+
+                    glm::mat4 boneTransformation = keyframes[key.mTime].transformations[bone->id];
+
+                    boneTransformation = boneTransformation * glm::toMat4(glm::quat(key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z));
+
+                    keyframes[key.mTime].transformations[bone->id] = boneTransformation;
+                }
+
+                for (int j = 0; j < aiChannel->mNumScalingKeys; ++j)
+                {
+                    auto key = aiChannel->mScalingKeys[j];
+
+                    if (keyframes.find(key.mTime) == keyframes.end())
+                    {
+                        keyframes[key.mTime] = AnimationKeyframe { .timestamp = static_cast<float>(key.mTime), .transformations = std::vector<glm::mat4>(boneByName.size()) };
+
+                        for (int mi = 0; mi < boneByName.size(); ++mi)
+                        {
+                            keyframes[key.mTime].transformations[mi] = glm::mat4(1.0);
+                        }
+                    }
+
+                    glm::mat4 boneTransformation = keyframes[key.mTime].transformations[bone->id];
+
+                    boneTransformation = boneTransformation * glm::scale(glm::vec3(key.mValue.x, key.mValue.y, key.mValue.z));
+
+                    keyframes[key.mTime].transformations[bone->id] = boneTransformation;
                 }
             }
-            
-            // std::string animationName = aiAnimation->mName.C_Str();
+
+            auto animation = std::make_shared<Animation>();
+
+            for (auto& kv : keyframes)
+            {
+                animation->keyframes.push_back(kv.second);
+            }
+
+            animations.push_back(animation);
         }
     }
 
