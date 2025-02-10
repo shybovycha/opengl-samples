@@ -29,6 +29,7 @@
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/ext/quaternion_relational.hpp>
 #include <glm/ext/quaternion_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>

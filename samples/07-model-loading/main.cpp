@@ -20,6 +20,7 @@
 
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
@@ -190,7 +191,7 @@ public:
                 for (auto path : materialLookupPaths) {
                     std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
 
-                    const auto filePath = std::filesystem::path(path).append(imagePath);
+                    const auto& filePath = std::filesystem::current_path() / path / imagePath;
 
                     if (std::filesystem::exists(filePath)) {
                         imagePath = filePath.string();

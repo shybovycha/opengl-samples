@@ -153,7 +153,7 @@ std::unique_ptr<Mesh> Mesh::fromAiMesh(const aiScene* scene, aiMesh* mesh, std::
             {
                 std::cout << "[INFO] Looking up the DIFFUSE texture in " << path << "...";
 
-                const auto& filePath = std::filesystem::path(path).append(imagePath);
+                const auto& filePath = std::filesystem::current_path() / path / imagePath;
 
                 if (std::filesystem::exists(filePath))
                 {
